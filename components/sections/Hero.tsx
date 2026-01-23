@@ -19,7 +19,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick }) => {
                     loop
                     muted
                     playsInline
-                    className="w-full h-full object-cover opacity-50"
+                    className="w-full h-full object-cover opacity-60"
                 >
                     <source src="/videos/hero-reel.mp4" type="video/mp4" />
                 </video>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -14,11 +14,20 @@ import { EVENT_DETAILS } from "@/constants";
 interface RegisterModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    defaultTab?: "delegate" | "volunteer";
 }
 
-export default function RegisterModal({ open, onOpenChange }: RegisterModalProps) {
-    const [activeTab, setActiveTab] = useState("delegate");
+export default function RegisterModal({ open, onOpenChange, defaultTab = "delegate" }: RegisterModalProps) {
+    const [activeTab, setActiveTab] = useState(defaultTab);
+
+
     const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        if (open) {
+            setActiveTab(defaultTab);
+        }
+    }, [open, defaultTab]);
 
     const handleSuccess = () => {
         setSuccess(true);

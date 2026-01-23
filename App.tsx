@@ -13,6 +13,17 @@ import Footer from '@/components/sections/Footer';
 
 const App: React.FC = () => {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [registerTab, setRegisterTab] = useState<"delegate" | "volunteer">("delegate");
+
+  const openRegister = () => {
+    setRegisterTab("delegate");
+    setIsRegisterOpen(true);
+  };
+
+  const openVolunteer = () => {
+    setRegisterTab("volunteer");
+    setIsRegisterOpen(true);
+  };
 
   return (
     <Router>
@@ -20,7 +31,7 @@ const App: React.FC = () => {
         <Route path="/" element={
           <div className="bg-black min-h-screen text-white font-sans selection:bg-orange-500/30">
 
-            <Hero onRegisterClick={() => setIsRegisterOpen(true)} />
+            <Hero onRegisterClick={openRegister} />
 
             <Info />
 
@@ -28,9 +39,13 @@ const App: React.FC = () => {
 
             <Legacy />
 
-            <Footer />
+            <Footer onRegisterClick={openRegister} onVolunteerClick={openVolunteer} />
 
-            <RegisterModal open={isRegisterOpen} onOpenChange={setIsRegisterOpen} />
+            <RegisterModal
+              open={isRegisterOpen}
+              onOpenChange={setIsRegisterOpen}
+              defaultTab={registerTab}
+            />
           </div>
         } />
         <Route path="/registration-success" element={<RegistrationSuccessPage />} />

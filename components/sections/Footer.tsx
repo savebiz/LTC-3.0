@@ -1,7 +1,12 @@
 import React from 'react';
 import { LINKS } from '@/constants';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+    onRegisterClick: () => void;
+    onVolunteerClick: () => void;
+}
+
+const Footer: React.FC<FooterProps> = ({ onRegisterClick, onVolunteerClick }) => {
     return (
         <footer className="border-t border-white/5 py-20 px-4 bg-black">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
@@ -11,15 +16,38 @@ const Footer: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-8 md:gap-12 text-sm text-gray-500">
-                    {LINKS.map(link => (
-                        <a
-                            key={link.label}
-                            href={link.url}
-                            className="hover:text-white transition-colors uppercase tracking-[0.2em] text-xs font-medium"
-                        >
-                            {link.label}
-                        </a>
-                    ))}
+                    {LINKS.map(link => {
+                        const isAction = link.label === "Register" || link.label === "Volunteer";
+                        const handleClick = (e: React.MouseEvent) => {
+                            if (link.label === "Register") {
+                                e.preventDefault();
+                                onRegisterClick();
+                            } else if (link.label === "Volunteer") {
+                                e.preventDefault();
+                                onVolunteerClick();
+                            }
+                        };
+
+                        return isAction ? (
+                            <button
+                                key={link.label}
+                                onClick={handleClick}
+                                className="hover:text-white transition-colors uppercase tracking-[0.2em] text-xs font-medium bg-transparent border-none cursor-pointer"
+                            >
+                                {link.label}
+                            </button>
+                        ) : (
+                            <a
+                                key={link.label}
+                                href={link.url}
+                                className="hover:text-white transition-colors uppercase tracking-[0.2em] text-xs font-medium"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {link.label}
+                            </a>
+                        );
+                    })}
                 </div>
             </div>
         </footer>
