@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
-import { GALLERY_RECAP } from '../../../constants';
+import { GALLERY_RECAP } from '@/constants';
 
 const Gallery: React.FC = () => {
     return (
@@ -43,7 +43,7 @@ const Gallery: React.FC = () => {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
                                 <span className="text-orange-500 text-xs font-mono tracking-widest uppercase mb-2">LTC 2.0 Recap</span>
-                                <h3 className="text-2xl font-bold font-heading text-white">{item.alt}</h3>
+                                <h3 className="text-2xl font-bold font-heading text-white">{item.caption}</h3>
                             </div>
                         </motion.div>
                     ))}

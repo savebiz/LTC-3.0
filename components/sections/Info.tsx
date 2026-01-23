@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { EVENT_DETAILS } from '../../../constants';
+import { EVENT_DETAILS } from '@/constants';
 import { Calendar, MapPin, Sparkles } from 'lucide-react';
 
 const Info: React.FC = () => {
