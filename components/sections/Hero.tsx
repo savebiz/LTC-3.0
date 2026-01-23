@@ -91,7 +91,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                     <Button
                         variant="outline"
                         size="lg"
-                        className="w-full md:w-auto h-auto border-white/20 text-white bg-transparent hover:bg-white/10 px-8 py-4 md:px-12 md:py-6 text-lg md:text-xl rounded-full font-bold tracking-wide backdrop-blur-sm transition-all hover:border-white/50"
+                        className="w-full md:w-auto h-auto border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white active:text-white px-8 py-4 md:px-12 md:py-6 text-lg md:text-xl rounded-full font-bold tracking-wide backdrop-blur-sm transition-all hover:border-white/50"
                         onClick={onVolunteerClick}
                     >
                         BECOME A VOLUNTEER
