@@ -15,9 +15,14 @@ export const EVENT_DETAILS = {
 
 export const LINKS = [
   { label: "Register", url: "https://bit.ly/LTC3Register" },
-  { label: "Volunteer", url: "https://bit.ly/LTC3Volunteer" },
-  { label: "Instagram", url: "https://instagram.com/lagosteens" },
-  { label: "Twitter", url: "https://twitter.com/lagosteens" }
+  { label: "Volunteer", url: "https://bit.ly/LTC3Volunteer" }
+];
+
+export const SOCIAL_LINKS = [
+  { label: "Instagram", url: "https://www.instagram.com/lagosteensconference?igsh=MWtoYzBoanY0bTFzdw==", icon: "Instagram" },
+  { label: "Twitter", url: "https://x.com/LTC_RCCG?s=20", icon: "Twitter" },
+  { label: "Facebook", url: "https://www.facebook.com/share/p/1DXoop4kXD/", icon: "Facebook" },
+  { label: "Tiktok", url: "https://www.tiktok.com/@lagosteensconference?is_from_webapp=1&sender_device=pc", icon: "Music" } // Using Music as placeholder for Tiktok if icon unavailable
 ];
 
 export const SPEAKERS: Speaker[] = [

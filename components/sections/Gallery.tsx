@@ -20,9 +20,16 @@ const Gallery: React.FC = () => {
                         </h2>
                         <p className="text-base md:text-xl text-gray-400 max-w-md font-light">Fragments of time from our last convergence.</p>
                     </motion.div>
-                    <Button variant="link" className="text-orange-400 hover:text-orange-300 text-lg group hidden md:flex">
-                        View Full Gallery <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
+                    <a
+                        href="https://www.instagram.com/lagosteensconference?igsh=MWtoYzBoanY0bTFzdw=="
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hidden md:flex"
+                    >
+                        <Button variant="link" className="text-orange-400 hover:text-orange-300 text-lg group">
+                            See More Images <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                    </a>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 md:grid-rows-2 gap-4 h-auto md:h-[90vh]">
@@ -50,9 +57,15 @@ const Gallery: React.FC = () => {
                 </div>
 
                 <div className="mt-8 flex justify-center md:hidden">
-                    <Button variant="link" className="text-orange-400 hover:text-orange-300 text-lg group">
-                        View Full Gallery <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
+                    <a
+                        href="https://www.instagram.com/lagosteensconference?igsh=MWtoYzBoanY0bTFzdw=="
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <Button variant="link" className="text-orange-400 hover:text-orange-300 text-lg group">
+                            See More Images <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                    </a>
                 </div>
             </div>
         </section>
