@@ -36,10 +36,14 @@ const Info: React.FC = () => {
     ];
 
     return (
-        <section className="py-20 md:py-32 px-4 relative bg-black overflow-hidden">
+        <section className="py-20 md:py-32 px-4 relative bg-[#050511] overflow-hidden">
+            {/* Colorful Background Blurs */}
+            <div className="absolute top-0 left-[20%] w-[500px] h-[500px] rounded-full bg-blue-900/20 blur-[100px] pointer-events-none mix-blend-screen" />
+            <div className="absolute bottom-0 right-[20%] w-[500px] h-[500px] rounded-full bg-purple-900/20 blur-[100px] pointer-events-none mix-blend-screen" />
+
             {/* Background Texture */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-50" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050511] via-transparent to-[#050511] pointer-events-none" />
 
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
                 {items.map((item, i) => (
