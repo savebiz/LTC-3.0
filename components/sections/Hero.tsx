@@ -5,9 +5,10 @@ import Navbar from '@/components/Navbar';
 
 interface HeroProps {
     onRegisterClick: () => void;
+    onVolunteerClick: () => void;
 }
 
-const Hero: React.FC<HeroProps> = ({ onRegisterClick }) => {
+const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
     return (
         <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-black">
             {/* Video Background */}
@@ -91,8 +92,9 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick }) => {
                         variant="outline"
                         size="lg"
                         className="w-full md:w-auto h-auto border-white/20 text-white hover:bg-white/10 px-8 py-4 md:px-12 md:py-6 text-lg md:text-xl rounded-full tracking-wide backdrop-blur-sm transition-all hover:border-white/50"
+                        onClick={onVolunteerClick}
                     >
-                        WATCH TRAILER
+                        BECOME A VOLUNTEER
                     </Button>
                 </motion.div>
             </div>

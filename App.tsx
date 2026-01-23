@@ -31,7 +31,7 @@ const App: React.FC = () => {
         <Route path="/" element={
           <div className="bg-black min-h-screen text-white font-sans selection:bg-orange-500/30">
 
-            <Hero onRegisterClick={openRegister} />
+            <Hero onRegisterClick={openRegister} onVolunteerClick={openVolunteer} />
 
             <Info />
 
