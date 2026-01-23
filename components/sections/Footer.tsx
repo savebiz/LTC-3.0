@@ -22,7 +22,7 @@ const Footer: React.FC<FooterProps> = ({ onRegisterClick, onVolunteerClick }) =>
         <footer className="border-t border-white/5 py-20 px-4 bg-black">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
                 <div className="text-center md:text-left">
-                    <h4 className="text-3xl font-black font-heading text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500">LTC 3.0</h4>
+                    <h4 className="text-3xl font-black font-heading text-white">LTC 3.0</h4>
                     <div className="flex gap-6 mt-6 justify-center md:justify-start">
                         {SOCIAL_LINKS.map(link => (
                             <a
