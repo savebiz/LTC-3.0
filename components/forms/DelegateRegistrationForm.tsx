@@ -38,7 +38,10 @@ const delegateSchema = z.object({
     return true;
 }, { message: "Level and Position required", path: ["execLevel"] });
 
-export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void }) {
+export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
+    onSuccess: () => void;
+    onStepChange?: (step: 'form' | 'payment' | 'upload') => void;
+}) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [registrationData, setRegistrationData] = useState<any>(null); // Store reg data after initial save
     const [step, setStep] = useState<'form' | 'payment' | 'upload'>('form');
@@ -76,6 +79,7 @@ export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void 
                 }]);
             }
             setStep('upload');
+            onStepChange?.('upload');
             // onSuccess(); // Moved to after upload
             // window.location.href = '/registration-success'; // Moved to after upload
         } catch (error: any) {
@@ -112,7 +116,9 @@ export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void 
 
             console.log("Registration Saved:", regData);
             setRegistrationData(regData);
+            setRegistrationData(regData);
             setStep('payment'); // Move to payment step
+            onStepChange?.('payment');
 
         } catch (error: any) {
             console.error("FULL Registration Error:", error);
