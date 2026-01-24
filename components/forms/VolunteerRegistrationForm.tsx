@@ -62,7 +62,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
             if (error) throw error;
 
             onSuccess();
-            window.location.href = '/registration-success';
+            window.location.href = '/registration-success?type=volunteer';
         } catch (error: any) {
             console.error("Volunteer Registration Error:", error);
             alert("Failed to register: " + (error.message || "Unknown error"));
