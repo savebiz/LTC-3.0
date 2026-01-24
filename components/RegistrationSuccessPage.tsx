@@ -4,6 +4,7 @@ import { CheckCircle2 } from "lucide-react";
 export default function RegistrationSuccessPage() {
     const searchParams = new URLSearchParams(window.location.search);
     const type = searchParams.get('type');
+    const reference = searchParams.get('reference');
     const isVolunteer = type === 'volunteer';
 
     return (
