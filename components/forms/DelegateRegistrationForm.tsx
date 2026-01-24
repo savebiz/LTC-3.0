@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { supabase } from "@/lib/supabase";
 import { TEEN_ROLES, EXEC_LEVELS } from "@/constants"
 import { REGIONS_AND_PROVINCES } from "../../constants";
+import imageCompression from 'browser-image-compression';
 
 const delegateSchema = z.object({
     fullName: z.string().min(2, { message: "Required" }),
@@ -205,8 +206,29 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                             if (!e.target.files || e.target.files.length === 0) return;
                             setUploading(true);
                             try {
-                                const file = e.target.files[0];
-                                const fileExt = file.name.split('.').pop();
+                                let file = e.target.files[0];
+                                const fileExt = file.name.split('.').pop()?.toLowerCase();
+                                const isImage = ['jpg', 'jpeg', 'png', 'webp'].includes(fileExt || '');
+
+                                // Compress if it's an image
+                                if (isImage) {
+                                    console.log(`Original size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+                                    const options = {
+                                        maxSizeMB: 0.2, // 200KB target
+                                        maxWidthOrHeight: 1920,
+                                        useWebWorker: true
+                                    };
+                                    try {
+                                        const compressedFile = await imageCompression(file, options);
+                                        console.log(`Compressed size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
+                                        file = compressedFile; // Replace original file with compressed one
+                                    } catch (err) {
+                                        console.error('Compression failed:', err);
+                                        // Continue with original file if compression fails? 
+                                        // Or alert? Let's log and continue to avoid blocking user.
+                                    }
+                                }
+
                                 const fileName = `${registrationData.id}.${fileExt}`;
                                 const filePath = `${fileName}`;
 
@@ -246,7 +268,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 </div>
 
                 <div className="text-center">
-                    {uploading && <p className="text-blue-600 font-bold animate-pulse">Uploading...</p>}
+                    {uploading && <p className="text-blue-600 font-bold animate-pulse">Compressing & Uploading...</p>}
                 </div>
             </div>
         );
