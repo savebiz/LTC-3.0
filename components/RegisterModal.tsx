@@ -9,6 +9,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DelegateRegistrationForm } from "./forms/DelegateRegistrationForm";
 import { VolunteerRegistrationForm } from "./forms/VolunteerRegistrationForm";
+import { ComingSoonDelegate } from "./forms/ComingSoonDelegate";
 import { EVENT_DETAILS } from "@/constants";
 
 interface RegisterModalProps {
@@ -78,11 +79,14 @@ export default function RegisterModal({ open, onOpenChange, defaultTab = "delega
                                 <TabsTrigger value="delegate" disabled={isLocked && activeTab !== "delegate"}>Delegate</TabsTrigger>
                                 <TabsTrigger value="volunteer" disabled={isLocked && activeTab !== "volunteer"}>Volunteer</TabsTrigger>
                             </TabsList>
-                            <TabsContent value="delegate">
+                            <TabsContent value="delegate" className="py-4">
+                                <ComingSoonDelegate />
+                                {/* 
                                 <DelegateRegistrationForm
                                     onSuccess={handleSuccess}
                                     onStepChange={(step) => setIsLocked(step !== 'form')}
-                                />
+                                /> 
+                                */}
                             </TabsContent>
                             <TabsContent value="volunteer">
                                 <VolunteerRegistrationForm onSuccess={handleSuccess} />
