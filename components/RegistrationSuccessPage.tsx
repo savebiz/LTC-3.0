@@ -18,7 +18,7 @@ export default function RegistrationSuccessPage() {
                 </h1>
                 <p className="text-gray-300">
                     Thank you for joining the LTC 3.0 (T.I.M.E) {isVolunteer ? 'Volunteer Force' : 'Delegates'}.
-                    Your seat is secured.
+                    {isVolunteer ? 'We will review your application and get back to you.' : 'Your seat is secured.'}
                 </p>
 
                 <div className="bg-white/5 p-4 rounded-lg border border-white/10">

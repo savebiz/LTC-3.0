@@ -61,7 +61,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
 
             if (error) throw error;
 
-            onSuccess();
+            // onSuccess(); // Skip success modal to avoid flash, just redirect
             window.location.href = '/registration-success?type=volunteer';
         } catch (error: any) {
             console.error("Volunteer Registration Error:", error);

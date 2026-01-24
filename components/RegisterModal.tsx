@@ -61,7 +61,7 @@ export default function RegisterModal({ open, onOpenChange, defaultTab = "delega
                         </div>
                         <DialogTitle>Registration Successful!</DialogTitle>
                         <DialogDescription>
-                            Welcome to {EVENT_DETAILS.shortName}. We have sent a confirmation email to you.
+                            Welcome to {EVENT_DETAILS.shortName}. A member of our team will reach out to you shortly.
                         </DialogDescription>
                         <button onClick={reset} className="text-sm text-primary underline">Close</button>
                     </div>
