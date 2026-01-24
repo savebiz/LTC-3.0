@@ -253,7 +253,12 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                                 if (dbError) throw dbError;
 
                                 onSuccess();
-                                window.location.href = '/registration-success';
+                                const redirectUrl = new URL('/registration-success', window.location.origin);
+                                redirectUrl.searchParams.set('type', 'delegate');
+                                redirectUrl.searchParams.set('reference', registrationData.id); // Using ID as reference for now or the payment ref? Let's use ID for consistency in "Ticket"
+                                redirectUrl.searchParams.set('name', registrationData.full_name);
+                                redirectUrl.searchParams.set('regId', registrationData.id);
+                                window.location.href = redirectUrl.toString();
 
                             } catch (error: any) {
                                 console.error('Upload Error:', error);
