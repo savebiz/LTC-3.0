@@ -200,7 +200,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 flex flex-col items-center justify-center border-dashed border-2">
                     <Input
                         type="file"
-                        accept="image/*"
+                        accept="image/*,application/pdf"
                         onChange={async (e) => {
                             if (!e.target.files || e.target.files.length === 0) return;
                             setUploading(true);
@@ -242,7 +242,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         }}
                         disabled={uploading}
                     />
-                    <p className="text-xs text-muted-foreground mt-4">Supported formats: JPG, PNG, Screenshots</p>
+                    <p className="text-xs text-muted-foreground mt-4">Supported formats: JPG, PNG, PDF, Screenshots</p>
                 </div>
 
                 <div className="text-center">
