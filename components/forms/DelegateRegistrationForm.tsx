@@ -113,8 +113,22 @@ export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void 
             setStep('payment'); // Move to payment step
 
         } catch (error: any) {
-            console.error("Registration Error:", error);
-            alert("Failed to register: " + (error.message || "Unknown error"));
+            console.error("FULL Registration Error:", error);
+            let errorMessage = "Unknown error";
+
+            if (error?.message) {
+                errorMessage = error.message;
+            } else if (typeof error === 'string') {
+                errorMessage = error;
+            } else if (error?.error_description) {
+                errorMessage = error.error_description;
+            }
+
+            if (errorMessage.includes("AbortError")) {
+                errorMessage = "Network request timed out or was blocked. Please check your internet connection or disable ad-blockers.";
+            }
+
+            alert("Failed to register: " + errorMessage);
         } finally {
             setIsSubmitting(false);
         }

@@ -13,4 +13,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.log('Supabase Configured. URL Length:', supabaseUrl.length);
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+export const supabase = createClient((supabaseUrl || '').trim(), (supabaseAnonKey || '').trim());
