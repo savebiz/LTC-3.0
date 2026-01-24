@@ -13,6 +13,12 @@ export const EVENT_DETAILS = {
   lng: 3.3339
 };
 
+export const BANK_DETAILS = {
+  bankName: "GTBank",
+  accountNumber: "0000000000",
+  accountName: "Lagos Teens Conference"
+};
+
 export const LINKS = [
   { label: "Register", url: "https://bit.ly/LTC3Register" },
   { label: "Volunteer", url: "https://bit.ly/LTC3Volunteer" }

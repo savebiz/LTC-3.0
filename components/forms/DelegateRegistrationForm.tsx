@@ -4,7 +4,7 @@ import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { usePaystackPayment } from "react-paystack"
+import { z } from "zod"
 import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -40,13 +40,8 @@ const delegateSchema = z.object({
 
 export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void }) {
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [readyToPay, setReadyToPay] = useState(false);
-    const [paymentConfig, setPaymentConfig] = useState<any>({
-        reference: (new Date()).getTime().toString(),
-        email: "",
-        amount: 200000,
-        publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || ""
-    });
+    const [registrationData, setRegistrationData] = useState<any>(null); // Store reg data after initial save
+    const [step, setStep] = useState<'form' | 'payment'>('form');
 
     const form = useForm<z.infer<typeof delegateSchema>>({
         resolver: zodResolver(delegateSchema),
@@ -58,24 +53,35 @@ export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void 
     // Update provinces when region changes
     const provinces = watchRegion ? REGIONS_AND_PROVINCES[watchRegion] || [] : []
 
-    // Paystack Hook
-    const initializePayment = usePaystackPayment(paymentConfig);
+    async function handleManualPaymentConfirmation() {
+        setIsSubmitting(true);
+        try {
+            if (registrationData?.id) {
+                // Update status to pending_verification
+                const { error } = await supabase
+                    .from('registrations')
+                    .update({ status: 'pending_verification' })
+                    .eq('id', registrationData.id);
 
-    async function handlePaymentSuccess(reference: any) {
-        console.log("Payment Successful", reference);
-        const regId = paymentConfig.metadata?.registrationId;
-        if (regId) {
-            await supabase.from('registrations').update({ status: 'confirmed' }).eq('id', regId);
-            await supabase.from('payments').insert([{
-                registration_id: regId,
-                amount: 2000,
-                provider: 'paystack',
-                reference: reference.reference,
-                status: 'success'
-            }]);
+                if (error) throw error;
+
+                // Log payment attempt (optional, but good for tracking)
+                await supabase.from('payments').insert([{
+                    registration_id: registrationData.id,
+                    amount: 2000,
+                    provider: 'manual_transfer',
+                    reference: `MANUAL-${Date.now()}`,
+                    status: 'pending'
+                }]);
+            }
+            onSuccess();
+            window.location.href = '/registration-success';
+        } catch (error: any) {
+            console.error("Payment Confirmation Error:", error);
+            alert("Failed to confirm payment: " + (error.message || "Unknown error"));
+        } finally {
+            setIsSubmitting(false);
         }
-        onSuccess();
-        window.location.href = '/registration-success';
     }
 
     async function onSubmit(data: z.infer<typeof delegateSchema>) {
@@ -103,31 +109,8 @@ export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void 
             if (regError) throw regError;
 
             console.log("Registration Saved:", regData);
-
-            // 2. Setup Payment Config
-            const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
-
-            if (!paystackKey || paystackKey.includes('your_paystack_key')) {
-                // SIMULATION MODE
-                await supabase.from('registrations').update({ status: 'confirmed' }).eq('id', regData.id);
-                // alert("Registration Successful! \n\n(Simulated Mode: Payment marked as confirmed).");
-                onSuccess(); // Close modal
-                window.location.href = '/registration-success';
-            } else {
-                // REAL PAYSTACK MODE
-                setPaymentConfig({
-                    reference: (new Date()).getTime().toString(),
-                    email: data.email,
-                    amount: 200000, // 2000 NGN in kobo
-                    publicKey: paystackKey,
-                    metadata: {
-                        registrationId: regData.id,
-                        fullName: data.fullName,
-                        phone: data.phone
-                    }
-                });
-                setReadyToPay(true);
-            }
+            setRegistrationData(regData);
+            setStep('payment'); // Move to payment step
 
         } catch (error: any) {
             console.error("Registration Error:", error);
@@ -135,6 +118,50 @@ export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void 
         } finally {
             setIsSubmitting(false);
         }
+    }
+
+    if (step === 'payment') {
+        return (
+            <div className="space-y-6 py-4 animate-in fade-in slide-in-from-bottom-4">
+                <div className="text-center space-y-2">
+                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="text-2xl">🏦</span>
+                    </div>
+                    <h3 className="font-heading font-bold text-xl">Complete Your Registration</h3>
+                    <p className="text-sm text-muted-foreground">Please make a transfer of <span className="font-bold text-black">₦2,000</span> to the account below.</p>
+                </div>
+
+                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 space-y-4">
+                    <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
+                        <span className="text-sm text-muted-foreground">Bank Name</span>
+                        <span className="font-medium">GTBank</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
+                        <span className="text-sm text-muted-foreground">Account Number</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-lg">0000000000</span>
+                            {/* Copy button could go here */}
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-1">
+                        <span className="text-sm text-muted-foreground">Account Name</span>
+                        <span className="font-medium text-right">Lagos Teens Conference</span>
+                    </div>
+                </div>
+
+                <Button
+                    onClick={handleManualPaymentConfirmation}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white h-12 text-base"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</> : "I have made the transfer"}
+                </Button>
+
+                <p className="text-xs text-center text-muted-foreground px-4">
+                    Clicking the button above will mark your registration as pending verification. You will receive a confirmation once verified.
+                </p>
+            </div>
+        );
     }
 
     return (
@@ -218,21 +245,9 @@ export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void 
                         )} />
                     </div>
                 )}
-                {!readyToPay ? (
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Proceed to Payment"}
-                    </Button>
-                ) : (
-                    <Button
-                        type="button"
-                        className="w-full bg-green-600 hover:bg-green-700 text-white"
-                        onClick={() => {
-                            initializePayment(handlePaymentSuccess, () => alert("Payment cancelled."));
-                        }}
-                    >
-                        Pay ₦2,000 Now
-                    </Button>
-                )}
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Proceed to Payment"}
+                </Button>
             </form>
         </Form>
     )
