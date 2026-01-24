@@ -21,8 +21,8 @@ export default function RegistrationSuccessPage() {
 
                 <div className="bg-white/5 p-4 rounded-lg border border-white/10">
                     <p className="text-sm text-gray-400 mb-2">Registration Status</p>
-                    <span className="inline-block px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-semibold">
-                        Confirmed
+                    <span className="inline-block px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-semibold">
+                        Pending Verification
                     </span>
                     {reference && (
                         <div className="mt-4 pt-3 border-t border-white/10">
@@ -32,9 +32,11 @@ export default function RegistrationSuccessPage() {
                     )}
                 </div>
 
-                <p className="text-sm text-gray-500">
-                    Please check your email for further details.
-                </p>
+                <div className="text-sm text-gray-500 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800">
+                    <p className="font-bold text-white mb-1">IMPORTANT:</p>
+                    <p className="mb-2">Please take a screenshot of this page for your records.</p>
+                    <p>Once your payment is confirmed by our admin team, your status will be updated.</p>
+                </div>
 
                 <Button
                     className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-bold tracking-wide py-6"

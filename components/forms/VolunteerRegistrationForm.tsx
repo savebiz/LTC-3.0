@@ -44,7 +44,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
     async function onSubmit(values: z.infer<typeof volunteerSchema>) {
         setIsSubmitting(true)
         try {
-            const { error } = await supabase.from('registrations').insert([
+            const { error } = await supabase.from('volunteers').insert([
                 {
                     full_name: values.fullName,
                     email: values.email,
@@ -53,8 +53,9 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                     gender: values.gender,
                     region: values.region,
                     province: values.province,
-                    type: 'volunteer',
-                    status: 'confirmed'
+                    role: values.role, // 'Teenager' or 'Teacher' stored directly
+                    department: values.department,
+                    status: 'pending' // Default status
                 }
             ]);
 

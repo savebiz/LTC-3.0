@@ -38,7 +38,7 @@ export default function RegistrationTable() {
     setLoading(false);
   }
 
-  const filteredData = data.filter(r => 
+  const filteredData = data.filter(r =>
     r.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.region?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -66,19 +66,19 @@ export default function RegistrationTable() {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h2 className="text-2xl font-bold font-heading text-slate-800">Registrations ({filteredData.length})</h2>
         <div className="flex gap-2 w-full md:w-auto">
-            <div className="relative w-full md:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <Input 
-                    placeholder="Search name, email..." 
-                    className="pl-10" 
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                />
-            </div>
-            <Button variant="outline" onClick={exportCSV} className="gap-2">
-                <Download size={18} />
-                Export CSV
-            </Button>
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Input
+              placeholder="Search name, email..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button variant="outline" onClick={exportCSV} className="gap-2">
+            <Download size={18} />
+            Export CSV
+          </Button>
         </div>
       </div>
 
@@ -89,53 +89,69 @@ export default function RegistrationTable() {
               <tr>
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Contact</th>
-                <th className="px-6 py-4">Region</th>
-                <th className="px-6 py-4">Type</th>
+                <th className="px-6 py-4">Method</th>
                 <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4">Receipt</th>
+                <th className="px-6 py-4">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {loading ? (
-                 <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                        <Loader2 className="mx-auto h-8 w-8 animate-spin mb-2" />
-                        Loading data...
-                    </td>
-                 </tr>
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin mb-2" />
+                    Loading data...
+                  </td>
+                </tr>
               ) : filteredData.length === 0 ? (
-                 <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                        No registrations found.
-                    </td>
-                 </tr>
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                    No registrations found.
+                  </td>
+                </tr>
               ) : (
-                filteredData.map((reg) => (
+                filteredData.map((reg: any) => (
                   <tr key={reg.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 font-medium text-slate-900">{reg.full_name}</td>
                     <td className="px-6 py-4 text-slate-500">
-                        <div>{reg.email}</div>
-                        <div className="text-xs">{reg.phone}</div>
+                      <div>{reg.email}</div>
+                      <div className="text-xs">{reg.phone}</div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{reg.region}</td>
-                    <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold capitalize
-                            ${reg.type === 'delegate' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}
-                        `}>
-                            {reg.type}
-                        </span>
+                    <td className="px-6 py-4 text-xs font-mono">
+                      Manual Transfer
                     </td>
                     <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold capitalize
-                            ${reg.status === 'confirmed' ? 'bg-green-100 text-green-700' : 
-                              reg.status === 'checked_in' ? 'bg-slate-100 text-slate-700' :
-                              'bg-yellow-100 text-yellow-700'}
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold capitalize
+                            ${reg.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                          reg.status === 'pending_verification' ? 'bg-orange-100 text-orange-700' :
+                            'bg-slate-100 text-slate-700'}
                         `}>
-                            {reg.status.replace('_', ' ')}
-                        </span>
+                        {reg.status?.replace('_', ' ')}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-slate-400">
-                        {new Date(reg.created_at).toLocaleDateString()}
+                    <td className="px-6 py-4">
+                      {reg.receipt_url ? (
+                        <a href={reg.receipt_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-xs">
+                          View Proof
+                        </a>
+                      ) : (
+                        <span className="text-slate-400 text-xs">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {reg.status === 'pending_verification' && (
+                        <Button
+                          size="sm"
+                          className="h-7 text-xs bg-green-600 hover:bg-green-700"
+                          onClick={async () => {
+                            if (!confirm('Confirm this payment?')) return;
+                            await supabase.from('registrations').update({ status: 'confirmed' }).eq('id', reg.id);
+                            fetchRegistrations();
+                          }}
+                        >
+                          Approve
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))

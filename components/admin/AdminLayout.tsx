@@ -19,6 +19,7 @@ export default function AdminLayout({ children, activePage, onNavigate }: AdminL
     const NAV_ITEMS = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'registrations', label: 'Registrations', icon: Users },
+        { id: 'volunteers', label: 'Volunteers', icon: Users },
         { id: 'finances', label: 'Finances', icon: CreditCard },
         { id: 'checkin', label: 'Check-in', icon: QrCode },
         { id: 'settings', label: 'Settings', icon: Settings },

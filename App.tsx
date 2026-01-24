@@ -4,6 +4,7 @@ import RegisterModal from './components/RegisterModal';
 import RegistrationSuccessPage from "./components/RegistrationSuccessPage";
 import AdminPage from "./AdminPage";
 import DebugPage from "./components/DebugPage";
+import CheckStatus from "./components/CheckStatus";
 
 // Sections
 import Hero from '@/components/sections/Hero';
@@ -52,6 +53,7 @@ const App: React.FC = () => {
         <Route path="/registration-success" element={<RegistrationSuccessPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/debug-env" element={<DebugPage />} />
+        <Route path="/check-status" element={<CheckStatus />} />
       </Routes>
     </Router>
   );

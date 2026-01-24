@@ -3,6 +3,7 @@ import { useState } from 'react';
 import AdminLayout from './components/admin/AdminLayout';
 import DashboardOverview from './components/admin/DashboardOverview';
 import RegistrationTable from './components/admin/RegistrationTable';
+import VolunteerTable from './components/admin/VolunteerTable';
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function AdminPage() {
@@ -13,6 +14,8 @@ export default function AdminPage() {
             {activePage === 'overview' && <DashboardOverview />}
 
             {activePage === 'registrations' && <RegistrationTable />}
+
+            {activePage === 'volunteers' && <VolunteerTable />}
 
             {/* Placeholders for other pages */}
             {['finances', 'checkin', 'settings'].includes(activePage) && (

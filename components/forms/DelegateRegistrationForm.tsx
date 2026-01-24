@@ -41,7 +41,8 @@ const delegateSchema = z.object({
 export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void }) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [registrationData, setRegistrationData] = useState<any>(null); // Store reg data after initial save
-    const [step, setStep] = useState<'form' | 'payment'>('form');
+    const [step, setStep] = useState<'form' | 'payment' | 'upload'>('form');
+    const [uploading, setUploading] = useState(false);
 
     const form = useForm<z.infer<typeof delegateSchema>>({
         resolver: zodResolver(delegateSchema),
@@ -74,8 +75,9 @@ export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void 
                     status: 'pending'
                 }]);
             }
-            onSuccess();
-            window.location.href = '/registration-success';
+            setStep('upload');
+            // onSuccess(); // Moved to after upload
+            // window.location.href = '/registration-success'; // Moved to after upload
         } catch (error: any) {
             console.error("Payment Confirmation Error:", error);
             alert("Failed to confirm payment: " + (error.message || "Unknown error"));
@@ -165,15 +167,81 @@ export function DelegateRegistrationForm({ onSuccess }: { onSuccess: () => void 
 
                 <Button
                     onClick={handleManualPaymentConfirmation}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white h-12 text-base"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-base"
                     disabled={isSubmitting}
                 >
-                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</> : "I have made the transfer"}
+                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</> : "I have made the transfer"}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground px-4">
                     Clicking the button above will mark your registration as pending verification. You will receive a confirmation once verified.
                 </p>
+            </div>
+        );
+    }
+
+    if (step === 'upload') {
+        return (
+            <div className="space-y-6 py-4 animate-in fade-in slide-in-from-bottom-4">
+                <div className="text-center space-y-2">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="text-2xl">📤</span>
+                    </div>
+                    <h3 className="font-heading font-bold text-xl">Upload Payment Proof</h3>
+                    <p className="text-sm text-muted-foreground">Please upload a screenshot of your transfer receipt to complete registration.</p>
+                </div>
+
+                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 flex flex-col items-center justify-center border-dashed border-2">
+                    <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                            if (!e.target.files || e.target.files.length === 0) return;
+                            setUploading(true);
+                            try {
+                                const file = e.target.files[0];
+                                const fileExt = file.name.split('.').pop();
+                                const fileName = `${registrationData.id}.${fileExt}`;
+                                const filePath = `${fileName}`;
+
+                                const { error: uploadError } = await supabase.storage
+                                    .from('payment_receipts')
+                                    .upload(filePath, file);
+
+                                if (uploadError) throw uploadError;
+
+                                const { data: { publicUrl } } = supabase.storage
+                                    .from('payment_receipts')
+                                    .getPublicUrl(filePath);
+
+                                const { error: dbError } = await supabase
+                                    .from('registrations')
+                                    .update({
+                                        receipt_url: publicUrl,
+                                        status: 'pending_verification'
+                                    })
+                                    .eq('id', registrationData.id);
+
+                                if (dbError) throw dbError;
+
+                                onSuccess();
+                                window.location.href = '/registration-success';
+
+                            } catch (error: any) {
+                                console.error('Upload Error:', error);
+                                alert('Failed to upload receipt: ' + error.message);
+                            } finally {
+                                setUploading(false);
+                            }
+                        }}
+                        disabled={uploading}
+                    />
+                    <p className="text-xs text-muted-foreground mt-4">Supported formats: JPG, PNG, Screenshots</p>
+                </div>
+
+                <div className="text-center">
+                    {uploading && <p className="text-blue-600 font-bold animate-pulse">Uploading...</p>}
+                </div>
             </div>
         );
     }
