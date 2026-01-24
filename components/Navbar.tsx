@@ -18,9 +18,11 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
       <div className={`absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500 ${isScrolled ? 'opacity-100' : 'opacity-0'} transition-opacity`}></div>
       <div className="container mx-auto px-6 flex justify-between items-center relative">
         <a href="#" className="flex items-center gap-3">
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2">
-            <img src="/logos/LTC_Logo.png" alt="LTC Logo" className="h-12 md:h-16 w-auto object-contain" />
-          </div>
+          <img
+            src={isScrolled ? "/logos/LTC_Logo.png" : "/logos/LTC_Logo_white.png"}
+            alt="LTC Logo"
+            className="h-12 md:h-16 w-auto object-contain transition-all duration-300"
+          />
         </a>
         <div className="hidden md:flex items-center gap-8">
           <Button onClick={onRegisterClick} size="lg" className="rounded-full font-bold tracking-wider">REGISTER</Button>
