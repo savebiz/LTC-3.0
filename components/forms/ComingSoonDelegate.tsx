@@ -4,31 +4,31 @@ import { Sparkles, CalendarClock } from "lucide-react";
 export function ComingSoonDelegate() {
     return (
         <div className="relative w-full overflow-hidden text-center perspective-1000">
-            {/* Main Card Container with Glassmorphism */}
+            {/* Main Card Container - Darker background for better contrast */}
             <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                className="relative z-10 mx-auto overflow-hidden rounded-3xl border border-white/10 bg-black/40 p-8 shadow-2xl backdrop-blur-xl sm:p-12"
+                className="relative z-10 mx-auto overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80 p-8 shadow-2xl backdrop-blur-xl sm:p-12 ring-1 ring-white/5"
             >
-                {/* Background Dynamic Gradients */}
-                <div className="absolute inset-0 z-0 opacity-30">
+                {/* Background Dynamic Gradients - Reduced opacity significantly */}
+                <div className="absolute inset-0 z-0 opacity-20">
                     <motion.div
                         animate={{
-                            scale: [1, 1.2, 1],
-                            rotate: [0, 90, 0],
+                            scale: [1, 1.1, 1],
+                            rotate: [0, 45, 0],
                         }}
                         transition={{
                             duration: 20,
                             repeat: Infinity,
                             ease: "linear",
                         }}
-                        className="absolute -top-[50%] -left-[50%] h-[200%] w-[200%] bg-[conic-gradient(from_0deg,transparent_0deg,rgba(168,85,247,0.2)_120deg,rgba(249,115,22,0.2)_240deg,transparent_360deg)]"
+                        className="absolute -top-[50%] -left-[50%] h-[200%] w-[200%] bg-[conic-gradient(from_0deg,transparent_0deg,rgba(139,92,246,0.15)_120deg,rgba(249,115,22,0.15)_240deg,transparent_360deg)]"
                     />
                 </div>
 
-                {/* Internal Shimmer/Noise Texture Overlay (Optional subtle texture) */}
-                <div className="absolute inset-0 z-0 bg-noise opacity-[0.03] mix-blend-overlay pointer-events-none" />
+                {/* Internal Shimmer/Noise Texture Overlay */}
+                <div className="absolute inset-0 z-0 bg-noise opacity-[0.05] mix-blend-overlay pointer-events-none" />
 
                 <div className="relative z-10 flex flex-col items-center space-y-8">
                     {/* Icon Container with Glow */}
@@ -41,13 +41,13 @@ export function ComingSoonDelegate() {
                             damping: 20,
                             delay: 0.2,
                         }}
-                        className="relative"
+                        className="relative group"
                     >
                         {/* Outer Glow Ring */}
-                        <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-violet-600/30 to-orange-500/30 blur-xl animate-pulse" />
+                        <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-violet-600/20 to-orange-500/20 blur-xl opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
 
                         {/* Icon Circle */}
-                        <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-900 to-black border border-white/10 shadow-inner">
+                        <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-black border border-white/10 shadow-lg ring-1 ring-white/5">
                             <Sparkles className="h-10 w-10 text-transparent bg-clip-text bg-gradient-to-tr from-violet-400 to-orange-400 fill-white/10" />
                         </div>
                     </motion.div>
@@ -58,10 +58,10 @@ export function ComingSoonDelegate() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 }}
-                            className="text-3xl font-bold tracking-tight text-white sm:text-4xl"
+                            className="text-3xl font-bold tracking-tight text-white sm:text-4xl drop-shadow-lg"
                         >
                             Registration <br className="hidden sm:block" />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-orange-400 drop-shadow-sm">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-orange-400">
                                 Opening Soon
                             </span>
                         </motion.h3>
@@ -70,7 +70,7 @@ export function ComingSoonDelegate() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 }}
-                            className="text-lg text-white/60 leading-relaxed"
+                            className="text-lg text-zinc-300 leading-relaxed font-medium drop-shadow-md"
                         >
                             We're putting the final touches on an incredible experience. Get ready to define your future.
                         </motion.p>
@@ -81,18 +81,18 @@ export function ComingSoonDelegate() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6 }}
-                        className="inline-flex items-center space-x-2.5 rounded-full border border-white/5 bg-white/5 py-2.5 px-6 backdrop-blur-md ring-1 ring-white/10 shadow-lg hover:bg-white/10 transition-colors"
+                        className="inline-flex items-center space-x-2.5 rounded-full border border-white/10 bg-white/5 py-3 px-8 backdrop-blur-md ring-1 ring-white/10 shadow-lg hover:bg-white/10 hover:border-white/20 transition-all cursor-default"
                     >
                         <CalendarClock className="h-5 w-5 text-orange-400" />
-                        <span className="text-sm font-medium text-gray-200">
+                        <span className="text-sm font-semibold text-gray-100 tracking-wide">
                             Check back later
                         </span>
                     </motion.div>
                 </div>
             </motion.div>
 
-            {/* Bottom Glow Reflection */}
-            <div className="absolute -bottom-20 left-1/2 h-40 w-[80%] -translate-x-1/2 rounded-[100%] bg-violet-500/20 blur-3xl" />
+            {/* Bottom Glow Reflection - Reduced */}
+            <div className="absolute -bottom-20 left-1/2 h-40 w-[60%] -translate-x-1/2 rounded-[100%] bg-violet-600/10 blur-3xl pointer-events-none" />
         </div>
     );
 }
