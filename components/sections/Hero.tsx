@@ -38,7 +38,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                     className="inline-flex items-center space-x-3 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 md:px-5 md:py-2 backdrop-blur-md"
                 >
                     <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-orange-500 animate-pulse" />
-                    <span className="text-gray-300 text-[10px] md:text-sm tracking-[0.2em] font-medium font-mono">ROMANS 13:11</span>
+                    <span className="text-gray-300 text-[10px] md:text-sm tracking-[0.2em] font-medium font-mono">ROMANS 12:2</span>
                 </motion.div>
 
                 <div className="relative flex items-center justify-center py-6 md:py-10">
@@ -104,7 +104,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 2, duration: 1 }}
-                className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 md:gap-3 z-30"
+                className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 md:hidden flex flex-col items-center gap-2 md:gap-3 z-30"
             >
                 <span className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-gray-400">Scroll</span>
                 <motion.div
