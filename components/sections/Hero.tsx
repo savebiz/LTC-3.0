@@ -57,7 +57,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                             initial={{ opacity: 0, rotate: 0, scale: 0 }}
                             animate={{ opacity: 1, rotate: 12, scale: 1 }}
                             transition={{ type: "spring", stiffness: 200, delay: 0.8 }}
-                            className="absolute -top-2 md:-top-4 -right-6 md:-right-12 rotate-12 bg-orange-500 text-black font-black text-lg sm:text-xl md:text-3xl px-2 py-0.5 md:px-3 md:py-1 rounded sm:rounded-md transform hover:rotate-0 transition-transform duration-300 cursor-default shadow-[0_0_20px_rgba(249,115,22,0.4)] border md:border-2 border-white/20 z-20 font-heading"
+                            className="absolute -top-1 -right-2 sm:-top-2 sm:-right-4 md:-top-4 md:-right-12 rotate-12 bg-orange-500 text-black font-black text-[10px] sm:text-xl md:text-3xl px-1.5 py-0.5 md:px-3 md:py-1 rounded-[3px] sm:rounded-md transform hover:rotate-0 transition-transform duration-300 cursor-default shadow-[0_0_10px_rgba(249,115,22,0.3)] md:shadow-[0_0_20px_rgba(249,115,22,0.4)] border border-white/10 md:border-2 border-white/20 z-20 font-heading"
                         >
                             '26
                         </motion.div>
