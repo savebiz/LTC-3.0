@@ -4,7 +4,6 @@ import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { z } from "zod"
 import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -13,12 +12,11 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator
 } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { supabase } from "@/lib/supabase";
-import { TEEN_ROLES, EXEC_LEVELS } from "@/constants"
-import { REGIONS_AND_PROVINCES } from "../../constants";
+import { TEEN_ROLES, EXEC_LEVELS, LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVINCES } from "@/constants"
 import imageCompression from 'browser-image-compression';
 
 const delegateSchema = z.object({
@@ -28,16 +26,96 @@ const delegateSchema = z.object({
     age: z.coerce.number().min(10).max(25),
     gender: z.enum(["Male", "Female"]),
     region: z.string().min(1, { message: "Select a region" }),
-    province: z.string().min(1, { message: "Select a province" }),
+    province: z.string().optional(),
+    otherRegionSpecified: z.string().optional(),
     role: z.enum(["Member", "Worker", "Teens Executive"]),
     execLevel: z.enum(["Parish", "Zone", "Area", "Province", "Region"]).optional(),
     execPosition: z.string().optional(),
-}).refine((data) => {
+    
+    registrationType: z.enum(["individual", "group"]),
+    emergencyContactName: z.string().optional(),
+    emergencyContactPhone: z.string().optional(),
+    groupName: z.string().optional(),
+    groupCoordinatorName: z.string().optional(),
+    groupCoordinatorPhone: z.string().optional(),
+}).superRefine((data, ctx) => {
+    // 1. Executive Role validation
     if (data.role === "Teens Executive") {
-        return !!data.execLevel && !!data.execPosition;
+        if (!data.execLevel) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Select executive level",
+                path: ["execLevel"],
+            });
+        }
+        if (!data.execPosition || data.execPosition.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Required",
+                path: ["execPosition"],
+            });
+        }
     }
-    return true;
-}, { message: "Level and Position required", path: ["execLevel"] });
+
+    // 2. Region / Province validation
+    if (data.region === "Other (Outside Lagos/Ogun)") {
+        if (!data.otherRegionSpecified || data.otherRegionSpecified.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Please specify your Region / Continent",
+                path: ["otherRegionSpecified"],
+            });
+        }
+    } else {
+        if (!data.province || data.province.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Select a province",
+                path: ["province"],
+            });
+        }
+    }
+
+    // 3. Registration Type conditional validations
+    if (data.registrationType === "individual") {
+        if (!data.emergencyContactName || data.emergencyContactName.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Required",
+                path: ["emergencyContactName"],
+            });
+        }
+        if (!data.emergencyContactPhone || data.emergencyContactPhone.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Required",
+                path: ["emergencyContactPhone"],
+            });
+        }
+    } else if (data.registrationType === "group") {
+        if (!data.groupName || data.groupName.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Required",
+                path: ["groupName"],
+            });
+        }
+        if (!data.groupCoordinatorName || data.groupCoordinatorName.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Required",
+                path: ["groupCoordinatorName"],
+            });
+        }
+        if (!data.groupCoordinatorPhone || data.groupCoordinatorPhone.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Required",
+                path: ["groupCoordinatorPhone"],
+            });
+        }
+    }
+});
 
 export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     onSuccess: () => void;
@@ -50,13 +128,18 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
     const form = useForm<z.infer<typeof delegateSchema>>({
         resolver: zodResolver(delegateSchema),
-        defaultValues: { fullName: "", email: "", phone: "", age: 15, region: "", province: "", role: "Member" },
+        defaultValues: { 
+            fullName: "", email: "", phone: "", age: 15, region: "", province: "", otherRegionSpecified: "", role: "Member", 
+            registrationType: "individual", emergencyContactName: "", emergencyContactPhone: "",
+            groupName: "", groupCoordinatorName: "", groupCoordinatorPhone: ""
+        },
     })
     const watchRole = form.watch("role")
     const watchRegion = form.watch("region")
+    const watchRegType = form.watch("registrationType")
 
     // Update provinces when region changes
-    const provinces = watchRegion ? REGIONS_AND_PROVINCES[watchRegion] || [] : []
+    const provinces = (watchRegion && watchRegion !== "Other (Outside Lagos/Ogun)") ? REGIONS_AND_PROVINCES[watchRegion] || [] : []
 
     async function handleManualPaymentConfirmation() {
         setIsSubmitting(true);
@@ -105,7 +188,14 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         gender: data.gender,
                         age: data.age,
                         region: data.region,
-                        province: data.province,
+                        province: data.region === "Other (Outside Lagos/Ogun)" ? "Other" : data.province,
+                        other_region_specified: data.region === "Other (Outside Lagos/Ogun)" ? data.otherRegionSpecified : null,
+                        registration_type: data.registrationType,
+                        emergency_contact_name: data.registrationType === "individual" ? data.emergencyContactName : null,
+                        emergency_contact_phone: data.registrationType === "individual" ? data.emergencyContactPhone : null,
+                        group_name: data.registrationType === "group" ? data.groupName : null,
+                        group_coordinator_name: data.registrationType === "group" ? data.groupCoordinatorName : null,
+                        group_coordinator_phone: data.registrationType === "group" ? data.groupCoordinatorPhone : null,
                         type: 'delegate',
                         status: 'pending_payment'
                     }
@@ -307,31 +397,110 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         )} />
                     </div>
                 </div>
+                <FormField control={form.control} name="registrationType" render={({ field }) => (
+                    <FormItem className="space-y-3"><FormLabel className="font-semibold">How are you registering?</FormLabel>
+                        <FormControl>
+                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row space-x-6">
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl><RadioGroupItem value="individual" /></FormControl><FormLabel className="font-normal">Individual</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl><RadioGroupItem value="group" /></FormControl><FormLabel className="font-normal">Part of a Group</FormLabel>
+                                </FormItem>
+                            </RadioGroup>
+                        </FormControl><FormMessage /></FormItem>
+                )} />
+
+                {watchRegType === "individual" && (
+                    <div className="p-5 bg-zinc-50 border border-zinc-200 rounded-2xl space-y-4 animate-in fade-in duration-300">
+                        <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest">Emergency Contact</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="emergencyContactName" render={({ field }) => (
+                                <FormItem><FormLabel>Emergency Contact Name</FormLabel><FormControl><Input placeholder="E.g. Parent or Guardian Name" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="emergencyContactPhone" render={({ field }) => (
+                                <FormItem><FormLabel>Emergency Contact Phone Number</FormLabel><FormControl><Input placeholder="080..." {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                        </div>
+                    </div>
+                )}
+
+                {watchRegType === "group" && (
+                    <div className="p-5 bg-zinc-50 border border-zinc-200 rounded-2xl space-y-4 animate-in fade-in duration-300">
+                        <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest">Group Details</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField control={form.control} name="groupName" render={({ field }) => (
+                                <FormItem><FormLabel>Group / Parish Name</FormLabel><FormControl><Input placeholder="E.g. Dominion Sanctuary" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="groupCoordinatorName" render={({ field }) => (
+                                <FormItem><FormLabel>Group Coordinator Full Name</FormLabel><FormControl><Input placeholder="E.g. Pastor Samuel" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="groupCoordinatorPhone" render={({ field }) => (
+                                <FormItem><FormLabel>Group Coordinator Phone</FormLabel><FormControl><Input placeholder="080..." {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                        </div>
+                        <p className="text-xs text-amber-700 font-medium bg-amber-50 border border-amber-200 rounded-xl p-4 mt-2">
+                            Each person in the group should register individually. Your coordinator will make a consolidated payment on behalf of the group.
+                        </p>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="region" render={({ field }) => (
                         <FormItem><FormLabel>Region</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select 
+                                onValueChange={(val) => {
+                                    field.onChange(val);
+                                    if (val === "Other (Outside Lagos/Ogun)") {
+                                        form.setValue("province", "");
+                                    } else {
+                                        form.setValue("otherRegionSpecified", "");
+                                    }
+                                }} 
+                                defaultValue={field.value}
+                            >
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select Region" /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                    {Object.keys(REGIONS_AND_PROVINCES).map(r => (
-                                        <SelectItem key={r} value={r}>{r}</SelectItem>
-                                    ))}
+                                    <SelectGroup>
+                                        <SelectLabel>Lagos</SelectLabel>
+                                        {LAGOS_REGIONS.map(r => (
+                                            <SelectItem key={r} value={r}>{r}</SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                    <SelectGroup>
+                                        <SelectLabel>Ogun</SelectLabel>
+                                        {OGUN_REGIONS.map(r => (
+                                            <SelectItem key={r} value={r}>{r}</SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                    <SelectSeparator />
+                                    <SelectItem value="Other (Outside Lagos/Ogun)">Other (Outside Lagos/Ogun)</SelectItem>
                                 </SelectContent>
                             </Select><FormMessage /></FormItem>
                     )} />
 
-                    <FormField control={form.control} name="province" render={({ field }) => (
-                        <FormItem><FormLabel>Province</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!watchRegion}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    {provinces.map(p => (
-                                        <SelectItem key={p} value={p}>{p}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select><FormMessage /></FormItem>
-                    )} />
+                    {watchRegion === "Other (Outside Lagos/Ogun)" ? (
+                        <FormField control={form.control} name="otherRegionSpecified" render={({ field }) => (
+                            <FormItem><FormLabel>Please specify your Region / Continent</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g. Region 5 / Europe" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                    ) : (
+                        <FormField control={form.control} name="province" render={({ field }) => (
+                            <FormItem><FormLabel>Province</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ""} disabled={!watchRegion}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {provinces.map(p => (
+                                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select><FormMessage /></FormItem>
+                        )} />
+                    )}
                 </div>
 
                 <FormField control={form.control} name="role" render={({ field }) => (

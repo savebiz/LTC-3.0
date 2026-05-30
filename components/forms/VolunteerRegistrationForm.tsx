@@ -12,11 +12,11 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator
 } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { supabase } from "@/lib/supabase";
-import { VOLUNTEER_DEPARTMENTS, REGIONS_AND_PROVINCES } from "@/constants"
+import { VOLUNTEER_DEPARTMENTS, REGIONS_AND_PROVINCES, LAGOS_REGIONS, OGUN_REGIONS } from "@/constants"
 
 const volunteerSchema = z.object({
     fullName: z.string().min(2, { message: "Required" }),
@@ -25,21 +25,40 @@ const volunteerSchema = z.object({
     age: z.coerce.number().min(10).max(100),
     gender: z.enum(["Male", "Female"]),
     region: z.string().min(1, { message: "Select a region" }),
-    province: z.string().min(1, { message: "Select a province" }),
+    province: z.string().optional(),
+    otherRegionSpecified: z.string().optional(),
     role: z.enum(["Teenager", "Teacher"]),
     department: z.string().min(1, { message: "Select a department" }),
     experience: z.string().optional(),
-})
+}).superRefine((data, ctx) => {
+    if (data.region === "Other (Outside Lagos/Ogun)") {
+        if (!data.otherRegionSpecified || data.otherRegionSpecified.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Please specify your Region / Continent",
+                path: ["otherRegionSpecified"],
+            });
+        }
+    } else {
+        if (!data.province || data.province.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Select a province",
+                path: ["province"],
+            });
+        }
+    }
+});
 
 export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void }) {
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const form = useForm<z.infer<typeof volunteerSchema>>({
         resolver: zodResolver(volunteerSchema),
-        defaultValues: { fullName: "", email: "", phone: "", age: 18, region: "", province: "", role: "Teenager", department: "" },
+        defaultValues: { fullName: "", email: "", phone: "", age: 18, region: "", province: "", otherRegionSpecified: "", role: "Teenager", department: "" },
     })
     const watchRegion = form.watch("region")
-    const provinces = watchRegion ? REGIONS_AND_PROVINCES[watchRegion] || [] : []
+    const provinces = (watchRegion && watchRegion !== "Other (Outside Lagos/Ogun)") ? REGIONS_AND_PROVINCES[watchRegion] || [] : []
 
     async function onSubmit(values: z.infer<typeof volunteerSchema>) {
         setIsSubmitting(true)
@@ -52,7 +71,8 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                     age: values.age,
                     gender: values.gender,
                     region: values.region,
-                    province: values.province,
+                    province: values.region === "Other (Outside Lagos/Ogun)" ? "Other" : values.province,
+                    other_region_specified: values.region === "Other (Outside Lagos/Ogun)" ? values.otherRegionSpecified : null,
                     role: values.role, // 'Teenager' or 'Teacher' stored directly
                     department: values.department,
                     status: 'pending' // Default status
@@ -103,27 +123,59 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="region" render={({ field }) => (
                         <FormItem><FormLabel>Region</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select 
+                                onValueChange={(val) => {
+                                    field.onChange(val);
+                                    if (val === "Other (Outside Lagos/Ogun)") {
+                                        form.setValue("province", "");
+                                    } else {
+                                        form.setValue("otherRegionSpecified", "");
+                                    }
+                                }} 
+                                defaultValue={field.value}
+                            >
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select Region" /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                    {Object.keys(REGIONS_AND_PROVINCES).map(r => (
-                                        <SelectItem key={r} value={r}>{r}</SelectItem>
-                                    ))}
+                                    <SelectGroup>
+                                        <SelectLabel>Lagos</SelectLabel>
+                                        {LAGOS_REGIONS.map(r => (
+                                            <SelectItem key={r} value={r}>{r}</SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                    <SelectGroup>
+                                        <SelectLabel>Ogun</SelectLabel>
+                                        {OGUN_REGIONS.map(r => (
+                                            <SelectItem key={r} value={r}>{r}</SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                    <SelectSeparator />
+                                    <SelectItem value="Other (Outside Lagos/Ogun)">Other (Outside Lagos/Ogun)</SelectItem>
                                 </SelectContent>
                             </Select><FormMessage /></FormItem>
                     )} />
 
-                    <FormField control={form.control} name="province" render={({ field }) => (
-                        <FormItem><FormLabel>Province</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!watchRegion}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    {provinces.map(p => (
-                                        <SelectItem key={p} value={p}>{p}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select><FormMessage /></FormItem>
-                    )} />
+                    {watchRegion === "Other (Outside Lagos/Ogun)" ? (
+                        <FormField control={form.control} name="otherRegionSpecified" render={({ field }) => (
+                            <FormItem><FormLabel>Please specify your Region / Continent</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g. Region 5 / Europe" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                    ) : (
+                        <FormField control={form.control} name="province" render={({ field }) => (
+                            <FormItem><FormLabel>Province</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ""} disabled={!watchRegion}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {provinces.map(p => (
+                                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select><FormMessage /></FormItem>
+                        )} />
+                    )}
                 </div>
 
                 <FormField control={form.control} name="role" render={({ field }) => (

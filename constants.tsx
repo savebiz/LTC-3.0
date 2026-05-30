@@ -134,7 +134,43 @@ export const REGIONS_AND_PROVINCES: Record<string, string[]> = {
     "Lagos Province 98", "Lagos Province 99", "Lagos Province 107"
   ],
   "Continental 3 Headquarters": ["Continental 3 Headquarters"],
-  "National Headquarters": ["National Headquarters"]
+  "National Headquarters": ["National Headquarters"],
+  "Region 12": [
+    "Region 12 Headquarters", "Ogun Province 4", "Ogun Province 5", "Ogun Province 8",
+    "Ogun Province 11", "Ogun Province 18", "Ogun Province 20", "Ogun Province 22",
+    "Ogun Province 23", "Ogun Province 30", "Ogun Province 31", "Ogun Province 33",
+    "Ogun Province 36"
+  ],
+  "Region 32": [
+    "Region 32 Headquarters", "Ogun Province 1", "Ogun Province 7", "Ogun Province 12",
+    "Ogun Province 16", "Ogun Province 19", "Ogun Province 28", "Ogun Province 35",
+    "Ogun Province 37", "Ogun Province 38"
+  ],
+  "Region 44": [
+    "Region 44 Headquarters", "Ogun Province 3", "Ogun Province 10", "Ogun Province 14",
+    "Ogun Province 17", "Ogun Province 21", "Ogun Province 25", "Ogun Province 27"
+  ],
+  "Region 58": [
+    "Region 58 Headquarters", "Ogun Province 2", "Ogun Province 9", "Ogun Province 13",
+    "Ogun Province 24", "Ogun Province 29", "Ogun Province 32"
+  ],
+  "Region 62": [
+    "Region 62 Headquarters", "Ogun Province 6", "Ogun Province 15", "Ogun Province 26",
+    "Ogun Province 34"
+  ],
+  "Redemption City": ["Redemption City"],
+  "Other (Outside Lagos/Ogun)": []
 };
+
+export const LAGOS_REGIONS = [
+  "Region 1", "Region 2", "Region 11", "Region 19", "Region 20", "Region 26", "Region 31",
+  "Region 36", "Region 37", "Region 51", "Region 52", "Region 53", "Region 54", "Region 59",
+  "Region 61", "Region 63", "Region 64", "Continental 3 Headquarters", "National Headquarters"
+];
+
+export const OGUN_REGIONS = [
+  "Region 12", "Region 32", "Region 44", "Region 58", "Region 62", "Redemption City"
+];
+
 export const TEEN_ROLES = ["Teens Executive", "Worker", "Member"];
 export const EXEC_LEVELS = ["Parish", "Zone", "Area", "Province", "Region"];
