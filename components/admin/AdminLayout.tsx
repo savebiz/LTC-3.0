@@ -11,9 +11,10 @@ interface AdminLayoutProps {
     children: React.ReactNode;
     activePage: string;
     onNavigate: (page: string) => void;
+    onLogout?: () => void;
 }
 
-export default function AdminLayout({ children, activePage, onNavigate }: AdminLayoutProps) {
+export default function AdminLayout({ children, activePage, onNavigate, onLogout }: AdminLayoutProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const NAV_ITEMS = [
@@ -71,7 +72,11 @@ export default function AdminLayout({ children, activePage, onNavigate }: AdminL
                 </nav>
 
                 <div className="absolute bottom-0 w-full p-4 border-t border-slate-800">
-                    <Button variant="ghost" className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-900/20 gap-2">
+                    <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-900/20 gap-2"
+                        onClick={onLogout}
+                    >
                         <LogOut size={18} />
                         Logout
                     </Button>
