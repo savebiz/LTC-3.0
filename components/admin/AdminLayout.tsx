@@ -42,7 +42,7 @@ export default function AdminLayout({ children, activePage, onNavigate }: AdminL
             )}>
                 <div className="p-6 flex items-center justify-between">
                     <h1 className="text-2xl font-black font-heading tracking-tighter text-orange-500">
-                        LTC ADMIN
+                        C3TC ADMIN
                     </h1>
                     <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-400">
                         <X size={24} />

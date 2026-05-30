@@ -54,7 +54,7 @@ const RegisterForm: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       setIsSuccess(true);
     } catch (err) {
-      setAiMessage("Welcome to the LEAD experience at LTC 3.0!");
+      setAiMessage("Welcome to the LEAD experience at C3TC 3.0!");
       setIsSuccess(true);
     } finally {
       setIsSubmitting(false);

@@ -34,7 +34,7 @@ const Footer: React.FC<FooterProps> = ({ onRegisterClick, onVolunteerClick }) =>
         <footer className="border-t border-white/5 py-20 px-4 bg-black">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
                 <div className="text-center md:text-left">
-                    <h4 className="text-3xl font-black font-heading text-white">LTC 3.0</h4>
+                    <h4 className="text-3xl font-black font-heading text-white">C3TC 3.0</h4>
                     <div className="flex gap-6 mt-6 justify-center md:justify-start">
                         {SOCIAL_LINKS.map(link => (
                             <a
@@ -48,7 +48,7 @@ const Footer: React.FC<FooterProps> = ({ onRegisterClick, onVolunteerClick }) =>
                             </a>
                         ))}
                     </div>
-                    <p className="text-zinc-500 text-sm mt-6">© 2026 Lagos Teens Conference. All rights reserved.</p>
+                    <p className="text-zinc-500 text-sm mt-6">© 2026 Continent 3 Teens Conference. All rights reserved.</p>
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-8 md:gap-12 text-sm text-gray-500">

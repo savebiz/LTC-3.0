@@ -28,7 +28,7 @@ const Legacy: React.FC = () => {
                     transition={{ duration: 0.8, delay: 0.2 }}
                     className="text-base md:text-2xl text-gray-400 leading-relaxed font-light px-4"
                 >
-                    Lagos Teens Conference is more than an event; it's a divine encounter with purpose.
+                    Continent 3 Teens Conference is more than an event; it's a divine encounter with purpose.
                     We empower teens with vision, faith, and courage to rise, lead, and make lasting impact. <span className="text-white font-medium">Your journey to greatness begins here. Be part of the movement</span>.
                 </motion.p>
             </div>

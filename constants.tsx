@@ -2,21 +2,21 @@
 import { Speaker, GalleryItem } from './types';
 
 export const EVENT_DETAILS = {
-  name: "LTC 3.0",
+  name: "C3TC 3.0",
   fullTheme: "T.I.M.E: The Incredible Me Emerging",
   scripture: "Romans 12:2",
   shortName: "T.I.M.E '26",
-  date: "Coming Soon",
-  venue: "To Be Announced",
-  address: "Lagos, Nigeria",
-  lat: 6.6083,
-  lng: 3.3339
+  date: "Saturday, 19th September, 2026",
+  venue: "Glory Arena, Redemption City of God, Ogun State, Nigeria",
+  address: "Ogun State, Nigeria",
+  lat: 6.8041,
+  lng: 3.4447
 };
 
 export const BANK_DETAILS = {
   bankName: "GTBank",
   accountNumber: "0000000000",
-  accountName: "Lagos Teens Conference"
+  accountName: "Continent 3 Teens Conference"
 };
 
 export const LINKS = [

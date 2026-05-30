@@ -30,10 +30,10 @@ export const generatePersonalizedWelcome = async (data: RegistrationData): Promi
       }
     });
 
-    return response.text || `Welcome to LTC 2.0, ${data.fullName}! Get ready to LEAD: Learn, Engage, Activate, and Develop your potential.`;
+    return response.text || `Welcome to C3TC 3.0, ${data.fullName}! Get ready to LEAD: Learn, Engage, Activate, and Develop your potential.`;
   } catch (error) {
     console.error("Gemini Error:", error);
-    return `Welcome to ${EVENT_DETAILS.name}! We can't wait to see you at Dominion Sanctuary.`;
+    return `Welcome to ${EVENT_DETAILS.name}! We can't wait to see you at Glory Arena, Redemption City of God.`;
   }
 };
 
@@ -42,7 +42,7 @@ export const askAboutVenue = async (query: string): Promise<{text: string, sourc
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `User asks about the venue (${EVENT_DETAILS.venue} at ${EVENT_DETAILS.address}): ${query}. Help them with directions to Acme Road, Ogba, Lagos. This is the Region 19 HQ of RCCG.`,
+      contents: `User asks about the venue (${EVENT_DETAILS.venue} at ${EVENT_DETAILS.address}): ${query}. Help them with directions to Glory Arena, Redemption City of God, Ogun State, Nigeria. It is located along the Lagos-Ibadan Expressway, Mowe, Ogun State.`,
       config: {
         tools: [{googleMaps: {}}],
         toolConfig: {
@@ -57,11 +57,11 @@ export const askAboutVenue = async (query: string): Promise<{text: string, sourc
     });
 
     return {
-      text: response.text || "Dominion Sanctuary is located on Acme Road, Ogba. It's easily accessible from the Ikeja central hub.",
+      text: response.text || "Glory Arena is located inside the Redemption City of God, Ogun State, Nigeria. It's accessible via the Lagos-Ibadan Expressway.",
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
     };
   } catch (error) {
     console.error("Maps Grounding Error:", error);
-    return { text: "The venue is the RCCG Region 19 Headquarters on Acme Road, Ogba, Ikeja.", sources: [] };
+    return { text: "The venue is Glory Arena, located inside Redemption City of God, Ogun State, Nigeria.", sources: [] };
   }
 };

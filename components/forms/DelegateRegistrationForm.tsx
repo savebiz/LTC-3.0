@@ -168,7 +168,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                     </div>
                     <div className="flex justify-between items-center pt-1">
                         <span className="text-sm text-muted-foreground">Account Name</span>
-                        <span className="font-medium text-right">Lagos Teens Conference</span>
+                        <span className="font-medium text-right">Continent 3 Teens Conference</span>
                     </div>
                 </div>
 

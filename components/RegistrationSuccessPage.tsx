@@ -37,7 +37,7 @@ export default function RegistrationSuccessPage() {
                         <div className="grid grid-cols-2 gap-4 text-left text-sm">
                             <div>
                                 <p className="text-gray-500 text-xs uppercase">Event</p>
-                                <p className="font-semibold text-white">LTC 3.0 (T.I.M.E)</p>
+                                <p className="font-semibold text-white">C3TC 3.0 (T.I.M.E)</p>
                             </div>
                             <div>
                                 <p className="text-gray-500 text-xs uppercase">Reg ID</p>
@@ -52,7 +52,7 @@ export default function RegistrationSuccessPage() {
                 ) : (
                     <div className="space-y-4">
                         <p className="text-gray-300">
-                            Thank you for joining the LTC 3.0 (T.I.M.E) Volunteer Force.
+                            Thank you for joining the C3TC 3.0 (T.I.M.E) Volunteer Force.
                             We will review your application and get back to you.
                         </p>
                         <div className="bg-white/5 p-4 rounded-lg border border-white/10">
