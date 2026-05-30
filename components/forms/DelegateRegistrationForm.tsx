@@ -151,8 +151,9 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 }) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [registrationData, setRegistrationData] = useState<any>(null); // Store reg data after initial save
-    const [step, setStep] = useState<'form' | 'payment' | 'upload'>('form');
-    const [uploading, setUploading] = useState(false);
+    const [step, setStep] = useState<'step1' | 'step2' | 'step3'>('step1');
+    const [paymentRef, setPaymentRef] = useState('');
+    const [paymentRefError, setPaymentRefError] = useState('');
 
     const [delegates, setDelegates] = useState<any[]>([]);
 
@@ -174,18 +175,81 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
     const totalAmount = delegates.reduce((sum, d) => sum + (d.category === "Teenager" ? 1000 : 1500), 0);
 
-    async function performSubmit(delegatesList: any[]) {
-        if (delegatesList.length === 0) {
+    async function proceedToPayment() {
+        const currentName = form.getValues("fullName");
+        const currentEmail = form.getValues("email");
+        
+        let finalDelegates = [...delegates];
+        
+        if (currentName.trim() || currentEmail.trim()) {
+            const isValid = await form.trigger([
+                "fullName", "email", "phone", "category", "age", "gender", 
+                "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
+            ]);
+            
+            if (!isValid) return;
+            
+            const values = form.getValues();
+            const newDelegate = {
+                fullName: values.fullName,
+                email: values.email,
+                phone: values.phone,
+                category: values.category,
+                age: values.category === "Teenager" ? values.age : null,
+                gender: values.gender,
+                region: values.region,
+                province: values.region === "Other (Outside Lagos/Ogun)" ? "Other" : values.province,
+                otherRegionSpecified: values.region === "Other (Outside Lagos/Ogun)" ? values.otherRegionSpecified : null,
+                role: values.role,
+                execLevel: values.role === "Teens Executive" ? values.execLevel : null,
+                execPosition: values.role === "Teens Executive" ? values.execPosition : null,
+            };
+            finalDelegates.push(newDelegate);
+            setDelegates(finalDelegates);
+            
+            // Reset form inputs for delegate section
+            form.setValue("fullName", "");
+            form.setValue("email", "");
+            form.setValue("phone", "");
+            form.setValue("category", "Teenager");
+            form.setValue("age", 15);
+            form.setValue("gender", undefined as any);
+            form.setValue("region", "");
+            form.setValue("province", "");
+            form.setValue("otherRegionSpecified", "");
+            form.setValue("role", "Member");
+            form.setValue("execLevel", undefined);
+            form.setValue("execPosition", "");
+            
+            form.clearErrors([
+                "fullName", "email", "phone", "category", "age", "gender", 
+                "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
+            ]);
+        }
+
+        if (finalDelegates.length === 0) {
+            await form.trigger(["fullName", "email", "phone", "category", "gender", "region"]);
+            return;
+        }
+
+        setStep('step2');
+        onStepChange?.('payment');
+    }
+
+    async function performSubmit() {
+        if (delegates.length === 0) {
             alert("Please add at least one delegate.");
+            return;
+        }
+        if (!paymentRef.trim()) {
+            setPaymentRefError("Reference / teller number is required.");
             return;
         }
 
         setIsSubmitting(true);
         try {
-            const randomDigits = Math.floor(10000 + Math.random() * 90000);
-            const batchRef = `C3TC-2026-${randomDigits}`;
-
-            const payload = delegatesList.map(d => ({
+            const batchId = self.crypto.randomUUID();
+            const payload = delegates.map(d => ({
                 full_name: d.fullName,
                 email: d.email,
                 phone: d.phone,
@@ -204,7 +268,11 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 status: 'pending_payment',
                 amount_due: d.category === "Teenager" ? 1000 : 1500,
                 category: d.category === "Teenager" ? "teenager" : "teacher",
-                batch_reference: batchRef,
+                // Redesigned columns:
+                batch_id: batchId,
+                payment_method: 'bank_transfer',
+                payment_reference: paymentRef.trim(),
+                payment_status: 'pending'
             }));
 
             const { data: regData, error: regError } = await supabase
@@ -216,62 +284,14 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
             console.log("Registrations Saved:", regData);
             setRegistrationData(regData);
-            setStep('payment');
-            onStepChange?.('payment');
+            setStep('step3');
+            onStepChange?.('upload');
         } catch (error: any) {
-            console.error("FULL Registration Error:", error);
-            let errorMessage = "Unknown error";
-
-            if (error?.message) {
-                errorMessage = error.message;
-            } else if (typeof error === 'string') {
-                errorMessage = error;
-            } else if (error?.error_description) {
-                errorMessage = error.error_description;
-            }
-
-            if (errorMessage.includes("AbortError")) {
-                errorMessage = "Network request timed out or was blocked. Please check your internet connection or disable ad-blockers.";
-            }
-
-            alert("Failed to register: " + errorMessage);
+            console.error("FULL Submit Error:", error);
+            alert("Failed to submit registration: " + (error?.message || "Unknown error"));
         } finally {
             setIsSubmitting(false);
         }
-    }
-
-    async function submitBatch() {
-        const currentName = form.getValues("fullName");
-        const currentEmail = form.getValues("email");
-        
-        let finalDelegates = [...delegates];
-        
-        if (currentName.trim() || currentEmail.trim()) {
-            const isValid = await form.trigger([
-                "fullName", "email", "phone", "category", "age", "gender", 
-                "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
-            ]);
-            
-            if (!isValid) return;
-            
-            const values = form.getValues();
-            finalDelegates.push({
-                fullName: values.fullName,
-                email: values.email,
-                phone: values.phone,
-                category: values.category,
-                age: values.category === "Teenager" ? values.age : null,
-                gender: values.gender,
-                region: values.region,
-                province: values.region === "Other (Outside Lagos/Ogun)" ? "Other" : values.province,
-                otherRegionSpecified: values.region === "Other (Outside Lagos/Ogun)" ? values.otherRegionSpecified : null,
-                role: values.role,
-                execLevel: values.role === "Teens Executive" ? values.execLevel : null,
-                execPosition: values.role === "Teens Executive" ? values.execPosition : null,
-            });
-        }
-
-        await performSubmit(finalDelegates);
     }
 
     async function addDelegateToList() {
@@ -354,162 +374,185 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     }
 
     async function onSubmit(data: z.infer<typeof delegateSchema>) {
-        const singleDelegate = {
-            fullName: data.fullName,
-            email: data.email,
-            phone: data.phone,
-            category: data.category,
-            age: data.category === "Teenager" ? data.age : null,
-            gender: data.gender,
-            region: data.region,
-            province: data.region === "Other (Outside Lagos/Ogun)" ? "Other" : data.province,
-            otherRegionSpecified: data.region === "Other (Outside Lagos/Ogun)" ? data.otherRegionSpecified : null,
-            role: data.role,
-            execLevel: data.role === "Teens Executive" ? data.execLevel : null,
-            execPosition: data.role === "Teens Executive" ? data.execPosition : null,
-        };
-        
-        await performSubmit([...delegates, singleDelegate]);
+        await addDelegateToList();
     }
-
-    if (step === 'payment') {
+    if (step === 'step2') {
         return (
             <div className="space-y-6 py-4 animate-in fade-in slide-in-from-bottom-4">
                 <div className="text-center space-y-2">
                     <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <span className="text-2xl">🏦</span>
                     </div>
-                    <h3 className="font-heading font-bold text-xl">Complete Your Registration</h3>
+                    <h3 className="font-heading font-bold text-xl">Payment Details</h3>
                     <p className="text-sm text-muted-foreground">Please make a transfer of <span className="font-bold text-black">₦{totalAmount.toLocaleString()}</span> to the account below.</p>
-                </div>                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 space-y-4">
+                </div>
+
+                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 space-y-4 text-sm">
                     <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
-                        <span className="text-sm text-muted-foreground">Bank Name</span>
-                        <span className="font-medium">GTBank</span>
+                        <span className="text-zinc-500">Bank Name</span>
+                        <span className="font-semibold text-slate-800">ACCESS BANK PLC</span>
                     </div>
                     <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
-                        <span className="text-sm text-muted-foreground">Account Number</span>
-                        <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-lg">0000000000</span>
-                            {/* Copy button could go here */}
-                        </div>
+                        <span className="text-zinc-500">Account Number</span>
+                        <span className="font-mono font-bold text-base text-slate-800">1494000251</span>
                     </div>
-                    <div className="flex justify-between items-center pt-1">
-                        <span className="text-sm text-muted-foreground">Account Name</span>
-                        <span className="font-medium text-right">Continent 3 Teens Conference</span>
+                    <div className="flex justify-between items-center pb-1">
+                        <span className="text-zinc-500">Account Name</span>
+                        <span className="font-semibold text-slate-800 text-right">RCCG Region 2 Junior Church (Lagos Family)</span>
                     </div>
                 </div>
 
-                <Button
-                    onClick={handleManualPaymentConfirmation}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-base"
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</> : "I have made the transfer"}
-                </Button>
+                {/* Registrants Summary Card */}
+                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-5 space-y-3">
+                    <h4 className="font-bold text-xs text-zinc-500 uppercase tracking-wider flex justify-between">
+                        <span>Registrants Summary ({delegates.length})</span>
+                        <span className="text-zinc-800 font-mono font-bold">Total: ₦{totalAmount.toLocaleString()}</span>
+                    </h4>
+                    <div className="space-y-1.5 max-h-[150px] overflow-y-auto pr-1">
+                        {delegates.map((d, index) => (
+                            <div key={index} className="flex justify-between items-center bg-white p-2 border border-zinc-100 rounded-lg">
+                                <div>
+                                    <p className="font-semibold text-slate-800">{d.fullName}</p>
+                                    <p className="text-[10px] text-zinc-400">{d.category === 'Teenager' ? 'Teenager' : 'Teacher / Adult'}</p>
+                                </div>
+                                <span className="font-mono font-medium text-slate-600">₦{(d.category === 'Teenager' ? 1000 : 1500).toLocaleString()}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
-                <p className="text-xs text-center text-muted-foreground px-4">
-                    Clicking the button above will mark your registration as pending verification. You will receive a confirmation once verified.
-                </p>
+                {/* Teller input */}
+                <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Enter your transfer reference / teller number</label>
+                    <Input
+                        type="text"
+                        placeholder="e.g. TXN102948573"
+                        className={`h-11 ${paymentRefError ? 'border-red-500' : ''}`}
+                        value={paymentRef}
+                        onChange={(e) => {
+                            setPaymentRef(e.target.value);
+                            if (e.target.value.trim()) setPaymentRefError('');
+                        }}
+                    />
+                    {paymentRefError && <p className="text-xs text-red-500">{paymentRefError}</p>}
+                    <p className="text-[11px] text-zinc-500">Your registration will be confirmed once payment is verified by our team.</p>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 h-12 text-slate-700 border-zinc-300 hover:bg-zinc-50 font-bold"
+                        onClick={() => {
+                            setStep('step1');
+                            onStepChange?.('form');
+                        }}
+                        disabled={isSubmitting}
+                    >
+                        Back
+                    </Button>
+                    <Button
+                        type="button"
+                        className="flex-[2] h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                        onClick={performSubmit}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</> : "Confirm & Submit"}
+                    </Button>
+                </div>
             </div>
         );
     }
 
-    if (step === 'upload') {
+    if (step === 'step3') {
+        const batchRef = registrationData && registrationData.length > 0 ? registrationData[0].batch_reference : 'C3TC-CONFIRMED';
+        
         return (
             <div className="space-y-6 py-4 animate-in fade-in slide-in-from-bottom-4">
                 <div className="text-center space-y-2">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="text-2xl">📤</span>
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="text-2xl">🎉</span>
                     </div>
-                    <h3 className="font-heading font-bold text-xl">Upload Payment Proof</h3>
-                    <p className="text-sm text-muted-foreground">Please upload a screenshot of your transfer receipt to complete registration.</p>
+                    <h3 className="font-heading font-bold text-xl text-green-600">Registration Submitted!</h3>
+                    <p className="text-sm text-muted-foreground">Your registration has been received and is pending verification.</p>
                 </div>
 
-                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 flex flex-col items-center justify-center border-dashed border-2">
-                    <Input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={async (e) => {
-                            if (!e.target.files || e.target.files.length === 0) return;
-                            setUploading(true);
-                            try {
-                                let file = e.target.files[0];
-                                const fileExt = file.name.split('.').pop()?.toLowerCase();
-                                const isImage = ['jpg', 'jpeg', 'png', 'webp'].includes(fileExt || '');
+                {/* Ticket/Pass Accent Container */}
+                <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 rounded-2xl p-6 relative overflow-hidden shadow-2xl text-white">
+                    <div className="absolute top-1/2 -left-3 w-6 h-6 bg-white rounded-full transform -translate-y-1/2"></div>
+                    <div className="absolute top-1/2 -right-3 w-6 h-6 bg-white rounded-full transform -translate-y-1/2"></div>
 
-                                // Compress if it's an image
-                                if (isImage) {
-                                    console.log(`Original size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
-                                    const options = {
-                                        maxSizeMB: 0.2, // 200KB target
-                                        maxWidthOrHeight: 1920,
-                                        useWebWorker: true
-                                    };
-                                    try {
-                                        const compressedFile = await imageCompression(file, options);
-                                        console.log(`Compressed size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
-                                        file = compressedFile; // Replace original file with compressed one
-                                    } catch (err) {
-                                        console.error('Compression failed:', err);
-                                        // Continue with original file if compression fails? 
-                                        // Or alert? Let's log and continue to avoid blocking user.
-                                    }
-                                }
+                    <div className="text-center border-b border-dashed border-white/20 pb-4 mb-4">
+                        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Batch Reference Code</h2>
+                        <p className="text-3xl font-black text-orange-400 tracking-wider font-mono mt-1">{batchRef}</p>
+                        <p className="text-[10px] text-gray-400 mt-2">Screenshot or note your reference code. You will need it on arrival.</p>
+                    </div>
 
-                                const regList = Array.isArray(registrationData) ? registrationData : [registrationData];
-                                const firstId = regList[0].id;
-                                const firstReg = regList[0];
-                                const ids = regList.map((r: any) => r.id);
-
-                                const fileName = `${firstId}.${fileExt}`;
-                                const filePath = `${fileName}`;
-
-                                const { error: uploadError } = await supabase.storage
-                                    .from('payment_receipts')
-                                    .upload(filePath, file);
-
-                                if (uploadError) throw uploadError;
-
-                                const { data: { publicUrl } } = supabase.storage
-                                    .from('payment_receipts')
-                                    .getPublicUrl(filePath);
-
-                                const { error: dbError } = await supabase
-                                    .from('registrations')
-                                    .update({
-                                        receipt_url: publicUrl,
-                                        status: 'pending_verification'
-                                    })
-                                    .in('id', ids);
-
-                                if (dbError) throw dbError;
-
-                                onSuccess();
-                                const redirectUrl = new URL('/registration-success', window.location.origin);
-                                redirectUrl.searchParams.set('type', 'delegate');
-                                redirectUrl.searchParams.set('reference', firstId);
-                                redirectUrl.searchParams.set('name', firstReg.full_name);
-                                redirectUrl.searchParams.set('regId', firstId);
-                                if (firstReg.batch_reference) {
-                                    redirectUrl.searchParams.set('batch_ref', firstReg.batch_reference);
-                                }
-                                window.location.href = redirectUrl.toString();
-
-                            } catch (error: any) {
-                                console.error('Upload Error:', error);
-                                alert('Failed to upload receipt: ' + error.message);
-                            } finally {
-                                setUploading(false);
-                            }
-                        }}
-                        disabled={uploading}
-                    />
-                    <p className="text-xs text-muted-foreground mt-4">Supported formats: JPG, PNG, PDF, Screenshots</p>
+                    <div className="space-y-3 text-sm">
+                        <div>
+                            <p className="text-[10px] text-gray-500 uppercase font-bold">Event</p>
+                            <p className="font-semibold text-white">Continent 3 Teens Conference — T.I.M.E</p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-500 uppercase font-bold">Venue</p>
+                            <p className="font-semibold text-white">Glory Arena, Redemption City of God, Ogun State</p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-500 uppercase font-bold">Date</p>
+                            <p className="font-semibold text-white">Saturday, 19th September, 2026</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 pt-1">
+                            <div>
+                                <p className="text-[10px] text-gray-500 uppercase font-bold">Payment Method</p>
+                                <p className="font-semibold text-white">Bank Transfer</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-gray-500 uppercase font-bold">Total Paid</p>
+                                <p className="font-semibold text-white font-mono">₦{totalAmount.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="text-center">
-                    {uploading && <p className="text-blue-600 font-bold animate-pulse">Compressing & Uploading...</p>}
+                {/* Full list of registered persons */}
+                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-2 text-xs">
+                    <p className="font-bold text-zinc-500 uppercase tracking-wider">Registered Persons</p>
+                    <div className="space-y-1 max-h-[120px] overflow-y-auto pr-1">
+                        {delegates.map((d, index) => (
+                            <div key={index} className="flex justify-between items-center py-1.5 border-b border-zinc-100 last:border-b-0">
+                                <span className="font-medium text-slate-800">{d.fullName}</span>
+                                <span className="text-zinc-500">
+                                    {d.category === 'Teenager' ? 'Teenager' : 'Teacher / Adult'} • ₦{(d.category === 'Teenager' ? 1000 : 1500).toLocaleString()}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
+
+                {/* Reminder and Status Link */}
+                <div className="text-center space-y-3">
+                    <p className="text-xs text-zinc-500 leading-relaxed px-2">
+                        You will receive an email notification once your payment is verified by the registration team.
+                    </p>
+                    <div>
+                        <a
+                            href={`/check-status?ref=${batchRef}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-block text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                        >
+                            Check your registration status anytime at check-status →
+                        </a>
+                    </div>
+                </div>
+
+                <Button
+                    type="button"
+                    className="w-full h-12 bg-zinc-900 hover:bg-black text-white font-bold"
+                    onClick={onSuccess}
+                >
+                    Close Window
+                </Button>
             </div>
         );
     }
@@ -727,9 +770,9 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         type="button" 
                         onClick={addDelegateToList} 
                         variant="outline" 
-                        className="flex-1 h-12 text-slate-700 border-zinc-300 hover:bg-zinc-50"
+                        className="flex-1 h-12 text-slate-700 border-zinc-300 hover:bg-zinc-50 font-bold"
                     >
-                        ➕ Add Person to List
+                        ➕ Add Person
                     </Button>
                 </div>
 
@@ -767,20 +810,13 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                     </div>
                 )}
 
-                {delegates.length === 0 ? (
-                    <Button type="submit" className="w-full h-12 text-base" disabled={isSubmitting}>
-                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Proceed to Payment"}
-                    </Button>
-                ) : (
-                    <Button 
-                        type="button" 
-                        onClick={submitBatch} 
-                        className="w-full h-12 text-base bg-blue-600 hover:bg-blue-700 text-white" 
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving List...</> : `Proceed to Payment (Total: ₦${totalAmount.toLocaleString()})`}
-                    </Button>
-                )}
+                <Button 
+                    type="button" 
+                    onClick={proceedToPayment} 
+                    className="w-full h-12 text-base bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                >
+                    {delegates.length > 0 ? `Proceed to Payment (Total: ₦${totalAmount.toLocaleString()})` : "Proceed to Payment"}
+                </Button>
             </form>
         </Form>
     )
