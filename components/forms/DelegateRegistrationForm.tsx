@@ -32,7 +32,7 @@ const delegateSchema = z.object({
     region: z.string().min(1, { message: "Select a region" }),
     province: z.string().optional(),
     otherRegionSpecified: z.string().optional(),
-    role: z.enum(["Member", "Worker", "Teens Executive"]),
+    role: z.enum(["Member", "Worker", "Teens Executive"]).optional(),
     execLevel: z.enum(["Parish", "Zone", "Area", "Province", "Region"]).optional(),
     execPosition: z.string().optional(),
     
@@ -59,21 +59,29 @@ const delegateSchema = z.object({
             });
         }
     }
-    // 1. Executive Role validation
-    if (data.role === "Teens Executive") {
-        if (!data.execLevel) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Select executive level",
-                path: ["execLevel"],
-            });
-        }
-        if (!data.execPosition || data.execPosition.trim().length === 0) {
+    // 2. Executive Role validation (Teenager only)
+    if (data.category === "Teenager") {
+        if (!data.role) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: "Required",
-                path: ["execPosition"],
+                path: ["role"],
             });
+        } else if (data.role === "Teens Executive") {
+            if (!data.execLevel) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Select executive level",
+                    path: ["execLevel"],
+                });
+            }
+            if (!data.execPosition || data.execPosition.trim().length === 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Required",
+                    path: ["execPosition"],
+                });
+            }
         }
     }
 
@@ -521,9 +529,14 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                                     field.onChange(val);
                                     if (val === "Teacher / Adult") {
                                         form.setValue("age", null);
+                                        form.setValue("role", undefined);
+                                        form.setValue("execLevel", undefined);
+                                        form.setValue("execPosition", "");
+                                    } else {
+                                        form.setValue("role", "Member");
                                     }
                                 }} 
-                                defaultValue={field.value}
+                                value={field.value}
                             >
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger></FormControl>
                                 <SelectContent>
@@ -626,7 +639,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                                         form.setValue("otherRegionSpecified", "");
                                     }
                                 }} 
-                                defaultValue={field.value}
+                                value={field.value || ""}
                             >
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select Region" /></SelectTrigger></FormControl>
                                 <SelectContent>
@@ -672,31 +685,35 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                     )}
                 </div>
 
-                <FormField control={form.control} name="role" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel>Role</FormLabel>
-                        <FormControl>
-                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                {TEEN_ROLES.map((role) => (
-                                    <FormItem key={role} className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value={role} /></FormControl><FormLabel className="font-normal">{role}</FormLabel>
-                                    </FormItem>
-                                ))}
-                            </RadioGroup>
-                        </FormControl><FormMessage /></FormItem>
-                )} />
-                {watchRole === "Teens Executive" && (
-                    <div className="p-4 bg-muted/50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in">
-                        <FormField control={form.control} name="execLevel" render={({ field }) => (
-                            <FormItem><FormLabel>Level</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select Level" /></SelectTrigger></FormControl>
-                                    <SelectContent>{EXEC_LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
-                                </Select><FormMessage /></FormItem>
+                {watchCategory === "Teenager" && (
+                    <>
+                        <FormField control={form.control} name="role" render={({ field }) => (
+                            <FormItem className="space-y-3"><FormLabel>Role</FormLabel>
+                                <FormControl>
+                                    <RadioGroup onValueChange={field.onChange} value={field.value || ""} className="flex flex-col space-y-1">
+                                        {TEEN_ROLES.map((role) => (
+                                            <FormItem key={role} className="flex items-center space-x-3 space-y-0">
+                                                <FormControl><RadioGroupItem value={role} /></FormControl><FormLabel className="font-normal">{role}</FormLabel>
+                                            </FormItem>
+                                        ))}
+                                    </RadioGroup>
+                                </FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField control={form.control} name="execPosition" render={({ field }) => (
-                            <FormItem><FormLabel>Position</FormLabel><FormControl><Input placeholder="President" {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                    </div>
+                        {watchRole === "Teens Executive" && (
+                            <div className="p-4 bg-muted/50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in">
+                                <FormField control={form.control} name="execLevel" render={({ field }) => (
+                                    <FormItem><FormLabel>Level</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Select Level" /></SelectTrigger></FormControl>
+                                            <SelectContent>{EXEC_LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                                        </Select><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="execPosition" render={({ field }) => (
+                                    <FormItem><FormLabel>Position</FormLabel><FormControl><Input placeholder="President" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                            </div>
+                        )}
+                    </>
                 )}
                 <div className="flex gap-4 pt-2">
                     <Button 
