@@ -27,7 +27,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
           <img
             src={isScrolled ? "/logos/LTC_Logo.png" : "/logos/LTC_Logo_white.png"}
             alt="C3TC Logo"
-            className={`${isScrolled ? 'h-8 md:h-10' : 'h-24 md:h-32'} w-auto object-contain transition-all duration-300`}
+            className={`${isScrolled ? 'h-8 md:h-10' : 'h-12 md:h-16'} w-auto object-contain transition-all duration-300`}
           />
         </a>
         <div className="hidden md:flex items-center gap-8">
