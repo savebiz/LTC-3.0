@@ -80,13 +80,10 @@ export default function RegisterModal({ open, onOpenChange, defaultTab = "delega
                                 <TabsTrigger value="volunteer" disabled={isLocked && activeTab !== "volunteer"}>Volunteer</TabsTrigger>
                             </TabsList>
                             <TabsContent value="delegate" className="py-4">
-                                <ComingSoonDelegate />
-                                {/* 
                                 <DelegateRegistrationForm
                                     onSuccess={handleSuccess}
                                     onStepChange={(step) => setIsLocked(step !== 'form')}
-                                /> 
-                                */}
+                                />
                             </TabsContent>
                             <TabsContent value="volunteer">
                                 <VolunteerRegistrationForm onSuccess={handleSuccess} />
