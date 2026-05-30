@@ -23,7 +23,11 @@ const delegateSchema = z.object({
     fullName: z.string().min(2, { message: "Required" }),
     email: z.string().email(),
     phone: z.string().min(10),
-    age: z.coerce.number().min(10).max(25),
+    category: z.enum(["Teenager", "Teacher / Adult"]),
+    age: z.preprocess(
+        (val) => (val === "" || val === null || val === undefined) ? null : Number(val),
+        z.number().nullable()
+    ).optional(),
     gender: z.enum(["Male", "Female"]),
     region: z.string().min(1, { message: "Select a region" }),
     province: z.string().optional(),
@@ -39,6 +43,22 @@ const delegateSchema = z.object({
     groupCoordinatorName: z.string().optional(),
     groupCoordinatorPhone: z.string().optional(),
 }).superRefine((data, ctx) => {
+    // 1. Category & Age validation
+    if (data.category === "Teenager") {
+        if (data.age === null || data.age === undefined || isNaN(data.age)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Required",
+                path: ["age"],
+            });
+        } else if (data.age < 13 || data.age > 19) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Please enter a valid age for a teenage delegate (13–19).",
+                path: ["age"],
+            });
+        }
+    }
     // 1. Executive Role validation
     if (data.role === "Teens Executive") {
         if (!data.execLevel) {
@@ -126,10 +146,12 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     const [step, setStep] = useState<'form' | 'payment' | 'upload'>('form');
     const [uploading, setUploading] = useState(false);
 
+    const [delegates, setDelegates] = useState<any[]>([]);
+
     const form = useForm<z.infer<typeof delegateSchema>>({
         resolver: zodResolver(delegateSchema),
         defaultValues: { 
-            fullName: "", email: "", phone: "", age: 15, region: "", province: "", otherRegionSpecified: "", role: "Member", 
+            fullName: "", email: "", phone: "", category: "Teenager", age: 15, region: "", province: "", otherRegionSpecified: "", role: "Member", 
             registrationType: "individual", emergencyContactName: "", emergencyContactPhone: "",
             groupName: "", groupCoordinatorName: "", groupCoordinatorPhone: ""
         },
@@ -137,80 +159,53 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     const watchRole = form.watch("role")
     const watchRegion = form.watch("region")
     const watchRegType = form.watch("registrationType")
+    const watchCategory = form.watch("category")
 
     // Update provinces when region changes
     const provinces = (watchRegion && watchRegion !== "Other (Outside Lagos/Ogun)") ? REGIONS_AND_PROVINCES[watchRegion] || [] : []
 
-    async function handleManualPaymentConfirmation() {
-        setIsSubmitting(true);
-        try {
-            if (registrationData?.id) {
-                // Update status to pending_verification
-                const { error } = await supabase
-                    .from('registrations')
-                    .update({ status: 'pending_verification' })
-                    .eq('id', registrationData.id);
+    const totalAmount = delegates.reduce((sum, d) => sum + (d.category === "Teenager" ? 1000 : 1500), 0);
 
-                if (error) throw error;
-
-                // Log payment attempt (optional, but good for tracking)
-                await supabase.from('payments').insert([{
-                    registration_id: registrationData.id,
-                    amount: 2000,
-                    provider: 'manual_transfer',
-                    reference: `MANUAL-${Date.now()}`,
-                    status: 'pending'
-                }]);
-            }
-            setStep('upload');
-            onStepChange?.('upload');
-            // onSuccess(); // Moved to after upload
-            // window.location.href = '/registration-success'; // Moved to after upload
-        } catch (error: any) {
-            console.error("Payment Confirmation Error:", error);
-            alert("Failed to confirm payment: " + (error.message || "Unknown error"));
-        } finally {
-            setIsSubmitting(false);
+    async function performSubmit(delegatesList: any[]) {
+        if (delegatesList.length === 0) {
+            alert("Please add at least one delegate.");
+            return;
         }
-    }
 
-    async function onSubmit(data: z.infer<typeof delegateSchema>) {
         setIsSubmitting(true);
         try {
-            // 1. Save to Supabase
+            const payload = delegatesList.map(d => ({
+                full_name: d.fullName,
+                email: d.email,
+                phone: d.phone,
+                gender: d.gender,
+                age: d.age,
+                region: d.region,
+                province: d.province,
+                other_region_specified: d.otherRegionSpecified,
+                registration_type: form.getValues("registrationType"),
+                emergency_contact_name: form.getValues("registrationType") === "individual" ? form.getValues("emergencyContactName") : null,
+                emergency_contact_phone: form.getValues("registrationType") === "individual" ? form.getValues("emergencyContactPhone") : null,
+                group_name: form.getValues("registrationType") === "group" ? form.getValues("groupName") : null,
+                group_coordinator_name: form.getValues("registrationType") === "group" ? form.getValues("groupCoordinatorName") : null,
+                group_coordinator_phone: form.getValues("registrationType") === "group" ? form.getValues("groupCoordinatorPhone") : null,
+                type: 'delegate',
+                status: 'pending_payment',
+                amount_due: d.category === "Teenager" ? 1000 : 1500,
+                category: d.category === "Teenager" ? "teenager" : "teacher",
+            }));
+
             const { data: regData, error: regError } = await supabase
                 .from('registrations')
-                .insert([
-                    {
-                        full_name: data.fullName,
-                        email: data.email,
-                        phone: data.phone,
-                        gender: data.gender,
-                        age: data.age,
-                        region: data.region,
-                        province: data.region === "Other (Outside Lagos/Ogun)" ? "Other" : data.province,
-                        other_region_specified: data.region === "Other (Outside Lagos/Ogun)" ? data.otherRegionSpecified : null,
-                        registration_type: data.registrationType,
-                        emergency_contact_name: data.registrationType === "individual" ? data.emergencyContactName : null,
-                        emergency_contact_phone: data.registrationType === "individual" ? data.emergencyContactPhone : null,
-                        group_name: data.registrationType === "group" ? data.groupName : null,
-                        group_coordinator_name: data.registrationType === "group" ? data.groupCoordinatorName : null,
-                        group_coordinator_phone: data.registrationType === "group" ? data.groupCoordinatorPhone : null,
-                        type: 'delegate',
-                        status: 'pending_payment'
-                    }
-                ])
-                .select()
-                .single();
+                .insert(payload)
+                .select();
 
             if (regError) throw regError;
 
-            console.log("Registration Saved:", regData);
+            console.log("Registrations Saved:", regData);
             setRegistrationData(regData);
-            setRegistrationData(regData);
-            setStep('payment'); // Move to payment step
+            setStep('payment');
             onStepChange?.('payment');
-
         } catch (error: any) {
             console.error("FULL Registration Error:", error);
             let errorMessage = "Unknown error";
@@ -233,6 +228,138 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
         }
     }
 
+    async function submitBatch() {
+        const currentName = form.getValues("fullName");
+        const currentEmail = form.getValues("email");
+        
+        let finalDelegates = [...delegates];
+        
+        if (currentName.trim() || currentEmail.trim()) {
+            const isValid = await form.trigger([
+                "fullName", "email", "phone", "category", "age", "gender", 
+                "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
+            ]);
+            
+            if (!isValid) return;
+            
+            const values = form.getValues();
+            finalDelegates.push({
+                fullName: values.fullName,
+                email: values.email,
+                phone: values.phone,
+                category: values.category,
+                age: values.category === "Teenager" ? values.age : null,
+                gender: values.gender,
+                region: values.region,
+                province: values.region === "Other (Outside Lagos/Ogun)" ? "Other" : values.province,
+                otherRegionSpecified: values.region === "Other (Outside Lagos/Ogun)" ? values.otherRegionSpecified : null,
+                role: values.role,
+                execLevel: values.role === "Teens Executive" ? values.execLevel : null,
+                execPosition: values.role === "Teens Executive" ? values.execPosition : null,
+            });
+        }
+
+        await performSubmit(finalDelegates);
+    }
+
+    async function addDelegateToList() {
+        const isValid = await form.trigger([
+            "fullName", "email", "phone", "category", "age", "gender", 
+            "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
+        ]);
+        
+        if (!isValid) return;
+        
+        const values = form.getValues();
+        const newDelegate = {
+            fullName: values.fullName,
+            email: values.email,
+            phone: values.phone,
+            category: values.category,
+            age: values.category === "Teenager" ? values.age : null,
+            gender: values.gender,
+            region: values.region,
+            province: values.region === "Other (Outside Lagos/Ogun)" ? "Other" : values.province,
+            otherRegionSpecified: values.region === "Other (Outside Lagos/Ogun)" ? values.otherRegionSpecified : null,
+            role: values.role,
+            execLevel: values.role === "Teens Executive" ? values.execLevel : null,
+            execPosition: values.role === "Teens Executive" ? values.execPosition : null,
+        };
+        
+        setDelegates(prev => [...prev, newDelegate]);
+        
+        // Reset form inputs for delegate section
+        form.setValue("fullName", "");
+        form.setValue("email", "");
+        form.setValue("phone", "");
+        form.setValue("category", "Teenager");
+        form.setValue("age", 15);
+        form.setValue("gender", undefined as any);
+        form.setValue("region", "");
+        form.setValue("province", "");
+        form.setValue("otherRegionSpecified", "");
+        form.setValue("role", "Member");
+        form.setValue("execLevel", undefined);
+        form.setValue("execPosition", "");
+        
+        form.clearErrors([
+            "fullName", "email", "phone", "category", "age", "gender", 
+            "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
+        ]);
+    }
+
+    async function handleManualPaymentConfirmation() {
+        setIsSubmitting(true);
+        try {
+            if (registrationData) {
+                const regList = Array.isArray(registrationData) ? registrationData : [registrationData];
+                const ids = regList.map((r: any) => r.id);
+                const firstId = regList[0].id;
+
+                const { error } = await supabase
+                    .from('registrations')
+                    .update({ status: 'pending_verification' })
+                    .in('id', ids);
+
+                if (error) throw error;
+
+                await supabase.from('payments').insert([{
+                    registration_id: firstId,
+                    amount: totalAmount,
+                    provider: 'manual_transfer',
+                    reference: `MANUAL-${Date.now()}`,
+                    status: 'pending'
+                }]);
+            }
+            setStep('upload');
+            onStepChange?.('upload');
+        } catch (error: any) {
+            console.error("Payment Confirmation Error:", error);
+            alert("Failed to confirm payment: " + (error.message || "Unknown error"));
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    async function onSubmit(data: z.infer<typeof delegateSchema>) {
+        const singleDelegate = {
+            fullName: data.fullName,
+            email: data.email,
+            phone: data.phone,
+            category: data.category,
+            age: data.category === "Teenager" ? data.age : null,
+            gender: data.gender,
+            region: data.region,
+            province: data.region === "Other (Outside Lagos/Ogun)" ? "Other" : data.province,
+            otherRegionSpecified: data.region === "Other (Outside Lagos/Ogun)" ? data.otherRegionSpecified : null,
+            role: data.role,
+            execLevel: data.role === "Teens Executive" ? data.execLevel : null,
+            execPosition: data.role === "Teens Executive" ? data.execPosition : null,
+        };
+        
+        await performSubmit([...delegates, singleDelegate]);
+    }
+
     if (step === 'payment') {
         return (
             <div className="space-y-6 py-4 animate-in fade-in slide-in-from-bottom-4">
@@ -241,10 +368,8 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         <span className="text-2xl">🏦</span>
                     </div>
                     <h3 className="font-heading font-bold text-xl">Complete Your Registration</h3>
-                    <p className="text-sm text-muted-foreground">Please make a transfer of <span className="font-bold text-black">₦2,000</span> to the account below.</p>
-                </div>
-
-                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 space-y-4">
+                    <p className="text-sm text-muted-foreground">Please make a transfer of <span className="font-bold text-black">₦{totalAmount.toLocaleString()}</span> to the account below.</p>
+                </div>                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 space-y-4">
                     <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
                         <span className="text-sm text-muted-foreground">Bank Name</span>
                         <span className="font-medium">GTBank</span>
@@ -319,7 +444,12 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                                     }
                                 }
 
-                                const fileName = `${registrationData.id}.${fileExt}`;
+                                const regList = Array.isArray(registrationData) ? registrationData : [registrationData];
+                                const firstId = regList[0].id;
+                                const firstReg = regList[0];
+                                const ids = regList.map((r: any) => r.id);
+
+                                const fileName = `${firstId}.${fileExt}`;
                                 const filePath = `${fileName}`;
 
                                 const { error: uploadError } = await supabase.storage
@@ -338,16 +468,16 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                                         receipt_url: publicUrl,
                                         status: 'pending_verification'
                                     })
-                                    .eq('id', registrationData.id);
+                                    .in('id', ids);
 
                                 if (dbError) throw dbError;
 
                                 onSuccess();
                                 const redirectUrl = new URL('/registration-success', window.location.origin);
                                 redirectUrl.searchParams.set('type', 'delegate');
-                                redirectUrl.searchParams.set('reference', registrationData.id); // Using ID as reference for now or the payment ref? Let's use ID for consistency in "Ticket"
-                                redirectUrl.searchParams.set('name', registrationData.full_name);
-                                redirectUrl.searchParams.set('regId', registrationData.id);
+                                redirectUrl.searchParams.set('reference', firstId);
+                                redirectUrl.searchParams.set('name', firstReg.full_name);
+                                redirectUrl.searchParams.set('regId', firstId);
                                 window.location.href = redirectUrl.toString();
 
                             } catch (error: any) {
@@ -384,18 +514,57 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                     <FormField control={form.control} name="phone" render={({ field }) => (
                         <FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="080..." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="category" render={({ field }) => (
+                        <FormItem><FormLabel>I am registering as a</FormLabel>
+                            <Select 
+                                onValueChange={(val) => {
+                                    field.onChange(val);
+                                    if (val === "Teacher / Adult") {
+                                        form.setValue("age", null);
+                                    }
+                                }} 
+                                defaultValue={field.value}
+                            >
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Teenager">Teenager</SelectItem>
+                                    <SelectItem value="Teacher / Adult">Teacher / Adult</SelectItem>
+                                </SelectContent>
+                            </Select><FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="gender" render={({ field }) => (
+                        <FormItem><FormLabel>Gender</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select Gender" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Male">Male</SelectItem>
+                                    <SelectItem value="Female">Female</SelectItem>
+                                </SelectContent>
+                            </Select><FormMessage />
+                        </FormItem>
+                    )} />
+                    {watchCategory === "Teenager" && (
                         <FormField control={form.control} name="age" render={({ field }) => (
-                            <FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Age</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        type="number" 
+                                        placeholder="E.g. 15"
+                                        {...field} 
+                                        value={field.value ?? ""} 
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            field.onChange(val === "" ? null : Number(val));
+                                        }}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
                         )} />
-                        <FormField control={form.control} name="gender" render={({ field }) => (
-                            <FormItem><FormLabel>Gender</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
-                                </Select><FormMessage /></FormItem>
-                        )} />
-                    </div>
+                    )}
                 </div>
                 <FormField control={form.control} name="registrationType" render={({ field }) => (
                     <FormItem className="space-y-3"><FormLabel className="font-semibold">How are you registering?</FormLabel>
@@ -529,9 +698,65 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         )} />
                     </div>
                 )}
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Proceed to Payment"}
-                </Button>
+                <div className="flex gap-4 pt-2">
+                    <Button 
+                        type="button" 
+                        onClick={addDelegateToList} 
+                        variant="outline" 
+                        className="flex-1 h-12 text-slate-700 border-zinc-300 hover:bg-zinc-50"
+                    >
+                        ➕ Add Person to List
+                    </Button>
+                </div>
+
+                {delegates.length > 0 && (
+                    <div className="p-5 bg-zinc-50 border border-zinc-200 rounded-2xl space-y-3 animate-in fade-in duration-300">
+                        <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest flex justify-between">
+                            <span>Delegates List ({delegates.length})</span>
+                            <span className="text-slate-800 font-mono font-bold">Total: ₦{totalAmount.toLocaleString()}</span>
+                        </h4>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                            {delegates.map((d, index) => (
+                                <div key={index} className="flex justify-between items-center bg-white p-3 border border-zinc-100 rounded-xl shadow-sm text-sm">
+                                    <div className="space-y-0.5">
+                                        <p className="font-semibold text-slate-800">{d.fullName}</p>
+                                        <p className="text-xs text-muted-foreground">{d.category} • {d.role}</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-mono font-medium text-slate-700">
+                                            ₦{(d.category === "Teenager" ? 1000 : 1500).toLocaleString()}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setDelegates(prev => prev.filter((_, i) => i !== index));
+                                            }}
+                                            className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors text-base leading-none border-0 bg-transparent cursor-pointer"
+                                            title="Remove"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {delegates.length === 0 ? (
+                    <Button type="submit" className="w-full h-12 text-base" disabled={isSubmitting}>
+                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Proceed to Payment"}
+                    </Button>
+                ) : (
+                    <Button 
+                        type="button" 
+                        onClick={submitBatch} 
+                        className="w-full h-12 text-base bg-blue-600 hover:bg-blue-700 text-white" 
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving List...</> : `Proceed to Payment (Total: ₦${totalAmount.toLocaleString()})`}
+                    </Button>
+                )}
             </form>
         </Form>
     )
