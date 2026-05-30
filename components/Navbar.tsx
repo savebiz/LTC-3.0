@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { EVENT_DETAILS } from '../constants';
 import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import { Menu, X, Clock, Ticket } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavbarProps { onRegisterClick: () => void; }
 
@@ -15,6 +16,18 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Lock body scrolling when drawer is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMenuOpen]);
+
   return (
     <nav 
       className={`fixed top-0 left-0 w-full z-40 transition-all duration-300 ${isScrolled ? 'py-2 bg-white/70 border-b border-white/20 shadow-sm' : 'py-6 bg-transparent'}`}
@@ -24,14 +37,6 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
       } : undefined}
     >
       <div className={`absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500 ${isScrolled ? 'opacity-100' : 'opacity-0'} transition-opacity`}></div>
-      
-      {/* Click overlay to close mobile dropdown */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 z-30 bg-transparent w-screen h-screen md:hidden"
-          onClick={() => setIsMenuOpen(false)}
-        />
-      )}
 
       <div className="container mx-auto px-6 flex justify-between items-center relative">
         <a href="#" className="flex items-center gap-3">
@@ -39,8 +44,8 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
             src={isScrolled ? "/logos/LTC_Logo.png" : "/logos/LTC_Logo_white.png"}
             alt="C3TC Logo"
             className={`${isScrolled 
-              ? 'h-6 max-w-[45%] md:h-10 md:max-w-none' 
-              : 'h-8 max-w-[50%] md:h-16 md:max-w-none'
+              ? 'h-8 max-w-[45%] md:h-10 md:max-w-none' 
+              : 'h-11 max-w-[50%] md:h-16 md:max-w-none'
             } w-auto object-contain transition-all duration-300`}
           />
         </a>
@@ -57,48 +62,83 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
         {/* Mobile Hamburger Button */}
         <div className="md:hidden flex items-center z-50">
           <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMenuOpen(!isMenuOpen);
-            }} 
+            onClick={() => setIsMenuOpen(true)} 
             className={`p-2 focus:outline-none transition-colors ${
               isScrolled ? 'text-zinc-800' : 'text-zinc-200'
             }`}
-            aria-label="Toggle Menu"
+            aria-label="Open Menu"
           >
-            {isMenuOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
+            <Menu className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Mobile Dropdown Menu */}
-        {isMenuOpen && (
-          <div className="absolute top-16 right-6 w-48 bg-black/95 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl z-40 animate-in fade-in slide-in-from-top-3 duration-200 flex flex-col gap-2 md:hidden">
-            <a 
-              href="/check-status"
-              className="w-full text-left px-4 py-3 text-sm font-bold tracking-wider text-zinc-200 hover:text-orange-500 hover:bg-white/5 rounded-xl transition-all"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Status
-            </a>
-            <button 
-              onClick={() => {
-                setIsMenuOpen(false);
-                onRegisterClick();
-              }}
-              className="w-full text-left px-4 py-3 text-sm font-bold tracking-wider text-zinc-200 hover:text-orange-500 hover:bg-white/5 rounded-xl transition-all"
-            >
-              Register
-            </button>
-          </div>
-        )}
+        {/* Drawer + Overlay via AnimatePresence */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <>
+              {/* Left Overlay (50% Width) */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-y-0 left-0 w-1/2 bg-black/60 backdrop-blur-sm z-50 md:hidden cursor-pointer"
+                onClick={() => setIsMenuOpen(false)}
+              />
+
+              {/* Right Drawer (50% Width) */}
+              <motion.div 
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "tween", ease: "easeOut", duration: 0.25 }}
+                className="fixed inset-y-0 right-0 w-1/2 bg-[#090d16] border-l border-orange-500/80 z-50 flex flex-col p-5 shadow-2xl md:hidden text-white overflow-y-auto"
+              >
+                {/* Header with Logo & Close Icon */}
+                <div className="flex justify-between items-center mb-6 pr-2">
+                  <img 
+                    src="/logos/LTC_Logo_white.png" 
+                    alt="C3TC Logo" 
+                    className="h-7 w-auto object-contain"
+                  />
+                  <button 
+                    onClick={() => setIsMenuOpen(false)} 
+                    className="text-zinc-400 hover:text-white transition-colors p-1"
+                    aria-label="Close Menu"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Divider Line */}
+                <div className="border-t border-white/10 mb-6" />
+
+                {/* Navigation Items */}
+                <div className="flex flex-col gap-4">
+                  <a 
+                    href="/check-status"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="h-14 flex items-center gap-3 px-4 rounded-xl text-sm font-bold tracking-wider text-zinc-300 hover:text-orange-500 hover:bg-orange-500/10 active:scale-98 transition-all"
+                  >
+                    <Clock className="w-5 h-5 text-orange-500" />
+                    <span>Check Status</span>
+                  </a>
+                  
+                  <button 
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onRegisterClick();
+                    }}
+                    className="h-14 flex items-center gap-3 px-4 rounded-xl text-sm font-bold tracking-wider text-zinc-300 hover:text-orange-500 hover:bg-orange-500/10 active:scale-98 transition-all text-left w-full"
+                  >
+                    <Ticket className="w-5 h-5 text-orange-500" />
+                    <span>Register</span>
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </nav>
   );
