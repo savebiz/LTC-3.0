@@ -42,24 +42,26 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                 </motion.div>
 
                 <div className="relative flex items-center justify-center py-6 md:py-10">
-                    <motion.h1
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        className="text-[clamp(3.5rem,13vw,13rem)] leading-[0.8] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 font-heading select-none filter drop-shadow-2xl z-10"
-                    >
-                        T.I.M.E
-                    </motion.h1>
+                    <div className="relative inline-block">
+                        <motion.h1
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className="text-[clamp(3.5rem,13vw,13rem)] leading-[0.8] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 font-heading select-none filter drop-shadow-2xl z-10"
+                        >
+                            T.I.M.E
+                        </motion.h1>
 
-                    {/* '26 Badge */}
-                    <motion.div
-                        initial={{ opacity: 0, rotate: 0, scale: 0 }}
-                        animate={{ opacity: 1, rotate: 12, scale: 1 }}
-                        transition={{ type: "spring", stiffness: 200, delay: 0.8 }}
-                        className="absolute top-0 right-4 sm:right-10 md:right-16 lg:right-28 rotate-12 bg-orange-500 text-black font-black text-lg sm:text-xl md:text-3xl px-2 py-0.5 md:px-3 md:py-1 rounded sm:rounded-md transform hover:rotate-0 transition-transform duration-300 cursor-default shadow-[0_0_20px_rgba(249,115,22,0.4)] border md:border-2 border-white/20 z-20 font-heading"
-                    >
-                        '26
-                    </motion.div>
+                        {/* '26 Badge */}
+                        <motion.div
+                            initial={{ opacity: 0, rotate: 0, scale: 0 }}
+                            animate={{ opacity: 1, rotate: 12, scale: 1 }}
+                            transition={{ type: "spring", stiffness: 200, delay: 0.8 }}
+                            className="absolute -top-2 md:-top-4 -right-6 md:-right-12 rotate-12 bg-orange-500 text-black font-black text-lg sm:text-xl md:text-3xl px-2 py-0.5 md:px-3 md:py-1 rounded sm:rounded-md transform hover:rotate-0 transition-transform duration-300 cursor-default shadow-[0_0_20px_rgba(249,115,22,0.4)] border md:border-2 border-white/20 z-20 font-heading"
+                        >
+                            '26
+                        </motion.div>
+                    </div>
 
                     {/* Glow Effects */}
                     <div className="absolute -top-10 -right-10 md:-top-20 md:-right-20 w-48 h-48 md:w-96 md:h-96 bg-orange-500/20 rounded-full blur-[80px] md:blur-[120px] animate-pulse" />
