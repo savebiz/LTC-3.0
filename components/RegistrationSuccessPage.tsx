@@ -7,6 +7,7 @@ export default function RegistrationSuccessPage() {
     const reference = searchParams.get('reference');
     const name = searchParams.get('name');
     const regId = searchParams.get('regId');
+    const batchRef = searchParams.get('batch_ref');
     const isVolunteer = type === 'volunteer';
 
     return (
@@ -40,8 +41,8 @@ export default function RegistrationSuccessPage() {
                                 <p className="font-semibold text-white">C3TC 3.0 (T.I.M.E)</p>
                             </div>
                             <div>
-                                <p className="text-gray-500 text-xs uppercase">Reg ID</p>
-                                <p className="font-mono text-orange-400 font-bold">{regId?.slice(0, 8).toUpperCase() || reference || '---'}</p>
+                                <p className="text-gray-500 text-xs uppercase">Ref Code</p>
+                                <p className="font-mono text-orange-400 font-bold">{batchRef || regId?.slice(0, 8).toUpperCase() || reference || '---'}</p>
                             </div>
                         </div>
 
@@ -61,6 +62,17 @@ export default function RegistrationSuccessPage() {
                                 Confirmed
                             </span>
                         </div>
+                    </div>
+                )}
+
+                {!isVolunteer && (
+                    <div className="text-center py-2 animate-in fade-in duration-300">
+                        <a
+                            href={`/check-status?ref=${batchRef || ''}`}
+                            className="inline-block text-orange-400 hover:text-orange-300 font-medium text-sm transition-colors hover:underline"
+                        >
+                            Check your registration status anytime &rarr;
+                        </a>
                     </div>
                 )}
 

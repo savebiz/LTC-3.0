@@ -182,6 +182,9 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
         setIsSubmitting(true);
         try {
+            const randomDigits = Math.floor(10000 + Math.random() * 90000);
+            const batchRef = `C3TC-2026-${randomDigits}`;
+
             const payload = delegatesList.map(d => ({
                 full_name: d.fullName,
                 email: d.email,
@@ -201,6 +204,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 status: 'pending_payment',
                 amount_due: d.category === "Teenager" ? 1000 : 1500,
                 category: d.category === "Teenager" ? "teenager" : "teacher",
+                batch_reference: batchRef,
             }));
 
             const { data: regData, error: regError } = await supabase
@@ -486,6 +490,9 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                                 redirectUrl.searchParams.set('reference', firstId);
                                 redirectUrl.searchParams.set('name', firstReg.full_name);
                                 redirectUrl.searchParams.set('regId', firstId);
+                                if (firstReg.batch_reference) {
+                                    redirectUrl.searchParams.set('batch_ref', firstReg.batch_reference);
+                                }
                                 window.location.href = redirectUrl.toString();
 
                             } catch (error: any) {

@@ -31,10 +31,22 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
           />
         </a>
         <div className="hidden md:flex items-center gap-8">
+          <a
+            href="/check-status"
+            className={`font-bold tracking-wider text-sm transition-all hover:text-orange-500 hover:scale-105 ${isScrolled ? 'text-zinc-800' : 'text-zinc-200'}`}
+          >
+            CHECK STATUS
+          </a>
           <Button onClick={onRegisterClick} size="lg" className="rounded-full font-bold tracking-wider">REGISTER</Button>
         </div>
-        <div className="md:hidden">
-          <Button onClick={onRegisterClick} size="sm" className="rounded-full font-bold tracking-wider text-xs px-6">REGISTER</Button>
+        <div className="md:hidden flex items-center gap-4">
+          <a
+            href="/check-status"
+            className={`font-bold tracking-wider text-xs transition-all hover:text-orange-500 ${isScrolled ? 'text-zinc-800' : 'text-zinc-200'}`}
+          >
+            STATUS
+          </a>
+          <Button onClick={onRegisterClick} size="sm" className="rounded-full font-bold tracking-wider text-xs px-4">REGISTER</Button>
         </div>
       </div>
     </nav>
