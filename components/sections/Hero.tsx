@@ -46,7 +46,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 1, ease: "easeOut" }}
-                        className="text-[18vw] md:text-[14rem] lg:text-[18rem] leading-[0.8] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 font-heading select-none filter drop-shadow-2xl z-10"
+                        className="text-[clamp(3.5rem,13vw,13rem)] leading-[0.8] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 font-heading select-none filter drop-shadow-2xl z-10"
                     >
                         T.I.M.E
                     </motion.h1>

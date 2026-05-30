@@ -72,7 +72,7 @@ const Info: React.FC = () => {
 
                             <div>
                                 <h3 className={`text-xs font-mono tracking-[0.2em] font-bold mb-3 uppercase ${item.iconColor}`}>{item.title}</h3>
-                                <p className="text-2xl md:text-3xl font-heading font-bold text-white leading-tight">
+                                <p className="text-xl sm:text-2xl md:text-3xl font-heading font-bold text-white leading-tight">
                                     {item.value}
                                 </p>
                             </div>

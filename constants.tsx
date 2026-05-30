@@ -7,7 +7,7 @@ export const EVENT_DETAILS = {
   scripture: "Romans 12:2",
   shortName: "T.I.M.E '26",
   date: "Saturday, 19th September, 2026",
-  venue: "Glory Arena, Redemption City of God, Ogun State, Nigeria",
+  venue: "Glory Arena, Redemption City of God",
   address: "Ogun State, Nigeria",
   lat: 6.8041,
   lng: 3.4447
