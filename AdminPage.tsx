@@ -39,6 +39,23 @@ export default function AdminPage() {
     if (!isLoggedIn) {
         return (
             <div className="min-h-screen w-full bg-slate-950 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-x-hidden overflow-y-auto text-white font-sans">
+                <style dangerouslySetInnerHTML={{__html: `
+                    .admin-password-input {
+                        color: #111827 !important;
+                        -webkit-text-fill-color: #111827 !important;
+                        background-color: #ffffff !important;
+                        caret-color: #111827 !important;
+                    }
+                    .admin-password-input:-webkit-autofill,
+                    .admin-password-input:-webkit-autofill:hover,
+                    .admin-password-input:-webkit-autofill:focus,
+                    .admin-password-input:-webkit-autofill:active {
+                        -webkit-text-fill-color: #111827 !important;
+                        -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+                        box-shadow: 0 0 0px 1000px #ffffff inset !important;
+                        caret-color: #111827 !important;
+                    }
+                `}} />
                 {/* Background glow effects */}
                 <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-orange-600/10 blur-[150px] pointer-events-none"></div>
                 <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[150px] pointer-events-none"></div>
@@ -74,7 +91,7 @@ export default function AdminPage() {
                                             placeholder="Enter password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full !bg-white !text-[#111827] border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 h-12 pr-12 placeholder:!text-[#9ca3af] rounded-xl font-medium"
+                                            className="admin-password-input w-full !bg-white !text-[#111827] border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 h-12 pr-12 placeholder:!text-[#9ca3af] rounded-xl font-medium"
                                         />
                                         <button
                                             type="button"
