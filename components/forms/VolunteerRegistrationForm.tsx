@@ -124,39 +124,65 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                         <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="hello@example.com" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                 </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="phone" render={({ field }) => (
                         <FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="080..." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <div className={watchRole === "Teenager" ? "grid grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
-                        {watchRole === "Teenager" && (
-                            <FormField control={form.control} name="age" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Age</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            type="number" 
-                                            placeholder="E.g. 15"
-                                            {...field} 
-                                            value={field.value ?? ""} 
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                field.onChange(val === "" ? null : Number(val));
-                                            }}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                        )}
-                        <FormField control={form.control} name="gender" render={({ field }) => (
-                            <FormItem><FormLabel>Gender</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
-                                </Select><FormMessage /></FormItem>
+                    <FormField control={form.control} name="role" render={({ field }) => (
+                        <FormItem className="space-y-3"><FormLabel>I am a...</FormLabel>
+                            <FormControl>
+                                <RadioGroup 
+                                    onValueChange={(val) => {
+                                        field.onChange(val);
+                                        if (val === "Teacher") {
+                                            form.setValue("age", null);
+                                        } else {
+                                            form.setValue("age", 15);
+                                        }
+                                    }} 
+                                    defaultValue={field.value} 
+                                    className="flex flex-row space-x-4 h-10 items-center"
+                                >
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl><RadioGroupItem value="Teenager" /></FormControl><FormLabel className="font-normal">Teenager</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl><RadioGroupItem value="Teacher" /></FormControl><FormLabel className="font-normal">Teacher</FormLabel>
+                                    </FormItem>
+                                </RadioGroup>
+                            </FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+
+                <div className={watchRole === "Teenager" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
+                    <FormField control={form.control} name="gender" render={({ field }) => (
+                        <FormItem><FormLabel>Gender</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
+                                <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
+                            </Select><FormMessage /></FormItem>
+                    )} />
+                    {watchRole === "Teenager" && (
+                        <FormField control={form.control} name="age" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Age</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        type="number" 
+                                        placeholder="E.g. 15"
+                                        {...field} 
+                                        value={field.value ?? ""} 
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            field.onChange(val === "" ? null : Number(val));
+                                        }}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
                         )} />
-                    </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -216,31 +242,6 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                         )} />
                     )}
                 </div>
-
-                <FormField control={form.control} name="role" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel>I am a...</FormLabel>
-                        <FormControl>
-                            <RadioGroup 
-                                onValueChange={(val) => {
-                                    field.onChange(val);
-                                    if (val === "Teacher") {
-                                        form.setValue("age", null);
-                                    } else {
-                                        form.setValue("age", 15);
-                                    }
-                                }} 
-                                defaultValue={field.value} 
-                                className="flex flex-row space-x-4"
-                            >
-                                <FormItem className="flex items-center space-x-2 space-y-0">
-                                    <FormControl><RadioGroupItem value="Teenager" /></FormControl><FormLabel className="font-normal">Teenager</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-2 space-y-0">
-                                    <FormControl><RadioGroupItem value="Teacher" /></FormControl><FormLabel className="font-normal">Teacher</FormLabel>
-                                </FormItem>
-                            </RadioGroup>
-                        </FormControl><FormMessage /></FormItem>
-                )} />
 
                 <FormField control={form.control} name="department" render={({ field }) => (
                     <FormItem><FormLabel>Preferred Department</FormLabel>
