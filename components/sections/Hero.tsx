@@ -10,7 +10,7 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
     return (
-        <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-black">
+        <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-black pb-12 md:pb-0">
             {/* Video Background */}
             <div className="absolute inset-0 w-full h-full">
                 {/* Dark overlay for text readability */}
@@ -30,7 +30,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
             <Navbar onRegisterClick={onRegisterClick} />
 
             {/* Content */}
-            <div className="relative z-30 text-center space-y-6 md:space-y-8 px-4 mt-20 max-w-7xl mx-auto w-full">
+            <div className="relative z-30 text-center space-y-6 md:space-y-8 px-4 mt-4 md:mt-20 max-w-7xl mx-auto w-full">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}

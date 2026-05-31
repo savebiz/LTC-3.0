@@ -45,7 +45,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
         className={`fixed top-0 left-0 w-full z-40 transition-all duration-300 ${
           isScrolled 
             ? 'py-2 bg-zinc-950/80 border-b border-white/10 shadow-sm md:bg-white/70 md:border-white/20' 
-            : 'py-6 bg-transparent'
+            : 'py-4 md:py-6 bg-transparent'
         }`}
         style={
           isScrolled 
@@ -61,13 +61,21 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
 
         <div className="container mx-auto px-6 flex justify-between items-center relative">
           <a href="#" className="flex items-center gap-3">
+            {/* Desktop Logo */}
             <img
               src={isScrolled ? "/logos/LTC_Logo.png" : "/logos/LTC_Logo_white.png"}
               alt="C3TC Logo"
-              className={`${isScrolled 
-                ? 'h-9 max-w-[40%] md:h-10 md:max-w-none' 
-                : 'h-14 max-w-[70%] md:h-16 md:max-w-none'
-              } w-auto object-contain transition-all duration-300`}
+              className={`hidden md:block w-auto object-contain transition-all duration-300 ${
+                isScrolled ? 'md:h-10' : 'md:h-16'
+              }`}
+            />
+            {/* Mobile Logo (Uses White Logo variant for both states to ensure contrast on dark sticky background) */}
+            <img
+              src="/logos/LTC_Logo_white.png"
+              alt="C3TC Logo"
+              className={`block md:hidden w-auto object-contain transition-all duration-300 ${
+                isScrolled ? 'h-9 max-w-[40%]' : 'h-14 max-w-[70%]'
+              }`}
             />
           </a>
 
