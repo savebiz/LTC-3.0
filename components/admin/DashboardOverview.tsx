@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     AreaChart, Area
 } from 'recharts';
 import {
-    Users, CreditCard, CheckCircle2, TrendingUp, Award, Loader2
+    Users, CreditCard, CheckCircle2, TrendingUp, Award, Loader2, QrCode
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardOverview() {
+    const navigate = useNavigate();
     const [regs, setRegs] = useState<any[]>([]);
     const [vols, setVols] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -151,7 +154,16 @@ export default function DashboardOverview() {
 
     return (
         <div className="space-y-6">
-            <h2 className="text-3xl font-bold font-heading text-slate-800">Dashboard Overview</h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-3xl font-bold font-heading text-slate-800">Dashboard Overview</h2>
+                <Button
+                    onClick={() => navigate('/admin/checkin')}
+                    className="w-full sm:w-auto md:hidden bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold h-11 rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                    <QrCode size={18} />
+                    Start Check-in
+                </Button>
+            </div>
 
             {/* STATS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

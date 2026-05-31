@@ -55,6 +55,7 @@ const App: React.FC = () => {
           } />
           <Route path="/registration-success" element={<RegistrationSuccessPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/checkin" element={<AdminPage initialPage="checkin" />} />
           <Route path="/debug-env" element={<DebugPage />} />
           <Route path="/check-status" element={<CheckStatus />} />
         </Routes>

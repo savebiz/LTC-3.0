@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AdminLayout from './components/admin/AdminLayout';
 import DashboardOverview from './components/admin/DashboardOverview';
 import RegistrationTable from './components/admin/RegistrationTable';
 import VolunteerTable from './components/admin/VolunteerTable';
+import CheckInModule from './components/admin/CheckInModule';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Lock } from "lucide-react";
 
-export default function AdminPage() {
+export default function AdminPage({ initialPage = 'overview' }: { initialPage?: string }) {
+    const navigate = useNavigate();
+    const location = useLocation();
+
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         if (typeof window !== 'undefined') {
             return sessionStorage.getItem('c3tc_admin_logged_in') === 'true';
@@ -18,12 +23,31 @@ export default function AdminPage() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loginError, setLoginError] = useState('');
-    const [activePage, setActivePage] = useState('overview');
+
+    const getPageFromPath = () => {
+        if (location.pathname === '/admin/checkin') return 'checkin';
+        return initialPage;
+    };
+
+    const [activePage, setActivePage] = useState(getPageFromPath);
+
+    useEffect(() => {
+        if (location.pathname === '/admin/checkin') {
+            setActivePage('checkin');
+        } else if (location.pathname === '/admin') {
+            // Only force overview if we aren't displaying one of the subpages like registrations
+            if (activePage === 'checkin') {
+                setActivePage('overview');
+            }
+        }
+    }, [location.pathname]);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         if (password === 'C3TC@admin2026') {
             sessionStorage.setItem('c3tc_admin_logged_in', 'true');
+            // Write session cookie for secure serverless API routes
+            document.cookie = `admin_session=C3TC@admin2026; path=/; max-age=86400; SameSite=Strict`;
             setIsLoggedIn(true);
             setLoginError('');
         } else {
@@ -33,7 +57,18 @@ export default function AdminPage() {
 
     const handleLogout = () => {
         sessionStorage.removeItem('c3tc_admin_logged_in');
+        // Clear session cookie
+        document.cookie = `admin_session=; path=/; max-age=0; SameSite=Strict`;
         setIsLoggedIn(false);
+    };
+
+    const handleNavigate = (page: string) => {
+        if (page === 'checkin') {
+            navigate('/admin/checkin');
+        } else {
+            navigate('/admin');
+            setActivePage(page);
+        }
     };
 
     if (!isLoggedIn) {
@@ -121,15 +156,17 @@ export default function AdminPage() {
     }
 
     return (
-        <AdminLayout activePage={activePage} onNavigate={setActivePage} onLogout={handleLogout}>
+        <AdminLayout activePage={activePage} onNavigate={handleNavigate} onLogout={handleLogout}>
             {activePage === 'overview' && <DashboardOverview />}
 
             {activePage === 'registrations' && <RegistrationTable />}
 
             {activePage === 'volunteers' && <VolunteerTable />}
 
+            {activePage === 'checkin' && <CheckInModule />}
+
             {/* Placeholders for other pages */}
-            {['finances', 'checkin', 'settings'].includes(activePage) && (
+            {['finances', 'settings'].includes(activePage) && (
                 <div className="flex flex-col items-center justify-center h-96 text-slate-400">
                     <h2 className="text-2xl font-bold capitalize">{activePage}</h2>
                     <p>Module under construction</p>
