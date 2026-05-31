@@ -22,7 +22,10 @@ const volunteerSchema = z.object({
     fullName: z.string().min(2, { message: "Required" }),
     email: z.string().email(),
     phone: z.string().min(10),
-    age: z.coerce.number().min(10).max(100),
+    age: z.preprocess(
+        (val) => (val === "" || val === null || val === undefined) ? null : Number(val),
+        z.number().nullable()
+    ).optional(),
     gender: z.enum(["Male", "Female"]),
     region: z.string().min(1, { message: "Select a region" }),
     province: z.string().optional(),
@@ -31,6 +34,24 @@ const volunteerSchema = z.object({
     department: z.string().min(1, { message: "Select a department" }),
     experience: z.string().optional(),
 }).superRefine((data, ctx) => {
+    // 1. Role-based age validation
+    if (data.role === "Teenager") {
+        if (data.age === null || data.age === undefined || isNaN(data.age)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Required",
+                path: ["age"],
+            });
+        } else if (data.age < 9 || data.age > 19) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Please enter a valid age for a teenage volunteer (9–19).",
+                path: ["age"],
+            });
+        }
+    }
+
+    // 2. Region / Province validation
     if (data.region === "Other (Outside Lagos/Ogun)") {
         if (!data.otherRegionSpecified || data.otherRegionSpecified.trim().length === 0) {
             ctx.addIssue({
@@ -55,9 +76,10 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
 
     const form = useForm<z.infer<typeof volunteerSchema>>({
         resolver: zodResolver(volunteerSchema),
-        defaultValues: { fullName: "", email: "", phone: "", age: 18, region: "", province: "", otherRegionSpecified: "", role: "Teenager", department: "" },
+        defaultValues: { fullName: "", email: "", phone: "", age: 15, region: "", province: "", otherRegionSpecified: "", role: "Teenager", department: "" },
     })
     const watchRegion = form.watch("region")
+    const watchRole = form.watch("role")
     const provinces = (watchRegion && watchRegion !== "Other (Outside Lagos/Ogun)") ? REGIONS_AND_PROVINCES[watchRegion] || [] : []
 
     async function onSubmit(values: z.infer<typeof volunteerSchema>) {
@@ -68,7 +90,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                     full_name: values.fullName,
                     email: values.email,
                     phone: values.phone,
-                    age: values.age,
+                    age: values.role === "Teenager" ? values.age : null,
                     gender: values.gender,
                     region: values.region,
                     province: values.region === "Other (Outside Lagos/Ogun)" ? "Other" : values.province,
@@ -106,10 +128,27 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                     <FormField control={form.control} name="phone" render={({ field }) => (
                         <FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="080..." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="age" render={({ field }) => (
-                            <FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
+                    <div className={watchRole === "Teenager" ? "grid grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
+                        {watchRole === "Teenager" && (
+                            <FormField control={form.control} name="age" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Age</FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            type="number" 
+                                            placeholder="E.g. 15"
+                                            {...field} 
+                                            value={field.value ?? ""} 
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                field.onChange(val === "" ? null : Number(val));
+                                            }}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                        )}
                         <FormField control={form.control} name="gender" render={({ field }) => (
                             <FormItem><FormLabel>Gender</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -181,7 +220,18 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                 <FormField control={form.control} name="role" render={({ field }) => (
                     <FormItem className="space-y-3"><FormLabel>I am a...</FormLabel>
                         <FormControl>
-                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row space-x-4">
+                            <RadioGroup 
+                                onValueChange={(val) => {
+                                    field.onChange(val);
+                                    if (val === "Teacher") {
+                                        form.setValue("age", null);
+                                    } else {
+                                        form.setValue("age", 15);
+                                    }
+                                }} 
+                                defaultValue={field.value} 
+                                className="flex flex-row space-x-4"
+                            >
                                 <FormItem className="flex items-center space-x-2 space-y-0">
                                     <FormControl><RadioGroupItem value="Teenager" /></FormControl><FormLabel className="font-normal">Teenager</FormLabel>
                                 </FormItem>

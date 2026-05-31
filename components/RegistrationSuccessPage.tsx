@@ -53,13 +53,12 @@ export default function RegistrationSuccessPage() {
                 ) : (
                     <div className="space-y-4">
                         <p className="text-gray-300">
-                            Thank you for joining the C3TC 3.0 (T.I.M.E) Volunteer Force.
-                            We will review your application and get back to you.
+                            Thank you for applying to join the Continent 3 Teens Conference (T.I.M.E '26) Volunteer Force. We will review your application and get back to you shortly.
                         </p>
                         <div className="bg-white/5 p-4 rounded-lg border border-white/10">
                             <p className="text-sm text-gray-400 mb-2">Registration Status</p>
-                            <span className="inline-block px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-semibold">
-                                Confirmed
+                            <span className="inline-block px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-semibold">
+                                Pending Review
                             </span>
                         </div>
                     </div>
