@@ -133,31 +133,42 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                     <FormField control={form.control} name="phone" render={({ field }) => (
                         <FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="080..." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <FormField control={form.control} name="role" render={({ field }) => (
-                        <FormItem className="space-y-3"><FormLabel>I am a...</FormLabel>
-                            <FormControl>
-                                <RadioGroup 
-                                    onValueChange={(val) => {
-                                        field.onChange(val);
-                                        if (val === "Teacher") {
-                                            form.setValue("age", null);
-                                        } else {
-                                            form.setValue("age", 15);
-                                        }
-                                    }} 
-                                    defaultValue={field.value} 
-                                    className="flex flex-row space-x-4 h-10 items-center"
-                                >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl><RadioGroupItem value="Teenager" /></FormControl><FormLabel className="font-normal">Teenager</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl><RadioGroupItem value="Teacher" /></FormControl><FormLabel className="font-normal">Teacher</FormLabel>
-                                    </FormItem>
-                                </RadioGroup>
-                            </FormControl><FormMessage /></FormItem>
-                    )} />
-                </div>
+                     <FormField control={form.control} name="role" render={({ field }) => (
+                         <FormItem className="space-y-3"><FormLabel className="font-semibold text-slate-800">I am a...</FormLabel>
+                             <FormControl>
+                                 <div className="flex flex-row flex-wrap items-center gap-6 mt-1.5 h-11">
+                                     <label className="flex items-center space-x-2.5 cursor-pointer font-medium text-sm text-slate-700">
+                                         <input 
+                                             type="radio" 
+                                             name="role" 
+                                             value="Teenager" 
+                                             checked={field.value === 'Teenager'} 
+                                             onChange={() => {
+                                                 field.onChange('Teenager');
+                                                 form.setValue('age', 15);
+                                             }}
+                                             className="appearance-none w-4 h-4 rounded-full border border-slate-300 checked:border-orange-500 checked:bg-orange-500 relative cursor-pointer outline-none checked:after:content-[''] checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:w-1.5 checked:after:h-1.5 checked:after:rounded-full checked:after:bg-white transition-all shrink-0"
+                                         />
+                                         <span>Teenager</span>
+                                     </label>
+                                     <label className="flex items-center space-x-2.5 cursor-pointer font-medium text-sm text-slate-700">
+                                         <input 
+                                             type="radio" 
+                                             name="role" 
+                                             value="Teacher" 
+                                             checked={field.value === 'Teacher'} 
+                                             onChange={() => {
+                                                 field.onChange('Teacher');
+                                                 form.setValue('age', null);
+                                             }}
+                                             className="appearance-none w-4 h-4 rounded-full border border-slate-300 checked:border-orange-500 checked:bg-orange-500 relative cursor-pointer outline-none checked:after:content-[''] checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:w-1.5 checked:after:h-1.5 checked:after:rounded-full checked:after:bg-white transition-all shrink-0"
+                                         />
+                                         <span>Teacher</span>
+                                     </label>
+                                 </div>
+                             </FormControl><FormMessage /></FormItem>
+                     )} />
+                 </div>
 
                 <div className={watchRole === "Teenager" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
                     <FormField control={form.control} name="gender" render={({ field }) => (

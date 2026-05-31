@@ -234,13 +234,22 @@ export default function CheckInModule() {
 
     // Stop camera scanner helper
     const stopScanner = async (): Promise<void> => {
-        if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+        if (html5QrCodeRef.current) {
             try {
-                await html5QrCodeRef.current.stop();
-                setIsScannerActive(false);
-                setIsFlashlightOn(false);
+                if (html5QrCodeRef.current.isScanning) {
+                    await html5QrCodeRef.current.stop();
+                }
             } catch (err) {
                 console.error('Error stopping scanner:', err);
+            } finally {
+                // Ensure DOM elements are cleared and reference released
+                const el = document.getElementById('qr-viewfinder');
+                if (el) {
+                    el.innerHTML = '';
+                }
+                html5QrCodeRef.current = null;
+                setIsScannerActive(false);
+                setIsFlashlightOn(false);
             }
         }
     };
@@ -303,7 +312,11 @@ export default function CheckInModule() {
     useEffect(() => {
         if (activeTab === 'qr') {
             setIsMobileScannerOpen(true);
-            startScanner();
+            // Wait for the DOM element #qr-viewfinder to render before initializing
+            const timer = setTimeout(() => {
+                startScanner();
+            }, 100);
+            return () => clearTimeout(timer);
         } else {
             stopScanner();
         }
@@ -771,25 +784,30 @@ export default function CheckInModule() {
 
             {/* MAIN CONTENT DISPLAY */}
             {activeTab === 'qr' && (
-                isMobile && !isMobileScannerOpen ? (
+                (isMobile && !isMobileScannerOpen) || (hasCameraPermission === false) ? (
                     <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden py-12 px-6 text-center space-y-4">
                         <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto text-orange-600">
-                            <Camera size={32} />
+                            {hasCameraPermission === false ? <XCircle size={32} className="text-red-500" /> : <Camera size={32} />}
                         </div>
                         <div className="space-y-1">
-                            <h4 className="font-bold text-slate-800 text-lg">QR Code Scanner</h4>
+                            <h4 className="font-bold text-slate-800 text-lg">
+                                {hasCameraPermission === false ? "Camera Access Blocked" : "QR Code Scanner"}
+                            </h4>
                             <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                                Use your device's camera to scan registrant QR codes for instant check-in.
+                                {hasCameraPermission === false 
+                                    ? "Please enable camera permissions in your browser configuration to scan registrant QR codes." 
+                                    : "Use your device's camera to scan registrant QR codes for instant check-in."}
                             </p>
                         </div>
                         <Button
                             onClick={() => {
+                                setHasCameraPermission(null);
                                 setIsMobileScannerOpen(true);
                                 startScanner();
                             }}
                             className="bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 px-6 rounded-xl cursor-pointer active:scale-95 transition-all shadow-md mx-auto flex items-center justify-center"
                         >
-                            Open Camera Scanner
+                            {hasCameraPermission === false ? "Retry Camera Access" : "Open Camera Scanner"}
                         </Button>
                     </Card>
                 ) : (
@@ -995,7 +1013,7 @@ export default function CheckInModule() {
 
                                             <div className="flex items-center gap-2 shrink-0">
                                                 {/* Mini Status Pill */}
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize
+                                                <span className={`status-badge px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize shrink-0
                                                     ${isAlreadyCheckedIn ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
                                                       isRejected ? 'bg-red-50 border-red-100 text-red-700' :
                                                       isPaid ? 'bg-blue-50 border-blue-100 text-blue-700' :
@@ -1006,7 +1024,7 @@ export default function CheckInModule() {
 
                                                 {/* Action Button */}
                                                 {isAlreadyCheckedIn ? (
-                                                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">In ✓</span>
+                                                    <span className="status-badge text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl shrink-0">In ✓</span>
                                                 ) : (
                                                     <div title={buttonTooltip}>
                                                         <Button

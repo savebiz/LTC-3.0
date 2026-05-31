@@ -265,7 +265,7 @@ export default function DashboardOverview() {
                                                 <p className="text-xs text-slate-500">{r.region} • {formatCategory(r.category)}</p>
                                             </div>
                                         </div>
-                                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border capitalize ${getStatusStyle(r)}`}>
+                                        <span className={`status-badge text-[10px] font-bold px-2.5 py-0.5 rounded-full border capitalize shrink-0 ${getStatusStyle(r)}`}>
                                             {getStatusLabel(r)}
                                         </span>
                                     </div>

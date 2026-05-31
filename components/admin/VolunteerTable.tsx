@@ -259,14 +259,14 @@ export default function VolunteerTable() {
                                                 <div className="text-xs text-slate-400 mt-0.5">{vol.phone}</div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 capitalize">
+                                                <span className="status-badge px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 capitalize shrink-0">
                                                     {vol.role}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-slate-700 font-medium">{vol.department}</td>
                                             <td className="px-6 py-4 text-slate-600">{vol.region}</td>
                                             <td className="px-6 py-4">
-                                                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border capitalize
+                                                <span className={`status-badge px-2.5 py-0.5 rounded-full text-[11px] font-bold border capitalize shrink-0
                                                     ${statusVal === 'confirmed' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
                                                       statusVal === 'rejected' ? 'bg-red-50 border-red-100 text-red-700' :
                                                       'bg-amber-50 border-amber-100 text-amber-700'}

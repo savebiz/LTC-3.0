@@ -135,6 +135,17 @@
   max-width: 100%;
 }
 
+/* Universal Status Badge Word-Wrapping Fix */
+.status-badge {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+
 @media (max-width: 767px) {
   /* Prevent horizontal scrolling on the entire page */
   html, body, #root {

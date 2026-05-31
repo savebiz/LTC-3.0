@@ -439,63 +439,79 @@ export default function RegistrationTable() {
       </div>
 
       {/* Search & Filters block */}
-      <div className="bg-white border rounded-2xl p-4 shadow-sm space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <div className="relative col-span-1 sm:col-span-2 lg:col-span-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <Input
-              placeholder="Search reference, name, payment ref..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-10 h-11 border-slate-200 rounded-xl bg-slate-50/50"
-            />
+      <div className="bg-white border rounded-2xl p-4 shadow-sm space-y-4 overflow-visible">
+        <div className="flex flex-col lg:flex-row gap-3 lg:items-center justify-between">
+          
+          {/* Main search and filters grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:flex lg:flex-1 gap-3 items-center w-full">
+            
+            {/* Search */}
+            <div className="relative col-span-1 sm:col-span-2 md:col-span-2 lg:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Input
+                placeholder="Search reference, name, payment ref..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pl-10 h-11 border-slate-200 rounded-xl bg-slate-50/50 w-full"
+              />
+            </div>
+
+            {/* Status */}
+            <div className="col-span-1 lg:flex-1 lg:min-w-[140px]">
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className="w-full h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none"
+              >
+                <option value="all">All Payments</option>
+                <option value="pending">Pending Verification</option>
+                <option value="cleared">Cleared Payments</option>
+                <option value="pay_on_arrival">Pay on Arrival</option>
+              </select>
+            </div>
+
+            {/* Category */}
+            <div className="col-span-1 lg:flex-1 lg:min-w-[140px]">
+              <select
+                value={categoryFilter}
+                onChange={e => setCategoryFilter(e.target.value)}
+                className="w-full h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none"
+              >
+                <option value="all">All Categories</option>
+                <option value="teenager">Teenagers</option>
+                <option value="teacher">Teachers / Adults</option>
+              </select>
+            </div>
+
+            {/* Region */}
+            <div className="col-span-1 lg:flex-1 lg:min-w-[140px]">
+              <select
+                value={regionFilter}
+                onChange={e => setRegionFilter(e.target.value)}
+                className="w-full h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none"
+              >
+                <option value="all">All Regions</option>
+                <option value="Lagos">Lagos State</option>
+                <option value="Ogun">Ogun State</option>
+                <option value="Other">Other Regions</option>
+              </select>
+            </div>
+
           </div>
 
-          <div className="col-span-1">
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="w-full h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none"
-            >
-              <option value="all">All Payments</option>
-              <option value="pending">Pending Verification</option>
-              <option value="cleared">Cleared Payments</option>
-              <option value="pay_on_arrival">Pay on Arrival</option>
-            </select>
-          </div>
-
-          <div className="col-span-1">
-            <select
-              value={categoryFilter}
-              onChange={e => setCategoryFilter(e.target.value)}
-              className="w-full h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none"
-            >
-              <option value="all">All Categories</option>
-              <option value="teenager">Teenagers</option>
-              <option value="teacher">Teachers / Adults</option>
-            </select>
-          </div>
-
-          <div className="col-span-1 flex gap-2">
-            <select
-              value={regionFilter}
-              onChange={e => setRegionFilter(e.target.value)}
-              className="flex-1 h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none"
-            >
-              <option value="all">All Regions</option>
-              <option value="Lagos">Lagos State</option>
-              <option value="Ogun">Ogun State</option>
-              <option value="Other">Other Regions</option>
-            </select>
+          {/* Export Button */}
+          <div className="w-full lg:w-auto shrink-0">
             <Button
               variant="outline"
               onClick={exportCSV}
-              className="h-11 px-3 border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl cursor-pointer"
+              className="w-full lg:w-auto h-11 px-4 gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer"
               title="Export Current View as CSV"
             >
-              <Download size={18} />
+              <Download size={16} />
+              Export CSV
             </Button>
           </div>
+
         </div>
       </div>
 
@@ -567,7 +583,7 @@ export default function RegistrationTable() {
                         {reg.payment_reference || '-'}
                       </td>
                       <td className="px-4 py-4 text-xs">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold capitalize border
+                        <span className={`status-badge px-2 py-1 rounded-full text-xs font-semibold capitalize border shrink-0
                           ${isCleared ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
                             isPending ? 'bg-orange-50 border-orange-100 text-orange-700' :
                             isArrival ? 'bg-blue-50 border-blue-100 text-blue-700' :
@@ -581,7 +597,7 @@ export default function RegistrationTable() {
                       </td>
                       <td className="px-4 py-4 text-center">
                         {reg.checked_in ? (
-                          <div className="mx-auto flex items-center justify-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded text-xs w-fit font-bold">
+                          <div className="status-badge mx-auto flex items-center justify-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded text-xs w-fit font-bold shrink-0">
                             <span>Checked In ✓</span>
                           </div>
                         ) : (
@@ -681,7 +697,7 @@ export default function RegistrationTable() {
                   <span className="font-mono font-bold text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-100">
                     {reg.batch_reference}
                   </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border
+                  <span className={`status-badge px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border shrink-0
                     ${isCleared ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
                       isPending ? 'bg-orange-50 border-orange-200 text-orange-700' :
                       isArrival ? 'bg-blue-50 border-blue-200 text-blue-700' :
@@ -797,7 +813,7 @@ export default function RegistrationTable() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold">
+                    <div className="status-badge flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0">
                       <span>Checked In ✓</span>
                     </div>
                   )}

@@ -170,7 +170,7 @@ export default function AuditLogTable() {
         }
 
         return (
-            <span className={`px-2 py-1.5 rounded-xl text-[11px] font-bold border capitalize whitespace-nowrap inline-flex items-center gap-1.5 ${badgeStyle}`}>
+            <span className={`status-badge px-2 py-1.5 rounded-xl text-[11px] font-bold border capitalize whitespace-nowrap inline-flex items-center gap-1.5 shrink-0 ${badgeStyle}`}>
                 {label}
             </span>
         );

@@ -712,16 +712,32 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                     )}
                 </div>
                 <FormField control={form.control} name="registrationType" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel className="font-semibold">How are you registering?</FormLabel>
+                    <FormItem className="space-y-3"><FormLabel className="font-semibold text-slate-800">How are you registering?</FormLabel>
                         <FormControl>
-                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row space-x-6">
-                                <FormItem className="flex items-center space-x-2 space-y-0">
-                                    <FormControl><RadioGroupItem value="individual" /></FormControl><FormLabel className="font-normal">Individual</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-2 space-y-0">
-                                    <FormControl><RadioGroupItem value="group" /></FormControl><FormLabel className="font-normal">Part of a Group</FormLabel>
-                                </FormItem>
-                            </RadioGroup>
+                            <div className="flex flex-row flex-wrap items-center gap-6 mt-1.5">
+                                <label className="flex items-center space-x-2.5 cursor-pointer font-medium text-sm text-slate-700">
+                                    <input 
+                                        type="radio" 
+                                        name="registrationType" 
+                                        value="individual" 
+                                        checked={field.value === 'individual'} 
+                                        onChange={() => field.onChange('individual')}
+                                        className="appearance-none w-4 h-4 rounded-full border border-slate-300 checked:border-orange-500 checked:bg-orange-500 relative cursor-pointer outline-none checked:after:content-[''] checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:w-1.5 checked:after:h-1.5 checked:after:rounded-full checked:after:bg-white transition-all shrink-0"
+                                    />
+                                    <span>Individual</span>
+                                </label>
+                                <label className="flex items-center space-x-2.5 cursor-pointer font-medium text-sm text-slate-700">
+                                    <input 
+                                        type="radio" 
+                                        name="registrationType" 
+                                        value="group" 
+                                        checked={field.value === 'group'} 
+                                        onChange={() => field.onChange('group')}
+                                        className="appearance-none w-4 h-4 rounded-full border border-slate-300 checked:border-orange-500 checked:bg-orange-500 relative cursor-pointer outline-none checked:after:content-[''] checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:w-1.5 checked:after:h-1.5 checked:after:rounded-full checked:after:bg-white transition-all shrink-0"
+                                    />
+                                    <span>Part of a Group</span>
+                                </label>
+                            </div>
                         </FormControl><FormMessage /></FormItem>
                 )} />
 
@@ -820,15 +836,23 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 {watchCategory === "Teenager" && (
                     <>
                         <FormField control={form.control} name="role" render={({ field }) => (
-                            <FormItem className="space-y-3"><FormLabel>Role</FormLabel>
+                            <FormItem className="space-y-3"><FormLabel className="font-semibold text-slate-800">Role</FormLabel>
                                 <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} value={field.value || ""} className="flex flex-col space-y-1">
+                                    <div className="flex flex-row flex-wrap items-center gap-6 mt-1.5">
                                         {TEEN_ROLES.map((role) => (
-                                            <FormItem key={role} className="flex items-center space-x-3 space-y-0">
-                                                <FormControl><RadioGroupItem value={role} /></FormControl><FormLabel className="font-normal">{role}</FormLabel>
-                                            </FormItem>
+                                            <label key={role} className="flex items-center space-x-2.5 cursor-pointer font-medium text-sm text-slate-700">
+                                                <input 
+                                                    type="radio" 
+                                                    name="role" 
+                                                    value={role} 
+                                                    checked={field.value === role} 
+                                                    onChange={() => field.onChange(role)}
+                                                    className="appearance-none w-4 h-4 rounded-full border border-slate-300 checked:border-orange-500 checked:bg-orange-500 relative cursor-pointer outline-none checked:after:content-[''] checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:w-1.5 checked:after:h-1.5 checked:after:rounded-full checked:after:bg-white transition-all shrink-0"
+                                                />
+                                                <span>{role}</span>
+                                            </label>
                                         ))}
-                                    </RadioGroup>
+                                    </div>
                                 </FormControl><FormMessage /></FormItem>
                         )} />
                         {watchRole === "Teens Executive" && (
