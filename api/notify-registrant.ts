@@ -112,72 +112,85 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; color: #27272a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
-        <div style="max-width: 600px; margin: 40px auto; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
-            
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 600px; margin: 40px auto; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; overflow: hidden; border-spacing: 0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
             <!-- Header Banner -->
-            <div style="background-color: #0a0f1e; padding: 40px 20px; text-align: center;">
-                <img src="${logoUrl}" alt="C3TC Logo" style="height: 80px; width: auto; display: block; margin: 0 auto 16px auto;" />
-                <h3 style="color: #f97316; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.5px;">T.I.M.E '26</h3>
-            </div>
+            <tr>
+                <td style="background-color: #0a0f1e; padding: 40px 20px; text-align: center;">
+                    <img src="${logoUrl}" alt="C3TC Logo" style="height: 80px; width: auto; display: block; margin: 0 auto 16px auto;" />
+                    <h3 style="color: #f97316; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">T.I.M.E '26</h3>
+                </td>
+            </tr>
 
             <!-- Greeting & Message -->
-            <div style="background-color: #ffffff; padding: 32px; font-size: 15px; color: #27272a; line-height: 1.6;">
-                <p style="font-size: 16px; font-weight: bold; color: #09090b; margin-top: 0; margin-bottom: 12px;">Hi ${full_name},</p>
-                <p style="margin: 0 0 24px 0;">Great news! Your payment has been verified and your registration for the Continent 3 Teens Conference is now confirmed. We can't wait to see you at T.I.M.E '26!</p>
+            <tr>
+                <td style="background-color: #ffffff; padding: 32px; font-size: 15px; color: #27272a; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                    <p style="font-size: 16px; font-weight: bold; color: #09090b; margin-top: 0; margin-bottom: 12px;">Hi ${full_name},</p>
+                    <p style="margin: 0 0 24px 0;">Great news! Your payment has been verified and your registration for the Continent 3 Teens Conference is now confirmed. We can't wait to see you at T.I.M.E '26!</p>
 
-                <!-- QR Code Block -->
-                <div style="text-align: center; margin: 32px 0;">
-                    <div style="background-color: #ffffff; padding: 12px; border: 1px solid #e4e4e7; border-radius: 12px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-                        <img src="${qrCodeUrl}" alt="Check-In QR Code" style="width: 200px; height: 200px; display: block;" />
+                    <!-- QR Code Block -->
+                    <div style="text-align: center; margin: 32px 0;">
+                        <div style="background-color: #ffffff; padding: 12px; border: 1px solid #e4e4e7; border-radius: 12px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                            <img src="${qrCodeUrl}" alt="Check-In QR Code" style="width: 200px; height: 200px; display: block;" />
+                        </div>
+                        <p style="font-size: 12px; color: #71717a; margin: 8px 0 0 0; font-weight: 500;">Show this QR code at the venue for express check-in</p>
                     </div>
-                    <p style="font-size: 12px; color: #71717a; margin: 8px 0 0 0; font-weight: 500;">Show this QR code at the venue for express check-in</p>
-                </div>
 
-                <!-- Event details block -->
-                <div style="background-color: #f8f8f8; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                        <tr>
-                            <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Reference Code:</td>
-                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #f97316; font-family: monospace; font-size: 15px;">${batch_reference || '---'}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Category:</td>
-                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">${formattedCategory}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Amount Paid:</td>
-                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">₦${amountPaid}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Event:</td>
-                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">Continent 3 Teens Conference — T.I.M.E</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Date:</td>
-                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">Saturday, 19th September, 2026</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 6px 0; color: #71717a; font-weight: 500; vertical-align: top;">Venue:</td>
-                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a; max-width: 250px;">Glory Arena, Redemption City of God, Ogun State</td>
-                        </tr>
-                    </table>
-                </div>
+                    <!-- Event details block -->
+                    <div style="background-color: #f8f8f8; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                            <tr>
+                                <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Reference Code:</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #f97316; font-family: monospace; font-size: 15px;">${batch_reference || '---'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Category:</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">${formattedCategory}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Amount Paid:</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">₦${amountPaid}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Event:</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">Continent 3 Teens Conference — T.I.M.E</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Date:</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">Saturday, 19th September, 2026</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #71717a; font-weight: 500; vertical-align: top;">Venue:</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a; max-width: 250px;">Glory Arena, Redemption City of God, Ogun State</td>
+                            </tr>
+                        </table>
+                    </div>
 
-                <!-- CTA Button -->
-                <div style="text-align: center; margin: 32px 0 16px 0;">
-                    <a href="${statusUrl}" target="_blank" style="display: block; background-color: #f97316; color: #ffffff !important; font-weight: bold; font-size: 15px; text-decoration: none; padding: 14px 24px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2); text-align: center;">View Your Registration Status →</a>
-                </div>
-            </div>
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 32px 0 16px 0;">
+                        <a href="${statusUrl}" target="_blank" style="display: block; background-color: #f97316; color: #ffffff !important; font-weight: bold; font-size: 15px; text-decoration: none; padding: 14px 24px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2); text-align: center;">View Your Registration Status →</a>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- Hidden space to break Gmail pattern detection -->
+            <tr>
+                <td style="padding: 0; margin: 0; line-height: 0;">
+                    <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+                        &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+                    </div>
+                </td>
+            </tr>
 
             <!-- Footer -->
-            <div style="background-color: #0a0f1e; color: #ffffff; padding: 32px 24px; text-align: center; font-size: 13px;">
-                <p style="font-size: 15px; font-weight: bold; margin: 0 0 6px 0; color: #ffffff;">See you at T.I.M.E '26!</p>
-                <p style="color: #f97316; font-weight: bold; margin: 0 0 24px 0;">The C3TC Planning Committee</p>
-                <p style="color: #71717a; font-size: 12px; margin: 0 0 16px 0; line-height: 1.5;">This is an automated confirmation email. Please do not reply directly to this email.</p>
-                <a href="https://continent3teens.cc" target="_blank" style="color: #ffffff !important; text-decoration: underline; font-weight: 500;">continent3teens.cc</a>
-            </div>
-
-        </div>
+            <tr>
+                <td style="background-color: #0a0f1e; color: #ffffff; padding: 32px 24px; text-align: center; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; max-width: 600px;">
+                    <p style="font-size: 15px; font-weight: bold; margin: 0 0 6px 0; color: #ffffff;">See you at T.I.M.E '26!</p>
+                    <p style="color: #f97316; font-weight: bold; margin: 0 0 24px 0;">The C3TC Planning Committee</p>
+                    <p style="color: #71717a; font-size: 12px; margin: 0 0 16px 0; line-height: 1.5;">This is an automated confirmation email. Please do not reply directly to this email.</p>
+                    <a href="https://www.continent3teens.cc" target="_blank" style="color: #ffffff !important; text-decoration: underline; font-weight: 500;">www.continent3teens.cc</a>
+                </td>
+            </tr>
+        </table>
     </body>
     </html>
     `;
