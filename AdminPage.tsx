@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import AdminLayout from './components/admin/AdminLayout';
+import AdminLayout, { ROLE_ACCESS, UserRole } from './components/admin/AdminLayout';
 import DashboardOverview from './components/admin/DashboardOverview';
 import RegistrationTable from './components/admin/RegistrationTable';
 import VolunteerTable from './components/admin/VolunteerTable';
@@ -10,12 +10,13 @@ import AuditLogTable from './components/admin/AuditLogTable';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Lock, UserCheck } from "lucide-react";
-import { supabase } from '@/lib/supabase';
+import { Eye, EyeOff, Lock, User, Check, ChevronDown } from "lucide-react";
+import { useDialog } from './components/ui/DialogProvider';
 
 export default function AdminPage({ initialPage = 'overview' }: { initialPage?: string }) {
     const navigate = useNavigate();
     const location = useLocation();
+    const { toast } = useDialog();
 
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -24,15 +25,19 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
         return false;
     });
 
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loginError, setLoginError] = useState('');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-    // Volunteer identity states
-    const [volunteers, setVolunteers] = useState<string[]>([]);
-    const [loginStep, setLoginStep] = useState<'password' | 'volunteer'>('password');
-    const [selectedVolunteer, setSelectedVolunteer] = useState('');
-    const [customVolunteer, setCustomVolunteer] = useState('');
+    // Active users list fetched from backend public endpoint
+    const [activeUsers, setActiveUsers] = useState<{ full_name: string; role: string }[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Mobile sidebar state to propagate to camera module
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const getPageFromPath = () => {
         if (location.pathname === '/admin/checkin') return 'checkin';
@@ -41,6 +46,7 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
 
     const [activePage, setActivePage] = useState(getPageFromPath);
 
+    // Synchronize page path
     useEffect(() => {
         if (location.pathname === '/admin/checkin') {
             setActivePage('checkin');
@@ -51,83 +57,140 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
         }
     }, [location.pathname]);
 
-    // Fetch authorized volunteers list from settings table
+    // Fetch active users for the login dropdown on mount
     useEffect(() => {
-        async function fetchVolunteers() {
+        async function fetchActiveUsers() {
             try {
-                const { data, error } = await supabase
-                    .from('settings')
-                    .select('*')
-                    .eq('key', 'checkin_volunteers')
-                    .single();
-                if (!error && data && Array.isArray(data.value)) {
-                    setVolunteers(data.value);
-                    if (data.value.length > 0) {
-                        setSelectedVolunteer(data.value[0]);
+                const res = await fetch('/api/admin/users?isPublic=true');
+                if (res.ok) {
+                    const resData = await res.json();
+                    if (resData.success && Array.isArray(resData.data)) {
+                        setActiveUsers(resData.data);
                     }
-                } else {
-                    const fallback = ["Registration Team Lead", "Victor Sabo", "Volunteer Name 1", "Volunteer Name 2"];
-                    setVolunteers(fallback);
-                    setSelectedVolunteer(fallback[0]);
                 }
             } catch (err) {
-                console.error('Error loading checkin volunteers settings:', err);
-                const fallback = ["Registration Team Lead", "Victor Sabo", "Volunteer Name 1", "Volunteer Name 2"];
-                setVolunteers(fallback);
-                setSelectedVolunteer(fallback[0]);
+                console.error('Failed to load active users for login screen:', err);
             }
         }
-
-        fetchVolunteers();
-    }, [isLoggedIn]); // Refresh if logout happens
-
-    const handlePasswordSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (password === 'C3TC@admin2026') {
-            setLoginStep('volunteer');
-            setLoginError('');
-        } else {
-            setLoginError('Incorrect password. Please try again.');
+        if (!isLoggedIn) {
+            fetchActiveUsers();
         }
-    };
+    }, [isLoggedIn]);
 
-    const handleVolunteerSubmit = (e: React.FormEvent) => {
+    // Close searchable user dropdown on outside clicks
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Enforce Role-Based Access Control and redirection checks on activePage change
+    useEffect(() => {
+        if (isLoggedIn) {
+            const role = (sessionStorage.getItem('c3tc_admin_role') || 'Super Admin') as UserRole;
+            const allowed = ROLE_ACCESS[role] || ROLE_ACCESS['Super Admin'];
+            
+            // Normalize finances tab to analytics
+            let targetPage = activePage;
+            if (targetPage === 'finances') targetPage = 'analytics';
+
+            if (!allowed.includes(targetPage)) {
+                setActivePage('overview');
+                navigate('/admin');
+                toast.error("Access Denied", "You don't have permission to access that page.");
+            }
+        }
+    }, [activePage, isLoggedIn, navigate]);
+
+    const handleLoginSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const volunteerName = selectedVolunteer === 'Other' ? customVolunteer.trim() : selectedVolunteer;
+        setLoginError('');
+        setIsLoggingIn(true);
 
-        if (!volunteerName) {
-            setLoginError('Please select or enter your name.');
+        if (!username.trim() || !password) {
+            setLoginError('Please enter both your name and password.');
+            setIsLoggingIn(false);
             return;
         }
 
-        sessionStorage.setItem('c3tc_admin_logged_in', 'true');
-        sessionStorage.setItem('c3tc_admin_volunteer', volunteerName);
-        // Save combined cookie for serverless API authorization verification
-        document.cookie = `admin_session=C3TC@admin2026|${encodeURIComponent(volunteerName)}; path=/; max-age=86400; SameSite=Strict`;
-        setIsLoggedIn(true);
-        setLoginError('');
+        try {
+            const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username.trim(),
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                const { full_name, role } = data.user;
+                
+                // Write session keys to sessionStorage
+                sessionStorage.setItem('c3tc_admin_logged_in', 'true');
+                sessionStorage.setItem('c3tc_admin_volunteer', full_name);
+                sessionStorage.setItem('c3tc_admin_role', role);
+
+                // Write authorization cookie format expected by backend API handlers
+                const expectedKey = 'C3TC@admin2026';
+                document.cookie = `admin_session=${expectedKey}|${encodeURIComponent(full_name)}|${encodeURIComponent(role)}; path=/; max-age=86400; SameSite=Strict`;
+
+                setIsLoggedIn(true);
+                // Set default page based on role access
+                const allowed = ROLE_ACCESS[role as UserRole] || ROLE_ACCESS['Super Admin'];
+                if (allowed.includes('overview')) {
+                    setActivePage('overview');
+                } else if (allowed.length > 0) {
+                    setActivePage(allowed[0]);
+                }
+                toast.success('Login Successful', `Welcome back, ${full_name}`);
+            } else {
+                setLoginError(data.error || 'Invalid credentials. Please try again.');
+            }
+        } catch (err: any) {
+            console.error('Login submit error:', err);
+            setLoginError('Failed to connect to authentication services.');
+        } finally {
+            setIsLoggingIn(false);
+        }
     };
 
     const handleLogout = () => {
         sessionStorage.removeItem('c3tc_admin_logged_in');
         sessionStorage.removeItem('c3tc_admin_volunteer');
-        // Clear session cookie
+        sessionStorage.removeItem('c3tc_admin_role');
+        // Clear authorization cookies
         document.cookie = `admin_session=; path=/; max-age=0; SameSite=Strict`;
         setIsLoggedIn(false);
-        setLoginStep('password');
+        setUsername('');
         setPassword('');
-        setSelectedVolunteer(volunteers[0] || 'Registration Team Lead');
-        setCustomVolunteer('');
+        setLoginError('');
+        setLoginError('');
     };
 
     const handleNavigate = (page: string) => {
-        if (page === 'checkin') {
+        // Map finances to analytics
+        const finalPage = page === 'finances' ? 'analytics' : page;
+        if (finalPage === 'checkin') {
             navigate('/admin/checkin');
         } else {
             navigate('/admin');
-            setActivePage(page);
+            setActivePage(finalPage);
         }
     };
+
+    // Filter active users on typing
+    const filteredUsers = activeUsers.filter(u => 
+        u.full_name.toLowerCase().includes(username.toLowerCase())
+    );
 
     if (!isLoggedIn) {
         return (
@@ -165,122 +228,105 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
 
                     <Card className="bg-slate-900/60 backdrop-blur-md border-slate-800/80 text-white shadow-2xl rounded-2xl p-6">
                         <CardContent className="p-0 space-y-6">
-                            {loginStep === 'password' ? (
-                                <>
-                                    <div className="flex flex-col items-center justify-center space-y-2">
-                                        <div className="w-12 h-12 bg-orange-500/10 border border-orange-500/20 text-orange-500 rounded-full flex items-center justify-center">
-                                            <Lock size={20} />
-                                        </div>
-                                        <h2 className="text-xl font-bold">Admin Authorization</h2>
-                                        <p className="text-xs text-slate-400 text-center">
-                                            Enter the password to access administrative modules
-                                        </p>
-                                    </div>
+                            <div className="flex flex-col items-center justify-center space-y-2">
+                                <div className="w-12 h-12 bg-orange-500/10 border border-orange-500/20 text-orange-500 rounded-full flex items-center justify-center">
+                                    <Lock size={20} />
+                                </div>
+                                <h2 className="text-xl font-bold">Admin Portal Login</h2>
+                                <p className="text-xs text-slate-400 text-center">
+                                    Enter your credentials to access the administrative dashboard
+                                </p>
+                            </div>
 
-                                    <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
-                                            <div className="relative flex items-center w-full">
-                                                <Input
-                                                    type={showPassword ? "text" : "password"}
-                                                    placeholder="Enter password"
-                                                    value={password}
-                                                    onChange={(e) => setPassword(e.target.value)}
-                                                    className="admin-password-input w-full !bg-white !text-[#111827] border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 h-12 pr-12 placeholder:!text-[#9ca3af] rounded-xl font-medium"
-                                                    required
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-9 w-9 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 transition-all focus:outline-none cursor-pointer"
+                            <form onSubmit={handleLoginSubmit} className="space-y-4">
+                                {/* Searchable Dropdown for User Name */}
+                                <div className="space-y-2 relative" ref={dropdownRef}>
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Your Name</label>
+                                    <div className="relative flex items-center">
+                                        <Input
+                                            type="text"
+                                            placeholder="Select or enter your name"
+                                            value={username}
+                                            onChange={(e) => {
+                                                setUsername(e.target.value);
+                                                setLoginError('');
+                                                setShowDropdown(true);
+                                            }}
+                                            onFocus={() => setShowDropdown(true)}
+                                            className="w-full !bg-white !text-slate-900 border-slate-200 focus:border-orange-500 h-12 pr-10 rounded-xl font-medium"
+                                            required
+                                        />
+                                        <ChevronDown 
+                                            size={18} 
+                                            className="absolute right-3 text-slate-400 cursor-pointer pointer-events-none"
+                                        />
+                                    </div>
+                                    
+                                    {showDropdown && (filteredUsers.length > 0 || username.trim() !== '') && (
+                                        <div className="absolute left-0 right-0 top-[76px] z-50 bg-slate-900 border border-slate-800 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-800/50">
+                                            {filteredUsers.map((user) => (
+                                                <div
+                                                    key={user.full_name}
+                                                    onClick={() => {
+                                                        setUsername(user.full_name);
+                                                        setShowDropdown(false);
+                                                    }}
+                                                    className="flex items-center justify-between px-4 py-3 hover:bg-slate-800 cursor-pointer text-sm font-medium transition-colors"
                                                 >
-                                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                                </button>
-                                            </div>
-                                            {loginError && (
-                                                <p className="text-xs text-red-500 mt-1 font-medium animate-pulse">{loginError}</p>
+                                                    <span>{user.full_name}</span>
+                                                    <span className="text-[10px] text-slate-400 font-bold bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded uppercase">
+                                                        {user.role}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {username.trim() !== '' && !filteredUsers.some(u => u.full_name.toLowerCase() === username.trim().toLowerCase()) && (
+                                                <div 
+                                                    onClick={() => setShowDropdown(false)}
+                                                    className="px-4 py-3 text-xs text-orange-500 italic font-medium cursor-pointer hover:bg-slate-800"
+                                                >
+                                                    Use custom: "{username.trim()}"
+                                                </div>
                                             )}
                                         </div>
+                                    )}
+                                </div>
 
-                                        <Button
-                                            type="submit"
-                                            className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold tracking-wide rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all"
-                                        >
-                                            Authorize Access
-                                        </Button>
-                                    </form>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="flex flex-col items-center justify-center space-y-2">
-                                        <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full flex items-center justify-center">
-                                            <UserCheck size={20} />
-                                        </div>
-                                        <h2 className="text-xl font-bold">Volunteer Identity</h2>
-                                        <p className="text-xs text-slate-400 text-center">
-                                            Who is operating the admin dashboard today?
-                                        </p>
-                                    </div>
-
-                                    <form onSubmit={handleVolunteerSubmit} className="space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Who are you today?</label>
-                                            <select
-                                                value={selectedVolunteer}
-                                                onChange={(e) => {
-                                                    setSelectedVolunteer(e.target.value);
-                                                    setLoginError('');
-                                                }}
-                                                className="w-full bg-slate-800 text-white border border-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 h-12 px-4 rounded-xl font-medium outline-none"
-                                            >
-                                                {volunteers.map((name) => (
-                                                    <option key={name} value={name} className="bg-slate-900 text-white">{name}</option>
-                                                ))}
-                                                <option value="Other" className="bg-slate-900 text-white">Other (Write-in)</option>
-                                            </select>
-                                        </div>
-
-                                        {selectedVolunteer === 'Other' && (
-                                            <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
-                                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Enter Your Name</label>
-                                                <Input
-                                                    type="text"
-                                                    placeholder="Your full name"
-                                                    value={customVolunteer}
-                                                    onChange={(e) => {
-                                                        setCustomVolunteer(e.target.value);
-                                                        setLoginError('');
-                                                    }}
-                                                    className="!bg-white !text-slate-900 border-slate-200 focus:border-orange-500 h-12 placeholder:text-slate-400 rounded-xl font-medium"
-                                                    required
-                                                />
-                                            </div>
-                                        )}
-
-                                        {loginError && (
-                                            <p className="text-xs text-red-500 mt-1 font-medium animate-pulse">{loginError}</p>
-                                        )}
-
-                                        <Button
-                                            type="submit"
-                                            className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold tracking-wide rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all"
-                                        >
-                                            Confirm & Login
-                                        </Button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setLoginStep('password');
+                                {/* Password field */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
+                                    <div className="relative flex items-center w-full">
+                                        <Input
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="Enter password"
+                                            value={password}
+                                            onChange={(e) => {
+                                                setPassword(e.target.value);
                                                 setLoginError('');
                                             }}
-                                            className="w-full text-center text-xs text-slate-400 hover:text-white mt-2 transition-colors focus:outline-none cursor-pointer"
+                                            className="admin-password-input w-full !bg-white !text-[#111827] border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 h-12 pr-12 placeholder:!text-[#9ca3af] rounded-xl font-medium"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-9 w-9 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 transition-all focus:outline-none cursor-pointer"
                                         >
-                                            ← Back to Password Entry
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                         </button>
-                                    </form>
-                                </>
-                            )}
+                                    </div>
+                                    {loginError && (
+                                        <p className="text-xs text-red-500 mt-1 font-medium animate-pulse">{loginError}</p>
+                                    )}
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    disabled={isLoggingIn}
+                                    className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold tracking-wide rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all"
+                                >
+                                    {isLoggingIn ? 'Logging in...' : 'Login'}
+                                </Button>
+                            </form>
                         </CardContent>
                     </Card>
                 </div>
@@ -289,23 +335,29 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
     }
 
     return (
-        <AdminLayout activePage={activePage} onNavigate={handleNavigate} onLogout={handleLogout}>
+        <AdminLayout 
+            activePage={activePage} 
+            onNavigate={handleNavigate} 
+            onLogout={handleLogout}
+            isSidebarOpen={isSidebarOpen}
+            onSidebarOpenChange={setIsSidebarOpen}
+        >
             {activePage === 'overview' && <DashboardOverview />}
 
             {activePage === 'registrations' && <RegistrationTable />}
 
             {activePage === 'volunteers' && <VolunteerTable />}
 
-            {activePage === 'checkin' && <CheckInModule />}
+            {activePage === 'checkin' && <CheckInModule isSidebarOpen={isSidebarOpen} />}
 
             {activePage === 'auditlog' && <AuditLogTable />}
 
             {activePage === 'settings' && <SettingsPage />}
 
-            {/* Placeholders for other pages */}
-            {['finances'].includes(activePage) && (
+            {/* Placeholder for Analytics Page */}
+            {activePage === 'analytics' && (
                 <div className="flex flex-col items-center justify-center h-96 text-slate-400">
-                    <h2 className="text-2xl font-bold capitalize">{activePage}</h2>
+                    <h2 className="text-2xl font-bold capitalize">Analytics</h2>
                     <p>Module under construction</p>
                 </div>
             )}

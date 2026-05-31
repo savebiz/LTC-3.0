@@ -36,7 +36,7 @@ interface ActivityLogItem {
     isOffline?: boolean;
 }
 
-export default function CheckInModule() {
+export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen?: boolean }) {
     const { confirm, toast } = useDialog();
     const [activeTab, setActiveTab] = useState<'qr' | 'manual'>('qr');
     const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? navigator.onLine : true);
@@ -184,15 +184,80 @@ export default function CheckInModule() {
         }
     }
 
+    // Fetch Today's Successful Check-ins from Audit Log
+    async function fetchTodaysActivity() {
+        try {
+            const midnight = new Date();
+            midnight.setHours(0, 0, 0, 0);
+            const midnightISO = midnight.toISOString();
+
+            const { data, error } = await supabase
+                .from('audit_log')
+                .select(`
+                    id,
+                    created_at,
+                    registrant_name,
+                    action,
+                    registration_id,
+                    registrations (
+                        category
+                    )
+                `)
+                .eq('action', 'check_in_success')
+                .gte('created_at', midnightISO)
+                .order('created_at', { ascending: false });
+
+            if (!error && data) {
+                const mapped: ActivityLogItem[] = data.map((log: any) => {
+                    const reg = log.registrations;
+                    return {
+                        id: log.registration_id || log.id,
+                        full_name: log.registrant_name || 'Unknown',
+                        category: reg?.category || 'Delegate',
+                        checked_in_at: log.created_at
+                    };
+                });
+                setActivityLog(mapped);
+                sessionStorage.setItem('c3tc_checkin_activity', JSON.stringify(mapped));
+            }
+        } catch (err) {
+            console.error('Error fetching today\'s activity:', err);
+        }
+    }
+
+    // Watch isSidebarOpen from prop to close camera on menu drawer open
+    useEffect(() => {
+        if (isSidebarOpen) {
+            setIsMobileScannerOpen(false);
+            if (html5QrCodeRef.current) {
+                try {
+                    const stream = (html5QrCodeRef.current as any).localMediaStream;
+                    if (stream) {
+                        stream.getTracks().forEach((track: any) => track.stop());
+                    }
+                } catch (err) {
+                    console.error('Error stopping stream tracks directly:', err);
+                }
+            }
+            stopScanner();
+        }
+    }, [isSidebarOpen]);
+
     // Initial Setup
     useEffect(() => {
         fetchStats();
+        fetchTodaysActivity();
 
         // Subscriptions
         const channel = supabase
             .channel('checkin-stats')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations' }, () => {
                 fetchStats();
+                fetchTodaysActivity();
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_log' }, () => {
+                fetchStats();
+                fetchTodaysActivity();
             })
             .subscribe();
 
@@ -204,6 +269,7 @@ export default function CheckInModule() {
             setIsOnline(true);
             syncPendingCheckins();
             cacheRegistrations();
+            fetchTodaysActivity();
         };
         const handleOffline = () => {
             setIsOnline(false);
@@ -541,6 +607,7 @@ export default function CheckInModule() {
 
                 // Update Stats
                 fetchStats();
+                fetchTodaysActivity();
 
                 // Add to Activity
                 addActivityLog({
@@ -704,6 +771,36 @@ export default function CheckInModule() {
                 .scan-line {
                     animation: scanAnimation 2.2s linear infinite;
                 }
+                @media (max-width: 767px) {
+                    .mobile-fullscreen-viewfinder {
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        z-index: 50 !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        max-width: 100vw !important;
+                        max-height: 100vh !important;
+                    }
+                    .mobile-fullscreen-viewfinder #qr-viewfinder {
+                        width: 100% !important;
+                        height: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                    .mobile-fullscreen-viewfinder video {
+                        width: 100% !important;
+                        height: 100% !important;
+                        object-fit: cover !important;
+                        transform: none !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                }
             `}} />
 
             {/* Offline Status Warning Banner */}
@@ -811,16 +908,16 @@ export default function CheckInModule() {
                         </Button>
                     </Card>
                 ) : (
-                    <div className={isMobile && isMobileScannerOpen ? "fixed inset-0 w-screen h-screen z-50 bg-slate-950 flex flex-col overflow-hidden" : "space-y-4"}>
+                    <div className={isMobile && isMobileScannerOpen ? "mobile-fullscreen-viewfinder bg-slate-950" : "space-y-4"}>
                         {/* Viewfinder Panel */}
                         <div className={`relative bg-slate-950 overflow-hidden flex items-center justify-center shadow-xl ${
                             isMobile && isMobileScannerOpen
-                                ? "h-[85vh] w-full border-none rounded-none"
+                                ? "mobile-fullscreen-viewfinder border-none rounded-none"
                                 : "w-full aspect-video md:aspect-[4/3] max-h-[50vh] rounded-2xl border border-slate-800"
                         }`}>
                             
                             {/* Video Element Target Container */}
-                            <div id="qr-viewfinder" className="w-full h-full object-cover [&>video]:object-cover [&>video]:w-full [&>video]:h-full"></div>
+                            <div id="qr-viewfinder" className="w-full h-full"></div>
 
                             {/* Back button on mobile */}
                             {isMobile && isMobileScannerOpen && (
@@ -830,7 +927,7 @@ export default function CheckInModule() {
                                         setIsMobileScannerOpen(false);
                                         await stopScanner();
                                     }}
-                                    className="absolute top-6 left-6 bg-slate-900/80 text-white border border-slate-700/50 h-11 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all z-20 pointer-events-auto cursor-pointer"
+                                    className="absolute top-6 left-6 bg-slate-900/85 text-white border border-slate-700/60 h-11 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all z-20 pointer-events-auto cursor-pointer shadow-lg backdrop-blur-sm"
                                 >
                                     ← Back
                                 </button>
@@ -887,40 +984,43 @@ export default function CheckInModule() {
                                     </Button>
                                 </div>
                             )}
+
+                            {/* Controls overlays for mobile scanner */}
+                            {isMobile && isMobileScannerOpen && (
+                                <>
+                                    <div className="absolute bottom-24 left-0 right-0 pointer-events-none flex justify-center z-20">
+                                        <span className="text-[10px] font-extrabold tracking-wider text-slate-300 bg-slate-900/60 px-3 py-1.5 rounded-full uppercase text-center backdrop-blur-sm">
+                                            POINT CAMERA AT REGISTRANT'S QR CODE
+                                        </span>
+                                    </div>
+                                    {isScannerActive && (
+                                        <>
+                                            <Button 
+                                                size="sm" 
+                                                variant="secondary"
+                                                onClick={toggleFlashlight}
+                                                className="absolute bottom-8 left-8 bg-slate-900/85 hover:bg-slate-900 border border-slate-700/60 text-white rounded-xl h-12 w-12 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer z-20 backdrop-blur-sm"
+                                                title="Toggle Flashlight"
+                                            >
+                                                <Lightbulb size={20} className={isFlashlightOn ? "text-yellow-400" : "text-white"} />
+                                            </Button>
+                                            <Button 
+                                                size="sm" 
+                                                variant="secondary"
+                                                onClick={toggleCamera}
+                                                className="absolute bottom-8 right-8 bg-slate-900/85 hover:bg-slate-900 border border-slate-700/60 text-white rounded-xl h-12 w-12 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer z-20 backdrop-blur-sm"
+                                                title="Switch Camera"
+                                            >
+                                                <RotateCw size={20} />
+                                            </Button>
+                                        </>
+                                    )}
+                                </>
+                            )}
                         </div>
 
-                        {/* Controls/Label below camera container on mobile, or inline on desktop */}
-                        {isMobile && isMobileScannerOpen ? (
-                            <div className="h-[15vh] w-full bg-slate-950 border-t border-slate-900 flex flex-col items-center justify-center py-2 px-6 gap-2.5 shrink-0 z-20">
-                                <div className="pointer-events-none">
-                                    <span className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase text-center">
-                                        POINT CAMERA AT REGISTRANT'S QR CODE
-                                    </span>
-                                </div>
-                                {isScannerActive && (
-                                    <div className="flex items-center justify-center gap-6 pointer-events-auto">
-                                        <Button 
-                                            size="sm" 
-                                            variant="secondary"
-                                            onClick={toggleFlashlight}
-                                            className="bg-slate-900 border border-slate-800 text-white rounded-xl h-11 w-11 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer shrink-0"
-                                            title="Toggle Flashlight"
-                                        >
-                                            <Lightbulb size={18} className={isFlashlightOn ? "text-yellow-400" : "text-white"} />
-                                        </Button>
-                                        <Button 
-                                            size="sm" 
-                                            variant="secondary"
-                                            onClick={toggleCamera}
-                                            className="bg-slate-900 border border-slate-800 text-white rounded-xl h-11 w-11 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer shrink-0"
-                                            title="Switch Camera"
-                                        >
-                                            <RotateCw size={18} />
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
+                        {/* Controls/Label below camera container for non-mobile or when mobile scanner is collapsed */}
+                        {!(isMobile && isMobileScannerOpen) && (
                             <>
                                 {isScannerActive && (
                                     <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-20 pointer-events-auto px-4">
@@ -1060,14 +1160,14 @@ export default function CheckInModule() {
                             Today's Activity
                         </h4>
                         <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full uppercase">
-                            Session Check-ins: {activityLog.length}
+                            TODAY'S CHECK-INS: {activityLog.length}
                         </span>
                     </div>
 
                     <div className="space-y-3 max-h-[220px] overflow-y-auto divide-y divide-slate-50">
                         {activityLog.length === 0 ? (
                             <p className="text-center py-6 text-slate-400 text-xs font-medium">
-                                No check-ins performed in this session.
+                                No check-ins performed today.
                             </p>
                         ) : (
                             activityLog.map((log, i) => (

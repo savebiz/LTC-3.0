@@ -1,25 +1,48 @@
 import { useState } from 'react';
 import {
-    LayoutDashboard, Users, CreditCard, QrCode,
+    LayoutDashboard, Users, BarChart3, QrCode,
     Settings, LogOut, Menu, X, ClipboardList
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+export type UserRole = 'Super Admin' | 'Access Admin' | 'Volunteer' | 'Supervisor';
+
+export const ROLE_ACCESS: Record<UserRole, string[]> = {
+    'Super Admin': ['overview', 'registrations', 'volunteers', 'analytics', 'auditlog', 'checkin', 'settings'],
+    'Access Admin': ['overview', 'registrations', 'volunteers', 'analytics', 'checkin'],
+    'Volunteer': ['overview', 'checkin'],
+    'Supervisor': ['overview', 'analytics']
+};
 
 interface AdminLayoutProps {
     children: React.ReactNode;
     activePage: string;
     onNavigate: (page: string) => void;
     onLogout?: () => void;
+    isSidebarOpen?: boolean;
+    onSidebarOpenChange?: (open: boolean) => void;
 }
 
-export default function AdminLayout({ children, activePage, onNavigate, onLogout }: AdminLayoutProps) {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+export default function AdminLayout({ 
+    children, 
+    activePage, 
+    onNavigate, 
+    onLogout,
+    isSidebarOpen: externalSidebarOpen,
+    onSidebarOpenChange
+}: AdminLayoutProps) {
+    const [localSidebarOpen, setLocalSidebarOpen] = useState(false);
+    
+    const isSidebarOpen = externalSidebarOpen !== undefined ? externalSidebarOpen : localSidebarOpen;
+    const setIsSidebarOpen = onSidebarOpenChange !== undefined ? onSidebarOpenChange : setLocalSidebarOpen;
 
-    // Read volunteer name from session storage
+    // Read volunteer name & role from session storage
     const volunteerName = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_volunteer') : null;
+    const volunteerRole = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_role') : null;
+    const activeRole = (volunteerRole || 'Super Admin') as UserRole;
 
-    // Calculate volunteer initials (e.g. "VS" for Victor Sabo)
+    // Calculate volunteer initials
     const initials = volunteerName 
         ? volunteerName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)
         : 'AD';
@@ -28,11 +51,15 @@ export default function AdminLayout({ children, activePage, onNavigate, onLogout
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'registrations', label: 'Registrations', icon: Users },
         { id: 'volunteers', label: 'Volunteers', icon: Users },
-        { id: 'finances', label: 'Finances', icon: CreditCard },
+        { id: 'analytics', label: 'Analytics', icon: BarChart3 },
         { id: 'auditlog', label: 'Audit Log', icon: ClipboardList },
         { id: 'checkin', label: 'Check-in', icon: QrCode },
         { id: 'settings', label: 'Settings', icon: Settings },
     ];
+
+    // Filter nav items based on user role
+    const allowedTabs = ROLE_ACCESS[activeRole] || ROLE_ACCESS['Super Admin'];
+    const filteredNavItems = NAV_ITEMS.filter(item => allowedTabs.includes(item.id));
 
     return (
         <div className="min-h-screen bg-gray-50 flex">
@@ -59,7 +86,7 @@ export default function AdminLayout({ children, activePage, onNavigate, onLogout
                 </div>
 
                 <nav className="px-4 space-y-2 mt-4">
-                    {NAV_ITEMS.map((item) => (
+                    {filteredNavItems.map((item) => (
                         <button
                             key={item.id}
                             onClick={() => {
@@ -103,13 +130,13 @@ export default function AdminLayout({ children, activePage, onNavigate, onLogout
                     </button>
 
                     <div className="flex items-center gap-4 ml-auto">
-                        <div className="text-right hidden md:block">
-                            <p className="text-sm font-bold text-slate-900">Super Admin</p>
-                            <p className="text-xs text-slate-500">
-                                {volunteerName ? `Logged in as: ${volunteerName}` : 'Session Active'}
-                            </p>
+                        <div className="text-right hidden md:flex md:flex-col md:items-end justify-center">
+                            <p className="text-sm font-bold text-slate-900 leading-tight">{volunteerName || 'Super Admin'}</p>
+                            <span className="text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-lg mt-0.5 inline-block shrink-0">
+                                {activeRole}
+                            </span>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold border-2 border-orange-200 shadow-sm" title={volunteerName || 'Super Admin'}>
+                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold border-2 border-orange-200 shadow-sm" title={`${volunteerName || 'Super Admin'} / ${activeRole}`}>
                             {initials}
                         </div>
                     </div>

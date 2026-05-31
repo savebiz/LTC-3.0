@@ -483,33 +483,29 @@ export default function RegistrationTable() {
               </select>
             </div>
 
-            {/* Region */}
-            <div className="col-span-1 lg:flex-1 lg:min-w-[140px]">
+            {/* Region & Export CSV wrapper */}
+            <div className="col-span-1 lg:flex-1 lg:min-w-[140px] flex items-center gap-2 w-full">
               <select
                 value={regionFilter}
                 onChange={e => setRegionFilter(e.target.value)}
-                className="w-full h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none"
+                className="flex-1 h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none min-w-0"
               >
                 <option value="all">All Regions</option>
                 <option value="Lagos">Lagos State</option>
                 <option value="Ogun">Ogun State</option>
                 <option value="Other">Other Regions</option>
               </select>
+
+              <Button
+                variant="outline"
+                onClick={exportCSV}
+                className="h-11 w-11 shrink-0 p-0 border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl flex items-center justify-center cursor-pointer"
+                title="Export CSV"
+              >
+                <Download size={18} />
+              </Button>
             </div>
 
-          </div>
-
-          {/* Export Button */}
-          <div className="w-full lg:w-auto shrink-0">
-            <Button
-              variant="outline"
-              onClick={exportCSV}
-              className="w-full lg:w-auto h-11 px-4 gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer"
-              title="Export Current View as CSV"
-            >
-              <Download size={16} />
-              Export CSV
-            </Button>
           </div>
 
         </div>
