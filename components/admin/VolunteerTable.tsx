@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Download, Search, Loader2 } from 'lucide-react';
+import { Download, Search, Loader2, Users, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { useDialog } from '../ui/DialogProvider';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function VolunteerTable() {
     const [data, setData] = useState<any[]>([]);
@@ -134,8 +135,65 @@ export default function VolunteerTable() {
         a.click();
     }
 
+    const totalVolunteers = data.length;
+    const confirmedVolunteers = data.filter(v => (v.status || 'pending') === 'confirmed').length;
+    const pendingVolunteers = data.filter(v => (v.status || 'pending') === 'pending').length;
+    const rejectedVolunteers = data.filter(v => (v.status || 'pending') === 'rejected').length;
+
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
+            {/* Volunteers Summary Bar */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                {/* Card 1: Total */}
+                <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
+                    <CardContent className="p-3 md:p-4 flex flex-row items-center gap-3 w-full">
+                        <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
+                            <Users size={16} className="md:w-5 md:h-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Total Volunteers</p>
+                            <h3 className="text-sm md:text-xl font-black text-slate-800 mt-0.5 whitespace-nowrap">{totalVolunteers.toLocaleString()}</h3>
+                        </div>
+                    </CardContent>
+                </Card>
+                {/* Card 2: Confirmed */}
+                <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
+                    <CardContent className="p-3 md:p-4 flex flex-row items-center gap-3 w-full">
+                        <div className="p-2 md:p-3 bg-emerald-50 text-emerald-500 rounded-xl shrink-0">
+                            <CheckCircle2 size={16} className="md:w-5 md:h-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Confirmed</p>
+                            <h3 className="text-sm md:text-xl font-black text-emerald-600 mt-0.5 whitespace-nowrap">{confirmedVolunteers.toLocaleString()}</h3>
+                        </div>
+                    </CardContent>
+                </Card>
+                {/* Card 3: Pending */}
+                <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
+                    <CardContent className="p-3 md:p-4 flex flex-row items-center gap-3 w-full">
+                        <div className="p-2 md:p-3 bg-amber-50 text-amber-500 rounded-xl shrink-0">
+                            <Clock size={16} className="md:w-5 md:h-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Pending</p>
+                            <h3 className="text-sm md:text-xl font-black text-amber-600 mt-0.5 whitespace-nowrap">{pendingVolunteers.toLocaleString()}</h3>
+                        </div>
+                    </CardContent>
+                </Card>
+                {/* Card 4: Rejected */}
+                <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
+                    <CardContent className="p-3 md:p-4 flex flex-row items-center gap-3 w-full">
+                        <div className="p-2 md:p-3 bg-red-50 text-red-500 rounded-xl shrink-0">
+                            <XCircle size={16} className="md:w-5 md:h-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Rejected</p>
+                            <h3 className="text-sm md:text-xl font-black text-red-600 mt-0.5 whitespace-nowrap">{rejectedVolunteers.toLocaleString()}</h3>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <h2 className="text-2xl font-bold font-heading text-slate-800">Volunteers ({filteredData.length})</h2>
                 <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">

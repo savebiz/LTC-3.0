@@ -166,17 +166,17 @@ export default function DashboardOverview() {
             </div>
 
             {/* STATS GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 {STATS.map((stat, i) => (
-                    <Card key={i} className="shadow-sm border-slate-200">
-                        <CardContent className="p-6 flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                                <h3 className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</h3>
-                                <p className="text-xs text-slate-500 mt-1 font-medium">{stat.change}</p>
+                    <Card key={i} className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
+                        <CardContent className="p-3 md:p-4 flex flex-row items-center justify-between gap-3 w-full">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{stat.label}</p>
+                                <h3 className="text-sm md:text-xl font-black text-slate-900 mt-0.5 whitespace-nowrap">{stat.value}</h3>
+                                <p className="text-[10px] text-slate-400 mt-0.5 font-medium whitespace-nowrap">{stat.change}</p>
                             </div>
-                            <div className={`p-3 rounded-full bg-slate-50 ${stat.color}`}>
-                                <stat.icon size={24} />
+                            <div className={`p-2 md:p-3 rounded-xl bg-slate-50 shrink-0 ${stat.color}`}>
+                                <stat.icon size={18} className="md:w-5 md:h-5" />
                             </div>
                         </CardContent>
                     </Card>
