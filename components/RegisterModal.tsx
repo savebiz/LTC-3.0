@@ -51,9 +51,21 @@ export default function RegisterModal({ open, onOpenChange, defaultTab = "delega
                     </DialogDescription>
                 </DialogHeader>
                 <Tabs defaultValue="delegate" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="delegate" disabled={isLocked && activeTab !== "delegate"}>Delegate</TabsTrigger>
-                        <TabsTrigger value="volunteer" disabled={isLocked && activeTab !== "volunteer"}>Volunteer</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 h-11 bg-[#f3f4f6] p-[4px] rounded-full md:inline-flex md:h-9 md:bg-muted md:p-1 md:rounded-lg">
+                        <TabsTrigger 
+                            value="delegate" 
+                            disabled={isLocked && activeTab !== "delegate"}
+                            className="w-full h-full rounded-full transition-all duration-150 ease-in-out flex items-center justify-center text-slate-500 font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:shadow-[0_1px_3px_rgba(0,0,0,0.1)] md:w-auto md:h-auto md:rounded-md md:px-3 md:py-1 md:text-sm md:font-medium md:text-muted-foreground md:data-[state=active]:bg-background md:data-[state=active]:text-foreground md:data-[state=active]:shadow"
+                        >
+                            Delegate
+                        </TabsTrigger>
+                        <TabsTrigger 
+                            value="volunteer" 
+                            disabled={isLocked && activeTab !== "volunteer"}
+                            className="w-full h-full rounded-full transition-all duration-150 ease-in-out flex items-center justify-center text-slate-500 font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:shadow-[0_1px_3px_rgba(0,0,0,0.1)] md:w-auto md:h-auto md:rounded-md md:px-3 md:py-1 md:text-sm md:font-medium md:text-muted-foreground md:data-[state=active]:bg-background md:data-[state=active]:text-foreground md:data-[state=active]:shadow"
+                        >
+                            Volunteer
+                        </TabsTrigger>
                     </TabsList>
                     <TabsContent value="delegate" className="py-4">
                         <DelegateRegistrationForm
