@@ -13,6 +13,13 @@ export default async function handler(req: any, res: any) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // 2. Validate Admin Key Header
+    const adminKey = req.headers['x-admin-key'];
+    const expectedKey = process.env.ADMIN_KEY || 'C3TC@admin2026';
+    if (!adminKey || adminKey !== expectedKey) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid admin key' });
+    }
+
     try {
         const { id, field, value, updates } = req.body;
 
@@ -20,14 +27,38 @@ export default async function handler(req: any, res: any) {
             return res.status(400).json({ error: 'Missing registration id' });
         }
 
-        // Support both single-field updates and batch update objects
+        // Support both single-field updates, batch updates object, and root-level fields
         let updatePayload: any = {};
+        
         if (updates && typeof updates === 'object') {
             updatePayload = { ...updates };
-        } else if (field) {
+            // Handle double-nesting if updates contains updates
+            if (updatePayload.updates && typeof updatePayload.updates === 'object') {
+                updatePayload = { ...updatePayload.updates };
+            }
+        } else if (field && field !== 'updates') {
             updatePayload[field] = value;
+        } else if (field === 'updates' && typeof value === 'object') {
+            updatePayload = { ...value };
         } else {
-            return res.status(400).json({ error: 'Missing field or updates payload' });
+            // Fallback to any other keys in req.body except metadata
+            const { id: _, field: __, value: ___, ...rest } = req.body;
+            updatePayload = { ...rest };
+            // Handle nesting in fallback case
+            if (updatePayload.updates && typeof updatePayload.updates === 'object') {
+                updatePayload = { ...updatePayload.updates };
+            }
+        }
+
+        // Safety cleanup to ensure no metadata/unsupported columns are passed to Supabase
+        delete updatePayload.updates;
+        delete updatePayload.id;
+        delete updatePayload.field;
+        delete updatePayload.value;
+
+        // Ensure there is actually something to update
+        if (Object.keys(updatePayload).length === 0) {
+            return res.status(400).json({ error: 'Missing updates payload fields' });
         }
 
         console.log(`API update-registration: Performing update on record ${id}:`, updatePayload);

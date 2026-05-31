@@ -62,6 +62,7 @@ export default function RegistrationTable() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-admin-key': 'C3TC@admin2026',
       },
       body: JSON.stringify({ id, updates }),
     });
@@ -85,12 +86,10 @@ export default function RegistrationTable() {
     setIsSubmitting(true);
     try {
       await updateRegistration(id, {
-        updates: {
-          payment_status: 'cleared',
-          status: 'confirmed',
-          cleared_by: 'admin',
-          cleared_at: new Date().toISOString()
-        }
+        payment_status: 'cleared',
+        status: 'confirmed',
+        cleared_by: 'admin',
+        cleared_at: new Date().toISOString()
       });
 
       setData(prev => prev.map(r => r.id === id ? {
@@ -123,12 +122,10 @@ export default function RegistrationTable() {
     setIsSubmitting(true);
     try {
       await updateRegistration(id, {
-        updates: {
-          payment_status: 'cleared',
-          status: 'confirmed',
-          cleared_by: 'admin',
-          cleared_at: new Date().toISOString()
-        }
+        payment_status: 'cleared',
+        status: 'confirmed',
+        cleared_by: 'admin',
+        cleared_at: new Date().toISOString()
       });
 
       setData(prev => prev.map(r => r.id === id ? {
@@ -161,10 +158,8 @@ export default function RegistrationTable() {
     setIsSubmitting(true);
     try {
       await updateRegistration(id, {
-        updates: {
-          checked_in: true,
-          checked_in_at: new Date().toISOString()
-        }
+        checked_in: true,
+        checked_in_at: new Date().toISOString()
       });
 
       setData(prev => prev.map(r => r.id === id ? {
@@ -197,13 +192,11 @@ export default function RegistrationTable() {
     setIsSubmitting(true);
     try {
       await updateRegistration(id, {
-        updates: {
-          status: 'rejected',
-          payment_status: 'rejected',
-          rejection_reason: reason?.trim() || '',
-          cleared_by: 'admin',
-          cleared_at: new Date().toISOString()
-        }
+        status: 'rejected',
+        payment_status: 'rejected',
+        rejection_reason: reason?.trim() || '',
+        cleared_by: 'admin',
+        cleared_at: new Date().toISOString()
       });
 
       setData(prev => prev.map(r => r.id === id ? {
