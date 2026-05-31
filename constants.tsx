@@ -25,9 +25,9 @@ export const LINKS = [
 ];
 
 export const SOCIAL_LINKS = [
-  { label: "Instagram", url: "https://www.instagram.com/lagosteensconference?igsh=MWtoYzBoanY0bTFzdw==", icon: "Instagram" },
-  { label: "Twitter", url: "https://x.com/LTC_RCCG?s=20", icon: "Twitter" },
-  { label: "Facebook", url: "https://www.facebook.com/share/p/1DXoop4kXD/", icon: "Facebook" },
+  { label: "Instagram", url: "https://instagram.com/p/DYralkoClJs/", icon: "Instagram" },
+  { label: "Twitter", url: "https://x.com/i/status/2058143991367872643", icon: "Twitter" },
+  { label: "Facebook", url: "https://m.facebook.com/story.php?story_fbid=pfbid0NUS6Xvf2Ph1FCj34KA4mdkGjrUpZ9zAtubJ36Te7xksmK2uSzyb9RnR1y4W5Npsgl&id=61556880640052", icon: "Facebook" },
   { label: "Tiktok", url: "https://www.tiktok.com/@lagosteensconference?is_from_webapp=1&sender_device=pc", icon: "Tiktok" } // Using Music as placeholder for Tiktok if icon unavailable
 ];
 
