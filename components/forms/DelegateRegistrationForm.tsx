@@ -265,7 +265,6 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 group_coordinator_name: form.getValues("registrationType") === "group" ? form.getValues("groupCoordinatorName") : null,
                 group_coordinator_phone: form.getValues("registrationType") === "group" ? form.getValues("groupCoordinatorPhone") : null,
                 type: 'delegate',
-                status: 'pending_payment',
                 amount_due: d.category === "Teenager" ? 1000 : 1500,
                 category: d.category === "Teenager" ? "teenager" : "teacher",
                 // Redesigned columns:
@@ -350,7 +349,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
                 const { error } = await supabase
                     .from('registrations')
-                    .update({ status: 'pending_verification' })
+                    .update({ payment_status: 'pending' })
                     .in('id', ids);
 
                 if (error) throw error;
