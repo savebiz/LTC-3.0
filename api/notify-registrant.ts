@@ -1,14 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from './admin/db_helper';
 
-// Configuration placeholders (User can adjust FROM_EMAIL as needed)
 const FROM_EMAIL = `C3TC Team <${process.env.RESEND_FROM_EMAIL || 'noreply@continent3teens.cc'}>`;
-
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 const resendApiKey = process.env.RESEND_API_KEY || '';
-
-// Create a Supabase Client using the Service Role Key (preferred) or Anon Key
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: any, res: any) {
     // 1. Validate HTTP Method
@@ -68,7 +61,7 @@ export default async function handler(req: any, res: any) {
         }
 
         // e) Updates notification_sent = true and notification_sent_at = now() on that record after sending
-        const { error: updateError } = await supabaseAdmin
+        const { error: updateError } = await getSupabaseAdmin()
             .from('registrations')
             .update({
                 notification_sent: true,

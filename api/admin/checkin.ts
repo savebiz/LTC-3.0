@@ -1,10 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-// Create a Supabase Client using the Service Role Key to bypass RLS
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+import { getSupabaseAdmin } from './db_helper';
 
 function parseCookies(req: any) {
     const list: Record<string, string> = {};
@@ -35,7 +29,7 @@ async function logAuditEvent(event: {
     notes?: string;
 }) {
     try {
-        const { error } = await supabaseAdmin
+        const { error } = await getSupabaseAdmin()
             .from('audit_log')
             .insert({
                 action: event.action,
@@ -100,7 +94,7 @@ export default async function handler(req: any, res: any) {
         console.log(`API checkin: Processing request with qr_code_hash=${qr_code_hash}, registration_id=${registration_id}`);
 
         // 3. Find Registrant
-        let query = supabaseAdmin.from('registrations').select('*');
+        let query = getSupabaseAdmin().from('registrations').select('*');
         if (qr_code_hash) {
             query = query.eq('qr_code_hash', qr_code_hash);
         } else {
@@ -186,7 +180,7 @@ export default async function handler(req: any, res: any) {
         }
 
         // 5. Perform Check-in Update
-        const { data: updatedData, error: updateError } = await supabaseAdmin
+        const { data: updatedData, error: updateError } = await getSupabaseAdmin()
             .from('registrations')
             .update({
                 checked_in: true,

@@ -1,10 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-// Create a Supabase Client using the Service Role Key to bypass RLS
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+import { getSupabaseAdmin } from './db_helper';
 
 function parseCookies(req: any) {
     const list: Record<string, string> = {};
@@ -66,7 +60,7 @@ export default async function handler(req: any, res: any) {
             updatePayload.rejection_reason = rejection_reason;
         }
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getSupabaseAdmin()
             .from('volunteers')
             .update(updatePayload)
             .eq('id', id)

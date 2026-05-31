@@ -1,10 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-// Create a Supabase Client using the Service Role Key to bypass RLS
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+import { getSupabaseAdmin } from './db_helper';
 
 function parseCookies(req: any) {
     const list: Record<string, string> = {};
@@ -35,7 +29,7 @@ async function logAuditEvent(event: {
     notes?: string;
 }) {
     try {
-        const { error } = await supabaseAdmin
+        const { error } = await getSupabaseAdmin()
             .from('audit_log')
             .insert({
                 action: event.action,
@@ -135,7 +129,7 @@ export default async function handler(req: any, res: any) {
         console.log(`API update-registration: Performing update on record ${id}:`, updatePayload);
 
         // Fetch the existing record to know the old values
-        const { data: oldRecord, error: fetchError } = await supabaseAdmin
+        const { data: oldRecord, error: fetchError } = await getSupabaseAdmin()
             .from('registrations')
             .select('*')
             .eq('id', id)
@@ -145,7 +139,7 @@ export default async function handler(req: any, res: any) {
             console.error('Error fetching old record for audit/notification check:', fetchError);
         }
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getSupabaseAdmin()
             .from('registrations')
             .update(updatePayload)
             .eq('id', id)

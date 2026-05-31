@@ -1,9 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+import { getSupabaseAdmin } from './db_helper';
 
 function parseCookies(req: any) {
     const list: Record<string, string> = {};
@@ -25,7 +20,7 @@ export default async function handler(req: any, res: any) {
     if (req.method === 'GET') {
         try {
             const { key } = req.query;
-            let query = supabaseAdmin.from('settings').select('*');
+            let query = getSupabaseAdmin().from('settings').select('*');
             if (key) {
                 query = query.eq('key', key);
             }
@@ -67,7 +62,7 @@ export default async function handler(req: any, res: any) {
                 return res.status(400).json({ error: 'Missing setting key' });
             }
 
-            const { data, error } = await supabaseAdmin
+            const { data, error } = await getSupabaseAdmin()
                 .from('settings')
                 .upsert({ key, value })
                 .select();

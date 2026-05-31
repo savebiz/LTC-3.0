@@ -1,8 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-export const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+let cachedSupabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+export function getSupabaseAdmin() {
+    if (cachedSupabaseAdmin) return cachedSupabaseAdmin;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Supabase environment variables (VITE_SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY) are missing in the backend environment. Please configure them in your deployment dashboard.');
+    }
+    cachedSupabaseAdmin = createClient(supabaseUrl, supabaseKey);
+    return cachedSupabaseAdmin;
+}
 
 export interface AdminUser {
     id: string;
@@ -32,7 +41,7 @@ export function getDefaultUsers(): AdminUser[] {
 export async function getAdminUsers(): Promise<AdminUser[]> {
     try {
         // Try querying the admin_users table first
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getSupabaseAdmin()
             .from('admin_users')
             .select('*');
         
@@ -42,7 +51,7 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
 
         // If table doesn't exist, fallback to settings key 'admin_users'
         console.log('Falling back to settings table for admin_users...');
-        const { data: settingData, error: settingError } = await supabaseAdmin
+        const { data: settingData, error: settingError } = await getSupabaseAdmin()
             .from('settings')
             .select('*')
             .eq('key', 'admin_users')
@@ -68,7 +77,7 @@ export async function saveAdminUsers(users: AdminUser[]): Promise<boolean> {
         // Try writing to admin_users table first
         // Since we do updates/upserts, we can upsert or delete/insert. Let's do upsert.
         // We check if the table exists by doing a dry query.
-        const { error: checkError } = await supabaseAdmin.from('admin_users').select('id').limit(1);
+        const { error: checkError } = await getSupabaseAdmin().from('admin_users').select('id').limit(1);
         
         if (!checkError) {
             // Table exists, perform upserts. 
@@ -76,9 +85,9 @@ export async function saveAdminUsers(users: AdminUser[]): Promise<boolean> {
             // So we can clear and insert, or do a comparison.
             // Let's do clear and insert (or write individual inserts/deletes).
             // A simple clear and insert:
-            const { error: deleteError } = await supabaseAdmin.from('admin_users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            const { error: deleteError } = await getSupabaseAdmin().from('admin_users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
             if (!deleteError) {
-                const { error: insertError } = await supabaseAdmin.from('admin_users').insert(users);
+                const { error: insertError } = await getSupabaseAdmin().from('admin_users').insert(users);
                 if (!insertError) return true;
                 console.error('Insert error in admin_users:', insertError);
             } else {
@@ -95,7 +104,7 @@ export async function saveAdminUsers(users: AdminUser[]): Promise<boolean> {
 
 async function saveAdminUsersToSettings(users: AdminUser[]): Promise<boolean> {
     try {
-        const { error } = await supabaseAdmin
+        const { error } = await getSupabaseAdmin()
             .from('settings')
             .upsert({ key: 'admin_users', value: users });
         
