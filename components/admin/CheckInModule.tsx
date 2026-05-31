@@ -793,11 +793,11 @@ export default function CheckInModule() {
                         </Button>
                     </Card>
                 ) : (
-                    <div className="space-y-4">
+                    <div className={isMobile && isMobileScannerOpen ? "fixed inset-0 w-screen h-screen z-50 bg-slate-950 flex flex-col overflow-hidden" : "space-y-4"}>
                         {/* Viewfinder Panel */}
                         <div className={`relative bg-slate-950 overflow-hidden flex items-center justify-center shadow-xl ${
                             isMobile && isMobileScannerOpen
-                                ? "fixed inset-0 w-screen h-screen z-50 border-none rounded-none"
+                                ? "h-[85vh] w-full border-none rounded-none"
                                 : "w-full aspect-video md:aspect-[4/3] max-h-[50vh] rounded-2xl border border-slate-800"
                         }`}>
                             
@@ -812,7 +812,7 @@ export default function CheckInModule() {
                                         setIsMobileScannerOpen(false);
                                         await stopScanner();
                                     }}
-                                    className="absolute top-6 left-6 bg-slate-900/80 text-white border border-slate-700/50 px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-all z-20 pointer-events-auto cursor-pointer"
+                                    className="absolute top-6 left-6 bg-slate-900/80 text-white border border-slate-700/50 h-11 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all z-20 pointer-events-auto cursor-pointer"
                                 >
                                     ← Back
                                 </button>
@@ -821,10 +821,26 @@ export default function CheckInModule() {
                             {/* Scanner Centering Framework Overlays */}
                             {isScannerActive && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                                    <div className="w-48 h-48 sm:w-60 sm:h-60 border-4 border-dashed border-orange-500 rounded-3xl relative flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.2)]">
-                                        {/* Scan animated horizontal line */}
-                                        <div className="scan-line absolute left-3 right-3 h-0.5 bg-orange-500/80 rounded shadow-[0_0_12px_#f97316]"></div>
-                                    </div>
+                                    {isMobile && isMobileScannerOpen ? (
+                                        <div className="w-[70vw] h-[70vw] max-w-[320px] max-h-[320px] relative flex items-center justify-center">
+                                            {/* White corner markers */}
+                                            <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
+                                            <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
+                                            <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
+                                            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-lg"></div>
+                                            
+                                            {/* Orange dashed inner box */}
+                                            <div className="absolute inset-1.5 border-2 border-dashed border-orange-500 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.2)]">
+                                                {/* Scan animated horizontal line */}
+                                                <div className="scan-line absolute left-3 right-3 h-0.5 bg-orange-500/80 rounded shadow-[0_0_12px_#f97316]"></div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="w-48 h-48 sm:w-60 sm:h-60 border-4 border-dashed border-orange-500 rounded-3xl relative flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.2)]">
+                                            {/* Scan animated horizontal line */}
+                                            <div className="scan-line absolute left-3 right-3 h-0.5 bg-orange-500/80 rounded shadow-[0_0_12px_#f97316]"></div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -848,45 +864,47 @@ export default function CheckInModule() {
                                             Please enable camera permissions in your browser configuration to scan registrant QR codes.
                                         </p>
                                     </div>
-                                    <Button size="sm" className="bg-orange-500 hover:bg-orange-600 font-bold rounded-xl h-10 px-4 cursor-pointer" onClick={startScanner}>
+                                    <Button size="sm" className="bg-orange-500 hover:bg-orange-600 font-bold rounded-xl h-11 px-4 cursor-pointer" onClick={startScanner}>
                                         Retry Camera Access
                                     </Button>
                                 </div>
                             )}
+                        </div>
 
-                            {/* Label strip on mobile */}
-                            {isMobile && isMobileScannerOpen && (
-                                <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-                                    <span className="bg-black/60 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider text-white whitespace-nowrap">
+                        {/* Controls/Label below camera container on mobile, or inline on desktop */}
+                        {isMobile && isMobileScannerOpen ? (
+                            <div className="h-[15vh] w-full bg-slate-950 border-t border-slate-900 flex flex-col items-center justify-center py-2 px-6 gap-2.5 shrink-0 z-20">
+                                <div className="pointer-events-none">
+                                    <span className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase text-center">
                                         POINT CAMERA AT REGISTRANT'S QR CODE
                                     </span>
                                 </div>
-                            )}
-
-                            {/* Control group buttons */}
-                            {isScannerActive && (
-                                isMobile && isMobileScannerOpen ? (
-                                    <>
+                                {isScannerActive && (
+                                    <div className="flex items-center justify-center gap-6 pointer-events-auto">
                                         <Button 
                                             size="sm" 
                                             variant="secondary"
                                             onClick={toggleFlashlight}
-                                            className="absolute bottom-8 left-8 bg-slate-900/80 hover:bg-slate-900 border border-slate-700/50 text-white rounded-xl h-12 w-12 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all z-20 cursor-pointer"
+                                            className="bg-slate-900 border border-slate-800 text-white rounded-xl h-11 w-11 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer shrink-0"
                                             title="Toggle Flashlight"
                                         >
-                                            <Lightbulb size={20} className={isFlashlightOn ? "text-yellow-400" : "text-white"} />
+                                            <Lightbulb size={18} className={isFlashlightOn ? "text-yellow-400" : "text-white"} />
                                         </Button>
                                         <Button 
                                             size="sm" 
                                             variant="secondary"
                                             onClick={toggleCamera}
-                                            className="absolute bottom-8 right-8 bg-slate-900/80 hover:bg-slate-900 border border-slate-700/50 text-white rounded-xl h-12 w-12 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all z-20 cursor-pointer"
+                                            className="bg-slate-900 border border-slate-800 text-white rounded-xl h-11 w-11 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer shrink-0"
                                             title="Switch Camera"
                                         >
-                                            <RotateCw size={20} />
+                                            <RotateCw size={18} />
                                         </Button>
-                                    </>
-                                ) : (
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                {isScannerActive && (
                                     <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-20 pointer-events-auto px-4">
                                         <Button 
                                             size="sm" 
@@ -907,14 +925,11 @@ export default function CheckInModule() {
                                             <RotateCw size={16} />
                                         </Button>
                                     </div>
-                                )
-                            )}
-                        </div>
-
-                        {!(isMobile && isMobileScannerOpen) && (
-                            <p className="text-center text-xs text-slate-500 font-bold tracking-wide uppercase">
-                                Point camera at registrant's QR code
-                            </p>
+                                )}
+                                <p className="text-center text-xs text-slate-500 font-bold tracking-wide uppercase">
+                                    Point camera at registrant's QR code
+                                </p>
+                            </>
                         )}
                     </div>
                 )

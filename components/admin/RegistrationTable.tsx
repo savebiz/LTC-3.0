@@ -815,17 +815,18 @@ export default function RegistrationTable() {
           <div className="absolute inset-0 bg-black/45 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in" onClick={() => setHistoryRegistrant(null)} />
           
           {/* Panel Content */}
-          <div className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col p-6 overflow-y-auto animate-in slide-in-from-right duration-300 z-10 border-l border-slate-200">
+          <div className="relative history-panel w-[100vw] max-w-[100vw] md:w-full md:max-w-lg bg-white h-full shadow-2xl flex flex-col px-4 py-6 md:p-6 overflow-y-auto animate-in slide-in-from-right duration-300 z-10 border-l border-slate-200 overflow-x-hidden">
             <div className="flex items-center justify-between border-b pb-4 mb-4">
-              <div>
-                <h3 className="font-bold text-lg text-slate-800">Registration History</h3>
-                <p className="text-xs text-slate-500 font-semibold">{historyRegistrant.full_name} ({historyRegistrant.batch_reference})</p>
+              <div className="min-w-0 pr-2">
+                <h3 className="font-bold text-lg text-slate-800 break-words whitespace-normal">Registration History</h3>
+                <p className="text-xs text-slate-500 font-semibold break-all whitespace-normal">{historyRegistrant.full_name} ({historyRegistrant.batch_reference})</p>
               </div>
               <button 
                 onClick={() => setHistoryRegistrant(null)} 
-                className="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer shrink-0 h-11 w-11 flex items-center justify-center"
+                title="Close panel"
               >
-                <X size={20} />
+                <X size={22} />
               </button>
             </div>
 
@@ -872,27 +873,36 @@ export default function RegistrationTable() {
                   }
 
                   return (
-                    <div key={log.id} className="flex gap-4 relative">
+                    <div key={log.id} className="flex gap-3 relative overflow-hidden">
                       {/* Timeline dot */}
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white font-bold text-[10px] ${statusColor}`}>
                         •
                       </div>
 
                       {/* Timeline Content */}
-                      <div className="flex-1 bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-2 shadow-sm">
-                        <div className="flex flex-wrap items-center justify-between gap-1 border-b border-slate-200/60 pb-1.5">
-                          <span className="font-bold text-xs text-slate-800">{actionText}</span>
-                          <span className="text-[10px] font-semibold text-slate-400">{new Date(log.created_at).toLocaleString()}</span>
+                      <div className="flex-1 bg-slate-50 border border-slate-100 p-3 sm:p-4 rounded-2xl space-y-2 shadow-sm min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200/60 pb-1.5">
+                          <span className="font-bold text-xs text-slate-800 break-words whitespace-normal">{actionText}</span>
+                          <span className="text-[10px] font-semibold text-slate-400 break-words whitespace-normal">{new Date(log.created_at).toLocaleString()}</span>
                         </div>
                         <div className="text-xs space-y-1">
-                          <p className="text-slate-600"><strong>Operator:</strong> <span className="font-bold text-slate-800">{log.performed_by}</span></p>
+                          <p className="text-slate-600 break-words whitespace-normal"><strong>Operator:</strong> <span className="font-bold text-slate-800">{log.performed_by}</span></p>
                           {log.notes && (
-                            <p className="text-slate-500 italic mt-1 font-medium bg-slate-100/50 p-1.5 rounded-lg border border-slate-200/30">
+                            <p className="text-slate-500 italic mt-1 font-medium bg-slate-100/50 p-1.5 rounded-lg border border-slate-200/30 break-words whitespace-normal">
                               Note: {log.notes}
                             </p>
                           )}
                           {log.device_info && (
-                            <p className="text-[10px] text-slate-400 truncate max-w-xs" title={log.device_info}>
+                            <p 
+                              className="text-[10px] text-slate-400 break-words whitespace-normal" 
+                              title={log.device_info}
+                              style={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden'
+                              }}
+                            >
                               Device: {log.device_info}
                             </p>
                           )}
