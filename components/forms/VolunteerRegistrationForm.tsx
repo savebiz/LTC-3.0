@@ -7,6 +7,7 @@ import { z } from "zod"
 import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { useDialog } from "../ui/DialogProvider"
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form"
@@ -73,6 +74,7 @@ const volunteerSchema = z.object({
 
 export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void }) {
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const { toast } = useDialog()
 
     const form = useForm<z.infer<typeof volunteerSchema>>({
         resolver: zodResolver(volunteerSchema),
@@ -107,7 +109,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
             window.location.href = '/registration-success?type=volunteer';
         } catch (error: any) {
             console.error("Volunteer Registration Error:", error);
-            alert("Failed to register: " + (error.message || "Unknown error"));
+            toast.error("Registration failed. Please try again.", error.message || "Unknown error");
         } finally {
             setIsSubmitting(false);
         }
@@ -115,7 +117,9 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+            <form onSubmit={form.handleSubmit(onSubmit, () => {
+                toast.error("Registration failed. Please try again.", "Please correct the highlighted errors in the form.");
+            })} className="space-y-6 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="fullName" render={({ field }) => (
                         <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>

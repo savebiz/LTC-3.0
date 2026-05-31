@@ -13,6 +13,8 @@ import Gallery from '@/components/sections/Gallery';
 import Legacy from '@/components/sections/Legacy';
 import Footer from '@/components/sections/Footer';
 
+import { DialogProvider } from './components/ui/DialogProvider';
+
 const App: React.FC = () => {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [registerTab, setRegisterTab] = useState<"delegate" | "volunteer">("delegate");
@@ -28,34 +30,36 @@ const App: React.FC = () => {
   };
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={
-          <div className="bg-black min-h-screen text-white font-sans selection:bg-orange-500/30">
+    <DialogProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={
+            <div className="bg-black min-h-screen text-white font-sans selection:bg-orange-500/30">
 
-            <Hero onRegisterClick={openRegister} onVolunteerClick={openVolunteer} />
+              <Hero onRegisterClick={openRegister} onVolunteerClick={openVolunteer} />
 
-            <Info />
+              <Info />
 
-            <Gallery />
+              <Gallery />
 
-            <Legacy />
+              <Legacy />
 
-            <Footer onRegisterClick={openRegister} onVolunteerClick={openVolunteer} />
+              <Footer onRegisterClick={openRegister} onVolunteerClick={openVolunteer} />
 
-            <RegisterModal
-              open={isRegisterOpen}
-              onOpenChange={setIsRegisterOpen}
-              defaultTab={registerTab}
-            />
-          </div>
-        } />
-        <Route path="/registration-success" element={<RegistrationSuccessPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/debug-env" element={<DebugPage />} />
-        <Route path="/check-status" element={<CheckStatus />} />
-      </Routes>
-    </Router>
+              <RegisterModal
+                open={isRegisterOpen}
+                onOpenChange={setIsRegisterOpen}
+                defaultTab={registerTab}
+              />
+            </div>
+          } />
+          <Route path="/registration-success" element={<RegistrationSuccessPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/debug-env" element={<DebugPage />} />
+          <Route path="/check-status" element={<CheckStatus />} />
+        </Routes>
+      </Router>
+    </DialogProvider>
   );
 };
 

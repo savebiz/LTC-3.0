@@ -8,6 +8,7 @@ import {
   AlertCircle, MapPin, CreditCard, UserCheck, Trash2
 } from 'lucide-react';
 import { LAGOS_REGIONS, OGUN_REGIONS } from "@/constants";
+import { useDialog } from '../ui/DialogProvider';
 
 interface Registration {
   id: string;
@@ -35,11 +36,9 @@ export default function RegistrationTable() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [regionFilter, setRegionFilter] = useState('all');
-  const [rejectingReg, setRejectingReg] = useState<Registration | null>(null);
-  const [rejectionReason, setRejectionReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorAlert, setErrorAlert] = useState<string | null>(null);
+
+  const { confirm, toast } = useDialog();
 
   useEffect(() => {
     fetchRegistrations();
@@ -75,9 +74,15 @@ export default function RegistrationTable() {
   }
 
   async function handleMarkAsCleared(id: string) {
-    if (!confirm('Mark this payment as cleared? This will confirm the delegate and trigger email notifications.')) return;
+    const { confirmed } = await confirm({
+      type: 'success',
+      title: 'Confirm Payment Clearance',
+      body: 'Are you sure you want to mark this payment as cleared? The registrant will receive a confirmation email.',
+      confirmText: 'Yes, Clear Payment'
+    });
+    if (!confirmed) return;
+
     setIsSubmitting(true);
-    setErrorAlert(null);
     try {
       await updateRegistration(id, {
         updates: {
@@ -96,22 +101,26 @@ export default function RegistrationTable() {
         cleared_at: new Date().toISOString()
       } : r));
 
-      setSuccessMessage('Registration payment successfully cleared.');
-      setTimeout(() => setSuccessMessage(null), 3000);
-
+      toast.success('Payment cleared successfully', 'Confirmation email sent to registrant');
       fetchRegistrations();
     } catch (err: any) {
       console.error(err);
-      setErrorAlert('Error clearing registration: ' + err.message);
+      toast.error('Error clearing registration', err.message);
     } finally {
       setIsSubmitting(false);
     }
   }
 
   async function handleMarkAsPaid(id: string) {
-    if (!confirm('Mark this Pay-on-Arrival registration as Paid? This will set payment status to cleared.')) return;
+    const { confirmed } = await confirm({
+      type: 'success',
+      title: 'Mark as Paid',
+      body: 'Confirm that this delegate has paid at the gate.',
+      confirmText: 'Confirm Payment'
+    });
+    if (!confirmed) return;
+
     setIsSubmitting(true);
-    setErrorAlert(null);
     try {
       await updateRegistration(id, {
         updates: {
@@ -130,22 +139,26 @@ export default function RegistrationTable() {
         cleared_at: new Date().toISOString()
       } : r));
 
-      setSuccessMessage('Registration marked as paid.');
-      setTimeout(() => setSuccessMessage(null), 3000);
-
+      toast.success('Payment recorded', 'Delegate cleared for entry');
       fetchRegistrations();
     } catch (err: any) {
       console.error(err);
-      setErrorAlert('Error updating payment: ' + err.message);
+      toast.error('Error updating payment', err.message);
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function handleCheckIn(id: string) {
-    if (!confirm('Check in this delegate?')) return;
+  async function handleCheckIn(id: string, fullName: string) {
+    const { confirmed } = await confirm({
+      type: 'primary',
+      title: 'Check In Delegate',
+      body: 'Confirm that this delegate is present at the venue and mark them as checked in.',
+      confirmText: 'Confirm Check In'
+    });
+    if (!confirmed) return;
+
     setIsSubmitting(true);
-    setErrorAlert(null);
     try {
       await updateRegistration(id, {
         updates: {
@@ -160,27 +173,34 @@ export default function RegistrationTable() {
         checked_in_at: new Date().toISOString()
       } : r));
 
-      setSuccessMessage('Delegate successfully checked in.');
-      setTimeout(() => setSuccessMessage(null), 3000);
-
+      toast.success('Delegate checked in', `${fullName} has been marked as present`);
       fetchRegistrations();
     } catch (err: any) {
       console.error(err);
-      setErrorAlert('Error checking in: ' + err.message);
+      toast.error('Error checking in', err.message);
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function handleRejectConfirm(id: string, reason: string): Promise<boolean> {
+  async function handleRejectClick(id: string) {
+    const { confirmed, value: reason } = await confirm({
+      type: 'danger',
+      title: 'Reject Payment',
+      body: 'This registrant will be notified that their payment could not be verified.',
+      showInput: true,
+      placeholder: 'Reason for rejection (optional)',
+      confirmText: 'Reject Payment'
+    });
+    if (!confirmed) return;
+
     setIsSubmitting(true);
-    setErrorAlert(null);
     try {
       await updateRegistration(id, {
         updates: {
           status: 'rejected',
           payment_status: 'rejected',
-          rejection_reason: reason.trim() || '',
+          rejection_reason: reason?.trim() || '',
           cleared_by: 'admin',
           cleared_at: new Date().toISOString()
         }
@@ -190,20 +210,16 @@ export default function RegistrationTable() {
         ...r,
         status: 'rejected',
         payment_status: 'rejected',
-        rejection_reason: reason.trim() || '',
+        rejection_reason: reason?.trim() || '',
         cleared_by: 'admin',
         cleared_at: new Date().toISOString()
       } : r));
 
-      setSuccessMessage('Registration payment successfully rejected.');
-      setTimeout(() => setSuccessMessage(null), 3000);
-
+      toast.error('Registration rejected', 'Registrant has been notified');
       fetchRegistrations();
-      return true;
     } catch (err: any) {
       console.error(err);
-      setErrorAlert('Error rejecting payment: ' + err.message);
-      return false;
+      toast.error('Error rejecting payment', err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -521,7 +537,7 @@ export default function RegistrationTable() {
                             size="sm"
                             variant="outline"
                             className="h-7 text-[11px] font-bold border-zinc-300 hover:bg-zinc-50"
-                            onClick={() => handleCheckIn(reg.id)}
+                            onClick={() => handleCheckIn(reg.id, reg.full_name)}
                             disabled={isSubmitting}
                           >
                             Check In
@@ -543,7 +559,7 @@ export default function RegistrationTable() {
                               <Button
                                 size="sm"
                                 className="h-7 text-xs bg-red-500 hover:bg-red-600 text-white font-bold"
-                                onClick={() => setRejectingReg(reg)}
+                                onClick={() => handleRejectClick(reg.id)}
                                 disabled={isSubmitting}
                               >
                                 Reject
@@ -668,7 +684,7 @@ export default function RegistrationTable() {
                         <Button
                           size="sm"
                           className="h-8 text-xs bg-red-500 hover:bg-red-600 text-white font-bold px-3.5 rounded-xl"
-                          onClick={() => setRejectingReg(reg)}
+                          onClick={() => handleRejectClick(reg.id)}
                           disabled={isSubmitting}
                         >
                           Reject
@@ -692,7 +708,7 @@ export default function RegistrationTable() {
                       size="sm"
                       variant="outline"
                       className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 px-3.5 rounded-xl"
-                      onClick={() => handleCheckIn(reg.id)}
+                      onClick={() => handleCheckIn(reg.id, reg.full_name)}
                       disabled={isSubmitting}
                     >
                       Check In
@@ -710,71 +726,6 @@ export default function RegistrationTable() {
         )}
       </div>
 
-      {/* Reject Modal */}
-      {rejectingReg && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in fade-in duration-200 text-slate-900">
-            <h3 className="text-lg font-bold">Reject Registration Payment</h3>
-            <p className="text-sm text-slate-500 mt-1">
-              Enter an optional reason for rejecting the payment for <strong className="text-slate-700">{rejectingReg.full_name}</strong>.
-            </p>
-            <div className="mt-4">
-              <textarea
-                placeholder="e.g. Transaction reference not found in bank statement"
-                className="w-full min-h-[100px] p-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
-                value={rejectionReason}
-                onChange={e => setRejectionReason(e.target.value)}
-              />
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setRejectingReg(null);
-                  setRejectionReason('');
-                }}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold"
-                onClick={async () => {
-                  const success = await handleRejectConfirm(rejectingReg.id, rejectionReason);
-                  if (success) {
-                    setRejectingReg(null);
-                    setRejectionReason('');
-                  }
-                }}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Rejecting...' : 'Confirm Reject'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success Toast */}
-      {successMessage && (
-        <div className="fixed bottom-4 right-4 z-50 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-5 duration-300">
-          <CheckCircle2 size={18} />
-          <span className="text-sm font-semibold">{successMessage}</span>
-        </div>
-      )}
-
-      {/* Error Alert Toast */}
-      {errorAlert && (
-        <div className="fixed bottom-4 right-4 z-50 bg-red-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={18} />
-            <span className="text-sm font-semibold">{errorAlert}</span>
-          </div>
-          <button onClick={() => setErrorAlert(null)} className="text-white/80 hover:text-white font-bold text-sm">
-            ✕
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 
 import { Button } from "@/components/ui/button"
+import { useDialog } from "../ui/DialogProvider"
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form"
@@ -151,6 +152,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     onStepChange?: (step: 'form' | 'payment' | 'upload') => void;
 }) {
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const { toast } = useDialog()
     const [registrationData, setRegistrationData] = useState<any>(null); // Store reg data after initial save
     const [step, setStep] = useState<'step1' | 'step2' | 'step3'>('step1');
     const [paymentRef, setPaymentRef] = useState('');
@@ -252,7 +254,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
     async function performSubmit() {
         if (delegates.length === 0) {
-            alert("Please add at least one delegate.");
+            toast.error("Registration failed. Please try again.", "Please add at least one delegate.");
             return;
         }
         if (!paymentRef.trim()) {
@@ -301,7 +303,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             onStepChange?.('upload');
         } catch (error: any) {
             console.error("FULL Submit Error:", error);
-            alert("Failed to submit registration: " + (error?.message || "Unknown error"));
+            toast.error("Registration failed. Please try again.", error?.message || "Unknown error");
         } finally {
             setIsSubmitting(false);
         }
@@ -380,7 +382,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             onStepChange?.('upload');
         } catch (error: any) {
             console.error("Payment Confirmation Error:", error);
-            alert("Failed to confirm payment: " + (error.message || "Unknown error"));
+            toast.error("Failed to confirm payment", error.message || "Unknown error");
         } finally {
             setIsSubmitting(false);
         }
@@ -608,7 +610,9 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+            <form onSubmit={form.handleSubmit(onSubmit, () => {
+                toast.error("Registration failed. Please try again.", "Please correct the highlighted errors in the form.");
+            })} className="space-y-6 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="fullName" render={({ field }) => (
                         <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Samuel Ade" {...field} /></FormControl><FormMessage /></FormItem>
