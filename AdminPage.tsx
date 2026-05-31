@@ -68,18 +68,18 @@ export default function AdminPage() {
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
-                                    <div className="relative flex items-center">
+                                    <div className="relative flex items-center w-full">
                                         <Input
                                             type={showPassword ? "text" : "password"}
                                             placeholder="Enter password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full bg-slate-950/80 border-slate-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 h-12 pr-12 text-white placeholder:text-slate-600 rounded-xl"
+                                            className="w-full !bg-white !text-[#111827] border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 h-12 pr-12 placeholder:!text-[#9ca3af] rounded-xl font-medium"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-9 w-9 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 active:scale-95 transition-all focus:outline-none cursor-pointer"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-9 w-9 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 transition-all focus:outline-none cursor-pointer"
                                         >
                                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                         </button>
