@@ -136,11 +136,50 @@ export default function DashboardOverview() {
 
     const trendData = getRegistrationTrendData();
 
+    const teenCount = regs.filter(r => r.category?.toLowerCase() === 'teenager').length;
+    const teacherCount = regs.filter(r => {
+        const cat = r.category?.toLowerCase() || '';
+        return cat.includes('teacher') || cat.includes('adult');
+    }).length;
+    const clearedPaymentsCount = regs.filter(r => {
+        const ps = r.payment_status?.toLowerCase();
+        const st = r.status?.toLowerCase();
+        return ps === 'cleared' || st === 'confirmed';
+    }).length;
+
     const STATS = [
-        { label: "Total Registrations", value: totalRegs.toLocaleString(), change: `${regs.filter(r => r.category === 'teenager').length} Teens • ${regs.filter(r => r.category === 'teacher' || r.category === 'teacher_adult' || r.category === 'teacher / adult').length} Teachers`, icon: Users, color: "text-blue-500" },
-        { label: "Total Revenue Collected", value: `₦${totalRevenue.toLocaleString()}`, change: `${regs.filter(r => r.payment_status === 'cleared').length} Cleared Payments`, icon: CreditCard, color: "text-green-500" },
-        { label: "Check-in Rate", value: `${checkInRate}%`, change: `${checkedInCount} Delegates Checked In`, icon: CheckCircle2, color: "text-orange-500" },
-        { label: "Total Volunteers", value: totalVolunteers.toLocaleString(), change: "Volunteers Team", icon: Award, color: "text-purple-500" },
+        { 
+            label: "Total Registrations", 
+            value: totalRegs.toLocaleString(), 
+            change: `${teenCount} Teens • ${teacherCount} Teachers`, 
+            icon: Users, 
+            color: "text-blue-500",
+            numColor: "text-blue-600"
+        },
+        { 
+            label: "Revenue Collected", 
+            value: `₦${totalRevenue.toLocaleString()}`, 
+            change: `${clearedPaymentsCount} Cleared Payments`, 
+            icon: CreditCard, 
+            color: "text-emerald-500",
+            numColor: "text-emerald-600"
+        },
+        { 
+            label: "Check-in Rate", 
+            value: `${checkInRate}%`, 
+            change: `${checkedInCount} Delegates Checked In`, 
+            icon: CheckCircle2, 
+            color: "text-orange-500",
+            numColor: "text-orange-600"
+        },
+        { 
+            label: "Total Volunteers", 
+            value: totalVolunteers.toLocaleString(), 
+            change: "Volunteers Team", 
+            icon: Award, 
+            color: "text-purple-500",
+            numColor: "text-purple-600"
+        },
     ];
 
     if (loading) {
@@ -168,17 +207,15 @@ export default function DashboardOverview() {
             {/* STATS GRID */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 {STATS.map((stat, i) => (
-                    <Card key={i} className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
-                        <CardContent className="p-3 md:p-4 flex flex-row items-center justify-between gap-3 w-full">
-                            <div className="min-w-0 flex-1">
-                                <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{stat.label}</p>
-                                <h3 className="text-sm md:text-xl font-black text-slate-900 mt-0.5 whitespace-nowrap">{stat.value}</h3>
-                                <p className="text-[10px] text-slate-400 mt-0.5 font-medium whitespace-nowrap">{stat.change}</p>
-                            </div>
-                            <div className={`p-2 md:p-3 rounded-xl bg-slate-50 shrink-0 ${stat.color}`}>
-                                <stat.icon size={18} className="md:w-5 md:h-5" />
-                            </div>
-                        </CardContent>
+                    <Card key={i} className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+                        <div className={`p-2 md:p-3 rounded-xl bg-slate-50 shrink-0 ${stat.color}`}>
+                            <stat.icon size={18} className="md:w-5 md:h-5" />
+                        </div>
+                        <div className="mt-2 w-full">
+                            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
+                            <h3 className={`text-lg md:text-2xl font-black mt-1 ${stat.numColor}`}>{stat.value}</h3>
+                            <p className="text-[10px] text-slate-500 mt-1 font-medium leading-relaxed">{stat.change}</p>
+                        </div>
                     </Card>
                 ))}
             </div>

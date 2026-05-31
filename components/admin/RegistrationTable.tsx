@@ -331,64 +331,58 @@ export default function RegistrationTable() {
       {/* Dashboard Summary Bar */}
       <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-5 gap-3 md:gap-4">
         {/* Card 1: Registered */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
-          <CardContent className="p-3 md:p-4 flex flex-row items-center gap-3 w-full">
-            <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
-              <Users size={16} className="md:w-5 md:h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" title="Registered">Registered</p>
-              <h3 className="text-sm md:text-xl font-black text-slate-800 mt-0.5 whitespace-nowrap">{totalRegistered.toLocaleString()}</h3>
-            </div>
-          </CardContent>
+        <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+          <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
+            <Users size={16} className="md:w-5 md:h-5" />
+          </div>
+          <div className="mt-2 w-full">
+            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">Registered</p>
+            <h3 className="text-lg md:text-2xl font-black text-blue-600 mt-1">{totalRegistered.toLocaleString()}</h3>
+          </div>
         </Card>
+
         {/* Card 2: Cleared */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
-          <CardContent className="p-3 md:p-4 flex flex-row items-center gap-3 w-full">
-            <div className="p-2 md:p-3 bg-emerald-50 text-emerald-500 rounded-xl shrink-0">
-              <CheckCircle2 size={16} className="md:w-5 md:h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" title="Cleared">Cleared</p>
-              <h3 className="text-sm md:text-xl font-black text-emerald-600 mt-0.5 whitespace-nowrap">{totalCleared.toLocaleString()}</h3>
-            </div>
-          </CardContent>
+        <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+          <div className="p-2 md:p-3 bg-emerald-50 text-emerald-500 rounded-xl shrink-0">
+            <CheckCircle2 size={16} className="md:w-5 md:h-5" />
+          </div>
+          <div className="mt-2 w-full">
+            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">Cleared</p>
+            <h3 className="text-lg md:text-2xl font-black text-emerald-600 mt-1">{totalCleared.toLocaleString()}</h3>
+          </div>
         </Card>
+
         {/* Card 3: Pending */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
-          <CardContent className="p-3 md:p-4 flex flex-row items-center gap-3 w-full">
-            <div className="p-2 md:p-3 bg-orange-50 text-orange-500 rounded-xl shrink-0">
-              <AlertCircle size={16} className="md:w-5 md:h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" title="Pending">Pending</p>
-              <h3 className="text-sm md:text-xl font-black text-orange-600 mt-0.5 whitespace-nowrap">{totalPending.toLocaleString()}</h3>
-            </div>
-          </CardContent>
+        <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+          <div className="p-2 md:p-3 bg-orange-50 text-orange-500 rounded-xl shrink-0">
+            <AlertCircle size={16} className="md:w-5 md:h-5" />
+          </div>
+          <div className="mt-2 w-full">
+            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">Pending</p>
+            <h3 className="text-lg md:text-2xl font-black text-orange-600 mt-1">{totalPending.toLocaleString()}</h3>
+          </div>
         </Card>
+
         {/* Card 4: On Arrival */}
-        <Card className="col-span-1 md:col-span-3 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
-          <CardContent className="p-3 md:p-4 flex flex-row items-center gap-3 w-full">
-            <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
-              <MapPin size={16} className="md:w-5 md:h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" title="On Arrival">On Arrival</p>
-              <h3 className="text-sm md:text-xl font-black text-blue-600 mt-0.5 whitespace-nowrap">{totalPayOnArrival.toLocaleString()}</h3>
-            </div>
-          </CardContent>
+        <Card className="col-span-1 md:col-span-3 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+          <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
+            <MapPin size={16} className="md:w-5 md:h-5" />
+          </div>
+          <div className="mt-2 w-full">
+            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">On Arrival</p>
+            <h3 className="text-lg md:text-2xl font-black text-blue-600 mt-1">{totalPayOnArrival.toLocaleString()}</h3>
+          </div>
         </Card>
+
         {/* Card 5: Collected */}
-        <Card className="col-span-2 md:col-span-3 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-visible min-h-[90px] flex items-center">
-          <CardContent className="p-3 md:p-4 flex flex-row items-center gap-3 w-full">
-            <div className="p-2 md:p-3 bg-violet-50 text-violet-500 rounded-xl shrink-0">
-              <CreditCard size={16} className="md:w-5 md:h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" title="Collected">Collected</p>
-              <h3 className="text-sm md:text-xl font-black text-violet-600 font-mono mt-0.5 whitespace-nowrap">₦{totalAmountCollected.toLocaleString()}</h3>
-            </div>
-          </CardContent>
+        <Card className="col-span-2 md:col-span-3 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+          <div className="p-2 md:p-3 bg-violet-50 text-violet-500 rounded-xl shrink-0">
+            <CreditCard size={16} className="md:w-5 md:h-5" />
+          </div>
+          <div className="mt-2 w-full">
+            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">Collected</p>
+            <h3 className="text-lg md:text-2xl font-black text-violet-600 font-mono mt-1">₦{totalAmountCollected.toLocaleString()}</h3>
+          </div>
         </Card>
       </div>
 
