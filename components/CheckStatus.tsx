@@ -106,7 +106,7 @@ export default function CheckStatus() {
     const totalAmount = result ? result.reduce((sum, r) => sum + (r.amount_due || 0), 0) : 0;
     const batchCode = result && result.length > 0 ? result[0].batch_reference : '';
     const paymentMethod = result && result.length > 0 ? result[0].payment_method : '';
-    const paymentStatus = result && result.length > 0 ? result[0].status : '';
+    const paymentStatus = result && result.length > 0 ? (result[0].payment_status || result[0].status) : '';
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-start py-12 px-4 relative overflow-hidden">
@@ -202,6 +202,23 @@ export default function CheckStatus() {
                                 <p className="text-xs uppercase tracking-wider text-zinc-400 font-bold">Current Payment Status</p>
                                 {renderStatusBadge(paymentStatus)}
                             </div>
+
+                            {/* QR Code section (only if cleared) */}
+                            {result && result.length > 0 && ['cleared', 'confirmed'].includes(paymentStatus?.toLowerCase()) && result[0].qr_code_hash && (
+                                <div className="space-y-3 flex flex-col items-center md:items-start animate-in fade-in duration-300">
+                                    <p className="text-xs uppercase tracking-wider text-zinc-400 font-bold w-full text-center md:text-left">Your Check-In QR Code</p>
+                                    <div className="bg-white p-3 rounded-2xl shadow-lg border border-zinc-800">
+                                        <img
+                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(result[0].qr_code_hash)}`}
+                                            alt="Check-In QR Code"
+                                            className="w-[200px] h-[200px] block"
+                                        />
+                                    </div>
+                                    <p className="text-sm text-zinc-300 font-medium text-center md:text-left">
+                                        Show this to the check-in team at the venue
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Payment Method & Summary */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-900/40 p-4 border border-zinc-800/50 rounded-xl text-sm">

@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Configuration placeholders (User can adjust FROM_EMAIL as needed)
-const FROM_EMAIL = 'C3TC Team <noreply@resend.dev>'; // Using sandbox default; update once domain is verified on Resend
+const FROM_EMAIL = `C3TC Team <${process.env.RESEND_FROM_EMAIL || 'noreply@continent3teens.cc'}>`;
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
@@ -94,92 +94,96 @@ export default async function handler(req: any, res: any) {
 // Approval Email Construction
 // -------------------------------------------------------------
 async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
-    const { full_name, email, batch_reference, category, amount_due } = record;
+    const { full_name, email, batch_reference, category, amount_due, qr_code_hash } = record;
     const formattedCategory = category === 'teenager' ? 'Teenager' : 'Teacher / Adult';
     const amountPaid = amount_due ? amount_due.toLocaleString() : '---';
 
     const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-    const statusUrl = `${protocol}://${host}/check-status?ref=${batch_reference || ''}`;
+    const logoUrl = `${protocol}://${host}/logos/C3TC_white-removebg-preview.png`;
+    const statusUrl = `https://continent3teens.cc/check-status?ref=${batch_reference || ''}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr_code_hash || '')}`;
 
     const htmlContent = `
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="utf-8">
-        <title>Your C3TC Registration is Confirmed!</title>
-        <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; color: #27272a; margin: 0; padding: 0; }
-            .container { max-width: 600px; margin: 40px auto; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
-            .header { background: linear-gradient(135deg, #ea580c 0%, #d97706 100%); color: #ffffff; padding: 40px 32px; text-align: center; }
-            .header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-            .content { padding: 32px; line-height: 1.6; font-size: 15px; }
-            .greeting { font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 16px; color: #09090b; }
-            .details-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 24px 0; }
-            .details-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-top: 0; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; letter-spacing: 0.5px; }
-            .detail-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
-            .detail-row:last-child { margin-bottom: 0; }
-            .detail-label { color: #64748b; font-weight: 500; }
-            .detail-value { font-weight: 700; color: #0f172a; text-align: right; }
-            .detail-value.mono { font-family: monospace; font-size: 15px; color: #ea580c; }
-            .button-container { text-align: center; margin: 32px 0; }
-            .btn { display: inline-block; background-color: #ea580c; color: #ffffff !important; font-weight: 700; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 10px; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.2); transition: all 0.2s; }
-            .footer { background-color: #f4f4f5; color: #71717a; text-align: center; padding: 24px; font-size: 12px; border-top: 1px solid #e4e4e7; }
-        </style>
+        <title>You're In! Your C3TC '26 Registration is Confirmed ✅</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>C3TC 3.0</h1>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; color: #27272a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+        <div style="max-width: 600px; margin: 40px auto; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
+            
+            <!-- Header Banner -->
+            <div style="background-color: #0a0f1e; padding: 40px 20px; text-align: center;">
+                <img src="${logoUrl}" alt="C3TC Logo" style="height: 80px; width: auto; display: block; margin: 0 auto 16px auto;" />
+                <h2 style="color: #ffffff; font-size: 18px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: 1px;">CONTINENT 3 TEENS CONFERENCE</h2>
+                <h3 style="color: #f97316; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.5px;">T.I.M.E '26</h3>
             </div>
-            <div class="content">
-                <p class="greeting">Hi ${full_name},</p>
-                <p>Great news! Your payment for the Continent 3 Teens Conference has been verified and your registration is now confirmed.</p>
-                
-                <div class="details-card">
-                    <h3 class="details-title">Event Registration Details</h3>
-                    <div class="detail-row">
-                        <span class="detail-label">Reference Code:</span>
-                        <span class="detail-value mono">${batch_reference || '---'}</span>
+
+            <!-- Greeting & Message -->
+            <div style="background-color: #ffffff; padding: 32px; font-size: 15px; color: #27272a; line-height: 1.6;">
+                <p style="font-size: 16px; font-weight: bold; color: #09090b; margin-top: 0; margin-bottom: 12px;">Hi ${full_name},</p>
+                <p style="margin: 0 0 24px 0;">Great news! Your payment has been verified and your registration for the Continent 3 Teens Conference is now confirmed. We can't wait to see you at T.I.M.E '26!</p>
+
+                <!-- QR Code Block -->
+                <div style="text-align: center; margin: 32px 0;">
+                    <div style="background-color: #ffffff; padding: 12px; border: 1px solid #e4e4e7; border-radius: 12px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                        <img src="${qrCodeUrl}" alt="Check-In QR Code" style="width: 200px; height: 200px; display: block;" />
                     </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Category:</span>
-                        <span class="detail-value">${formattedCategory}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Amount Paid:</span>
-                        <span class="detail-value">₦${amountPaid}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Event:</span>
-                        <span class="detail-value">Continent 3 Teens Conference — T.I.M.E</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Date:</span>
-                        <span class="detail-value">Saturday, 19th September, 2026</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Venue:</span>
-                        <span class="detail-value">Glory Arena, Redemption City of God, Ogun State</span>
-                    </div>
+                    <p style="font-size: 12px; color: #71717a; margin: 8px 0 0 0; font-weight: 500;">Show this QR code at the venue for express check-in</p>
                 </div>
-                
-                <p>Please save your reference code. You will need it for check-in on the day of the event.</p>
-                
-                <div class="button-container">
-                    <a href="${statusUrl}" target="_blank" class="btn">View Your Registration →</a>
+
+                <!-- Event details block -->
+                <div style="background-color: #f8f8f8; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                        <tr>
+                            <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Reference Code:</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #f97316; font-family: monospace; font-size: 15px;">${batch_reference || '---'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Category:</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">${formattedCategory}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Amount Paid:</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">₦${amountPaid}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Event:</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">Continent 3 Teens Conference — T.I.M.E</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Date:</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">Saturday, 19th September, 2026</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; color: #71717a; font-weight: 500; vertical-align: top;">Venue:</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a; max-width: 250px;">Glory Arena, Redemption City of God, Ogun State</td>
+                        </tr>
+                    </table>
                 </div>
-                
-                <p>See you at T.I.M.E '26!<br><strong>The C3TC Planning Committee</strong></p>
+
+                <!-- CTA Button -->
+                <div style="text-align: center; margin: 32px 0 16px 0;">
+                    <a href="${statusUrl}" target="_blank" style="display: block; background-color: #f97316; color: #ffffff !important; font-weight: bold; font-size: 15px; text-decoration: none; padding: 14px 24px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2); text-align: center;">View Your Registration Status →</a>
+                </div>
             </div>
-            <div class="footer">
-                This is an automated confirmation email. Please do not reply directly to this email.
+
+            <!-- Footer -->
+            <div style="background-color: #0a0f1e; color: #ffffff; padding: 32px 24px; text-align: center; font-size: 13px;">
+                <p style="font-size: 15px; font-weight: bold; margin: 0 0 6px 0; color: #ffffff;">See you at T.I.M.E '26!</p>
+                <p style="color: #f97316; font-weight: bold; margin: 0 0 24px 0;">The C3TC Planning Committee</p>
+                <p style="color: #71717a; font-size: 12px; margin: 0 0 16px 0; line-height: 1.5;">This is an automated confirmation email. Please do not reply directly to this email.</p>
+                <a href="https://continent3teens.cc" target="_blank" style="color: #ffffff !important; text-decoration: underline; font-weight: 500;">continent3teens.cc</a>
             </div>
+
         </div>
     </body>
     </html>
     `;
 
-    return sendResendEmail(email, 'Your C3TC Registration is Confirmed! 🎉', htmlContent);
+    return sendResendEmail(email, "You're In! Your C3TC '26 Registration is Confirmed ✅", htmlContent);
 }
 
 // -------------------------------------------------------------
