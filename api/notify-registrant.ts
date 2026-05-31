@@ -99,7 +99,7 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
     const amountPaid = amount_due ? amount_due.toLocaleString() : '---';
 
     const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-    const logoUrl = `${protocol}://${host}/logos/C3TC_white-removebg-preview.png`;
+    const logoUrl = `${protocol}://${host}/logos/LTC_Logo_white.png`;
     const statusUrl = `https://continent3teens.cc/check-status?ref=${batch_reference || ''}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr_code_hash || '')}`;
 
