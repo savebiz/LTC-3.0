@@ -56,28 +56,35 @@ export default function RegistrationTable() {
     setLoading(false);
   }
 
+  async function updateRegistrationField(id: string, field: string, value: any) {
+    const res = await fetch('/api/admin/update-registration', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id, field, value }),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP error ${res.status}`);
+    }
+    return res.json();
+  }
+
   async function handleMarkAsCleared(id: string) {
     if (!confirm('Mark this payment as cleared? This will confirm the delegate and trigger email notifications.')) return;
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('registrations')
-        .update({
-          payment_status: 'cleared',
-          status: 'confirmed',
-          cleared_by: 'admin',
-          cleared_at: new Date().toISOString()
-        })
-        .eq('id', id);
+      await updateRegistrationField(id, 'payment_status', 'cleared');
+      await updateRegistrationField(id, 'status', 'confirmed');
+      await updateRegistrationField(id, 'cleared_by', 'admin');
+      await updateRegistrationField(id, 'cleared_at', new Date().toISOString());
 
-      if (error) {
-        alert('Error clearing registration: ' + error.message);
-      } else {
-        fetchRegistrations();
-      }
+      fetchRegistrations();
     } catch (err: any) {
       console.error(err);
-      alert('An unexpected error occurred.');
+      alert('Error clearing registration: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -87,24 +94,15 @@ export default function RegistrationTable() {
     if (!confirm('Mark this Pay-on-Arrival registration as Paid? This will set payment status to cleared.')) return;
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('registrations')
-        .update({
-          payment_status: 'cleared',
-          status: 'confirmed',
-          cleared_by: 'admin',
-          cleared_at: new Date().toISOString()
-        })
-        .eq('id', id);
+      await updateRegistrationField(id, 'payment_status', 'cleared');
+      await updateRegistrationField(id, 'status', 'confirmed');
+      await updateRegistrationField(id, 'cleared_by', 'admin');
+      await updateRegistrationField(id, 'cleared_at', new Date().toISOString());
 
-      if (error) {
-        alert('Error updating payment: ' + error.message);
-      } else {
-        fetchRegistrations();
-      }
+      fetchRegistrations();
     } catch (err: any) {
       console.error(err);
-      alert('An unexpected error occurred.');
+      alert('Error updating payment: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -114,22 +112,13 @@ export default function RegistrationTable() {
     if (!confirm('Check in this delegate?')) return;
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('registrations')
-        .update({
-          checked_in: true,
-          checked_in_at: new Date().toISOString()
-        })
-        .eq('id', id);
+      await updateRegistrationField(id, 'checked_in', true);
+      await updateRegistrationField(id, 'checked_in_at', new Date().toISOString());
 
-      if (error) {
-        alert('Error checking in: ' + error.message);
-      } else {
-        fetchRegistrations();
-      }
+      fetchRegistrations();
     } catch (err: any) {
       console.error(err);
-      alert('An unexpected error occurred.');
+      alert('Error checking in: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -138,25 +127,16 @@ export default function RegistrationTable() {
   async function handleRejectConfirm(id: string, reason: string) {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('registrations')
-        .update({
-          status: 'rejected',
-          payment_status: 'rejected',
-          rejection_reason: reason.trim() || null,
-          cleared_by: 'admin',
-          cleared_at: new Date().toISOString()
-        })
-        .eq('id', id);
+      await updateRegistrationField(id, 'status', 'rejected');
+      await updateRegistrationField(id, 'payment_status', 'rejected');
+      await updateRegistrationField(id, 'rejection_reason', reason.trim() || null);
+      await updateRegistrationField(id, 'cleared_by', 'admin');
+      await updateRegistrationField(id, 'cleared_at', new Date().toISOString());
 
-      if (error) {
-        alert('Error rejecting payment: ' + error.message);
-      } else {
-        fetchRegistrations();
-      }
+      fetchRegistrations();
     } catch (err: any) {
       console.error(err);
-      alert('An unexpected error occurred.');
+      alert('Error rejecting payment: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
