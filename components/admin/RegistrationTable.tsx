@@ -38,6 +38,8 @@ export default function RegistrationTable() {
   const [rejectingReg, setRejectingReg] = useState<Registration | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorAlert, setErrorAlert] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRegistrations();
@@ -56,13 +58,13 @@ export default function RegistrationTable() {
     setLoading(false);
   }
 
-  async function updateRegistrationField(id: string, field: string, value: any) {
+  async function updateRegistration(id: string, updates: Record<string, any>) {
     const res = await fetch('/api/admin/update-registration', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ id, field, value }),
+      body: JSON.stringify({ id, updates }),
     });
 
     if (!res.ok) {
@@ -75,16 +77,32 @@ export default function RegistrationTable() {
   async function handleMarkAsCleared(id: string) {
     if (!confirm('Mark this payment as cleared? This will confirm the delegate and trigger email notifications.')) return;
     setIsSubmitting(true);
+    setErrorAlert(null);
     try {
-      await updateRegistrationField(id, 'payment_status', 'cleared');
-      await updateRegistrationField(id, 'status', 'confirmed');
-      await updateRegistrationField(id, 'cleared_by', 'admin');
-      await updateRegistrationField(id, 'cleared_at', new Date().toISOString());
+      await updateRegistration(id, {
+        updates: {
+          payment_status: 'cleared',
+          status: 'confirmed',
+          cleared_by: 'admin',
+          cleared_at: new Date().toISOString()
+        }
+      });
+
+      setData(prev => prev.map(r => r.id === id ? {
+        ...r,
+        payment_status: 'cleared',
+        status: 'confirmed',
+        cleared_by: 'admin',
+        cleared_at: new Date().toISOString()
+      } : r));
+
+      setSuccessMessage('Registration payment successfully cleared.');
+      setTimeout(() => setSuccessMessage(null), 3000);
 
       fetchRegistrations();
     } catch (err: any) {
       console.error(err);
-      alert('Error clearing registration: ' + err.message);
+      setErrorAlert('Error clearing registration: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -93,16 +111,32 @@ export default function RegistrationTable() {
   async function handleMarkAsPaid(id: string) {
     if (!confirm('Mark this Pay-on-Arrival registration as Paid? This will set payment status to cleared.')) return;
     setIsSubmitting(true);
+    setErrorAlert(null);
     try {
-      await updateRegistrationField(id, 'payment_status', 'cleared');
-      await updateRegistrationField(id, 'status', 'confirmed');
-      await updateRegistrationField(id, 'cleared_by', 'admin');
-      await updateRegistrationField(id, 'cleared_at', new Date().toISOString());
+      await updateRegistration(id, {
+        updates: {
+          payment_status: 'cleared',
+          status: 'confirmed',
+          cleared_by: 'admin',
+          cleared_at: new Date().toISOString()
+        }
+      });
+
+      setData(prev => prev.map(r => r.id === id ? {
+        ...r,
+        payment_status: 'cleared',
+        status: 'confirmed',
+        cleared_by: 'admin',
+        cleared_at: new Date().toISOString()
+      } : r));
+
+      setSuccessMessage('Registration marked as paid.');
+      setTimeout(() => setSuccessMessage(null), 3000);
 
       fetchRegistrations();
     } catch (err: any) {
       console.error(err);
-      alert('Error updating payment: ' + err.message);
+      setErrorAlert('Error updating payment: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -111,32 +145,65 @@ export default function RegistrationTable() {
   async function handleCheckIn(id: string) {
     if (!confirm('Check in this delegate?')) return;
     setIsSubmitting(true);
+    setErrorAlert(null);
     try {
-      await updateRegistrationField(id, 'checked_in', true);
-      await updateRegistrationField(id, 'checked_in_at', new Date().toISOString());
+      await updateRegistration(id, {
+        updates: {
+          checked_in: true,
+          checked_in_at: new Date().toISOString()
+        }
+      });
+
+      setData(prev => prev.map(r => r.id === id ? {
+        ...r,
+        checked_in: true,
+        checked_in_at: new Date().toISOString()
+      } : r));
+
+      setSuccessMessage('Delegate successfully checked in.');
+      setTimeout(() => setSuccessMessage(null), 3000);
 
       fetchRegistrations();
     } catch (err: any) {
       console.error(err);
-      alert('Error checking in: ' + err.message);
+      setErrorAlert('Error checking in: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function handleRejectConfirm(id: string, reason: string) {
+  async function handleRejectConfirm(id: string, reason: string): Promise<boolean> {
     setIsSubmitting(true);
+    setErrorAlert(null);
     try {
-      await updateRegistrationField(id, 'status', 'rejected');
-      await updateRegistrationField(id, 'payment_status', 'rejected');
-      await updateRegistrationField(id, 'rejection_reason', reason.trim() || null);
-      await updateRegistrationField(id, 'cleared_by', 'admin');
-      await updateRegistrationField(id, 'cleared_at', new Date().toISOString());
+      await updateRegistration(id, {
+        updates: {
+          status: 'rejected',
+          payment_status: 'rejected',
+          rejection_reason: reason.trim() || '',
+          cleared_by: 'admin',
+          cleared_at: new Date().toISOString()
+        }
+      });
+
+      setData(prev => prev.map(r => r.id === id ? {
+        ...r,
+        status: 'rejected',
+        payment_status: 'rejected',
+        rejection_reason: reason.trim() || '',
+        cleared_by: 'admin',
+        cleared_at: new Date().toISOString()
+      } : r));
+
+      setSuccessMessage('Registration payment successfully rejected.');
+      setTimeout(() => setSuccessMessage(null), 3000);
 
       fetchRegistrations();
+      return true;
     } catch (err: any) {
       console.error(err);
-      alert('Error rejecting payment: ' + err.message);
+      setErrorAlert('Error rejecting payment: ' + err.message);
+      return false;
     } finally {
       setIsSubmitting(false);
     }
@@ -673,16 +740,39 @@ export default function RegistrationTable() {
               <Button
                 className="bg-red-600 hover:bg-red-700 text-white font-semibold"
                 onClick={async () => {
-                  await handleRejectConfirm(rejectingReg.id, rejectionReason);
-                  setRejectingReg(null);
-                  setRejectionReason('');
+                  const success = await handleRejectConfirm(rejectingReg.id, rejectionReason);
+                  if (success) {
+                    setRejectingReg(null);
+                    setRejectionReason('');
+                  }
                 }}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Rejecting...' : 'Reject Payment'}
+                {isSubmitting ? 'Rejecting...' : 'Confirm Reject'}
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Success Toast */}
+      {successMessage && (
+        <div className="fixed bottom-4 right-4 z-50 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-5 duration-300">
+          <CheckCircle2 size={18} />
+          <span className="text-sm font-semibold">{successMessage}</span>
+        </div>
+      )}
+
+      {/* Error Alert Toast */}
+      {errorAlert && (
+        <div className="fixed bottom-4 right-4 z-50 bg-red-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={18} />
+            <span className="text-sm font-semibold">{errorAlert}</span>
+          </div>
+          <button onClick={() => setErrorAlert(null)} className="text-white/80 hover:text-white font-bold text-sm">
+            ✕
+          </button>
         </div>
       )}
     </div>
