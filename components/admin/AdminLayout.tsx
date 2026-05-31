@@ -69,7 +69,7 @@ export default function AdminLayout({ children, activePage, onNavigate, onLogout
                             className={cn(
                                 "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer",
                                 activePage === item.id
-                                    ? "bg-orange-50 text-white shadow-lg shadow-orange-500/20"
+                                    ? "bg-orange-500 text-white font-bold shadow-lg shadow-orange-500/20"
                                     : "text-slate-400 hover:bg-slate-800 hover:text-white"
                             )}
                         >
