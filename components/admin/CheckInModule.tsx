@@ -93,6 +93,35 @@ export default function CheckInModule() {
     const [pendingSyncCount, setPendingSyncCount] = useState(0);
     const [isSyncing, setIsSyncing] = useState(false);
 
+    // Mobile specific layout states
+    const [isMobile, setIsMobile] = useState(false);
+    const [isMobileScannerOpen, setIsMobileScannerOpen] = useState(true);
+
+    // Watch screen size for mobile check
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Prevent background scrolling on mobile when full-screen camera or overlay is active
+    useEffect(() => {
+        const shouldLock = isMobile && activeTab === 'qr' && (
+            (isMobileScannerOpen && isScannerActive) || overlayState.show
+        );
+        if (shouldLock) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isMobile, activeTab, isMobileScannerOpen, isScannerActive, overlayState.show]);
+
     // Wake Lock
     const wakeLockRef = useRef<any>(null);
 
@@ -273,6 +302,7 @@ export default function CheckInModule() {
     // Handle Active Tab toggling
     useEffect(() => {
         if (activeTab === 'qr') {
+            setIsMobileScannerOpen(true);
             startScanner();
         } else {
             stopScanner();
@@ -607,9 +637,23 @@ export default function CheckInModule() {
         }
     };
 
-    // Result overlay countdown timer
+    // Scan Another Code handler for mobile
+    const handleScanAnother = () => {
+        setOverlayState(prev => ({ ...prev, show: false }));
+        setIsMobileScannerOpen(true);
+        startScanner();
+    };
+
+    // Exit Scanner handler for mobile
+    const handleExitScanner = async () => {
+        setOverlayState(prev => ({ ...prev, show: false }));
+        setIsMobileScannerOpen(false);
+        await stopScanner();
+    };
+
+    // Result overlay countdown timer (only runs on desktop/tablet)
     useEffect(() => {
-        if (!overlayState.show) return;
+        if (!overlayState.show || isMobile) return;
 
         setCountdown(8);
         const timer = setInterval(() => {
@@ -624,7 +668,7 @@ export default function CheckInModule() {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [overlayState.show]);
+    }, [overlayState.show, isMobile]);
 
     // Formatting category display labels
     const formatCategory = (cat: string) => {
@@ -727,78 +771,153 @@ export default function CheckInModule() {
 
             {/* MAIN CONTENT DISPLAY */}
             {activeTab === 'qr' && (
-                <div className="space-y-4">
-                    {/* Viewfinder Panel */}
-                    <div className="relative w-full aspect-video md:aspect-[4/3] max-h-[50vh] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center shadow-xl">
-                        
-                        {/* Video Element Target Container */}
-                        <div id="qr-viewfinder" className="w-full h-full object-cover [&>video]:object-cover [&>video]:w-full [&>video]:h-full"></div>
+                isMobile && !isMobileScannerOpen ? (
+                    <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden py-12 px-6 text-center space-y-4">
+                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto text-orange-600">
+                            <Camera size={32} />
+                        </div>
+                        <div className="space-y-1">
+                            <h4 className="font-bold text-slate-800 text-lg">QR Code Scanner</h4>
+                            <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                                Use your device's camera to scan registrant QR codes for instant check-in.
+                            </p>
+                        </div>
+                        <Button
+                            onClick={() => {
+                                setIsMobileScannerOpen(true);
+                                startScanner();
+                            }}
+                            className="bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 px-6 rounded-xl cursor-pointer active:scale-95 transition-all shadow-md mx-auto flex items-center justify-center"
+                        >
+                            Open Camera Scanner
+                        </Button>
+                    </Card>
+                ) : (
+                    <div className="space-y-4">
+                        {/* Viewfinder Panel */}
+                        <div className={`relative bg-slate-950 overflow-hidden flex items-center justify-center shadow-xl ${
+                            isMobile && isMobileScannerOpen
+                                ? "fixed inset-0 w-screen h-screen z-50 border-none rounded-none"
+                                : "w-full aspect-video md:aspect-[4/3] max-h-[50vh] rounded-2xl border border-slate-800"
+                        }`}>
+                            
+                            {/* Video Element Target Container */}
+                            <div id="qr-viewfinder" className="w-full h-full object-cover [&>video]:object-cover [&>video]:w-full [&>video]:h-full"></div>
 
-                        {/* Scanner Centering Framework Overlays */}
-                        {isScannerActive && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                                <div className="w-48 h-48 sm:w-60 sm:h-60 border-4 border-dashed border-orange-500 rounded-3xl relative flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.2)]">
-                                    {/* Scan animated horizontal line */}
-                                    <div className="scan-line absolute left-3 right-3 h-0.5 bg-orange-500/80 rounded shadow-[0_0_12px_#f97316]"></div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Loading Spinner */}
-                        {isCameraLoading && (
-                            <div className="absolute inset-0 bg-slate-900/90 z-20 flex flex-col items-center justify-center gap-3">
-                                <Loader2 className="h-10 w-10 text-orange-500 animate-spin" />
-                                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Accessing Camera...</span>
-                            </div>
-                        )}
-
-                        {/* Camera Permissions Blocked Error screen */}
-                        {hasCameraPermission === false && (
-                            <div className="absolute inset-0 bg-slate-900 p-6 flex flex-col items-center justify-center text-center gap-4 z-20">
-                                <div className="p-3 bg-red-950/50 border border-red-500/20 text-red-500 rounded-full">
-                                    <XCircle size={32} />
-                                </div>
-                                <div className="space-y-1">
-                                    <h4 className="font-bold text-white text-base">Camera Access Blocked</h4>
-                                    <p className="text-xs text-slate-400 max-w-xs">
-                                        Please enable camera permissions in your browser configuration to scan registrant QR codes.
-                                    </p>
-                                </div>
-                                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 font-bold rounded-xl h-10 px-4" onClick={startScanner}>
-                                    Retry Camera Access
-                                </Button>
-                            </div>
-                        )}
-
-                        {/* Control group buttons */}
-                        {isScannerActive && (
-                            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-20 pointer-events-auto px-4">
-                                <Button 
-                                    size="sm" 
-                                    variant="secondary"
-                                    onClick={toggleFlashlight}
-                                    className="bg-slate-900/80 hover:bg-slate-900 border border-slate-700/50 text-white rounded-xl h-10 w-10 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all"
-                                    title="Toggle Flashlight"
+                            {/* Back button on mobile */}
+                            {isMobile && isMobileScannerOpen && (
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        setIsMobileScannerOpen(false);
+                                        await stopScanner();
+                                    }}
+                                    className="absolute top-6 left-6 bg-slate-900/80 text-white border border-slate-700/50 px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-all z-20 pointer-events-auto cursor-pointer"
                                 >
-                                    <Lightbulb size={16} className={isFlashlightOn ? "text-yellow-400" : "text-white"} />
-                                </Button>
-                                <Button 
-                                    size="sm" 
-                                    variant="secondary"
-                                    onClick={toggleCamera}
-                                    className="bg-slate-900/80 hover:bg-slate-900 border border-slate-700/50 text-white rounded-xl h-10 w-10 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all"
-                                    title="Switch Camera"
-                                >
-                                    <RotateCw size={16} />
-                                </Button>
-                            </div>
+                                    ← Back
+                                </button>
+                            )}
+
+                            {/* Scanner Centering Framework Overlays */}
+                            {isScannerActive && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                                    <div className="w-48 h-48 sm:w-60 sm:h-60 border-4 border-dashed border-orange-500 rounded-3xl relative flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.2)]">
+                                        {/* Scan animated horizontal line */}
+                                        <div className="scan-line absolute left-3 right-3 h-0.5 bg-orange-500/80 rounded shadow-[0_0_12px_#f97316]"></div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Loading Spinner */}
+                            {isCameraLoading && (
+                                <div className="absolute inset-0 bg-slate-900/90 z-20 flex flex-col items-center justify-center gap-3">
+                                    <Loader2 className="h-10 w-10 text-orange-500 animate-spin" />
+                                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Accessing Camera...</span>
+                                </div>
+                            )}
+
+                            {/* Camera Permissions Blocked Error screen */}
+                            {hasCameraPermission === false && (
+                                <div className="absolute inset-0 bg-slate-900 p-6 flex flex-col items-center justify-center text-center gap-4 z-20">
+                                    <div className="p-3 bg-red-950/50 border border-red-500/20 text-red-500 rounded-full">
+                                        <XCircle size={32} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="font-bold text-white text-base">Camera Access Blocked</h4>
+                                        <p className="text-xs text-slate-400 max-w-xs">
+                                            Please enable camera permissions in your browser configuration to scan registrant QR codes.
+                                        </p>
+                                    </div>
+                                    <Button size="sm" className="bg-orange-500 hover:bg-orange-600 font-bold rounded-xl h-10 px-4 cursor-pointer" onClick={startScanner}>
+                                        Retry Camera Access
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* Label strip on mobile */}
+                            {isMobile && isMobileScannerOpen && (
+                                <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                                    <span className="bg-black/60 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider text-white whitespace-nowrap">
+                                        POINT CAMERA AT REGISTRANT'S QR CODE
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Control group buttons */}
+                            {isScannerActive && (
+                                isMobile && isMobileScannerOpen ? (
+                                    <>
+                                        <Button 
+                                            size="sm" 
+                                            variant="secondary"
+                                            onClick={toggleFlashlight}
+                                            className="absolute bottom-8 left-8 bg-slate-900/80 hover:bg-slate-900 border border-slate-700/50 text-white rounded-xl h-12 w-12 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all z-20 cursor-pointer"
+                                            title="Toggle Flashlight"
+                                        >
+                                            <Lightbulb size={20} className={isFlashlightOn ? "text-yellow-400" : "text-white"} />
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            variant="secondary"
+                                            onClick={toggleCamera}
+                                            className="absolute bottom-8 right-8 bg-slate-900/80 hover:bg-slate-900 border border-slate-700/50 text-white rounded-xl h-12 w-12 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all z-20 cursor-pointer"
+                                            title="Switch Camera"
+                                        >
+                                            <RotateCw size={20} />
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-20 pointer-events-auto px-4">
+                                        <Button 
+                                            size="sm" 
+                                            variant="secondary"
+                                            onClick={toggleFlashlight}
+                                            className="bg-slate-900/80 hover:bg-slate-900 border border-slate-700/50 text-white rounded-xl h-10 w-10 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer"
+                                            title="Toggle Flashlight"
+                                        >
+                                            <Lightbulb size={16} className={isFlashlightOn ? "text-yellow-400" : "text-white"} />
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            variant="secondary"
+                                            onClick={toggleCamera}
+                                            className="bg-slate-900/80 hover:bg-slate-900 border border-slate-700/50 text-white rounded-xl h-10 w-10 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer"
+                                            title="Switch Camera"
+                                        >
+                                            <RotateCw size={16} />
+                                        </Button>
+                                    </div>
+                                )
+                            )}
+                        </div>
+
+                        {!(isMobile && isMobileScannerOpen) && (
+                            <p className="text-center text-xs text-slate-500 font-bold tracking-wide uppercase">
+                                Point camera at registrant's QR code
+                            </p>
                         )}
                     </div>
-
-                    <p className="text-center text-xs text-slate-500 font-bold tracking-wide uppercase">
-                        Point camera at registrant's QR code
-                    </p>
-                </div>
+                )
             )}
 
             {activeTab === 'manual' && (
@@ -937,14 +1056,18 @@ export default function CheckInModule() {
             </Card>
 
             {/* FULL SCREEN SLIDE UP RESULT OVERLAY */}
-            <div className={`fixed inset-0 z-50 transition-all duration-300 transform flex flex-col justify-end
+            <div className={`fixed inset-0 z-[60] transition-all duration-300 transform flex flex-col justify-end
                 ${overlayState.show ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}
             `}>
                 {/* Backdrop Blur */}
-                <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={handleDismissOverlay}></div>
+                {!isMobile && <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={handleDismissOverlay}></div>}
 
                 {/* Overlay Sheet content */}
-                <div className={`relative z-10 w-full max-w-xl mx-auto rounded-t-[32px] p-6 text-white text-center flex flex-col items-center gap-6 shadow-2xl transition-colors duration-300 min-h-[60vh] max-h-[85vh] overflow-y-auto pb-10
+                <div className={`relative z-[70] w-full mx-auto text-white text-center flex flex-col items-center gap-6 shadow-2xl transition-colors duration-300 overflow-y-auto pb-10
+                    ${isMobile 
+                        ? 'fixed inset-0 w-screen h-screen rounded-none z-[70] justify-between p-6' 
+                        : 'max-w-xl rounded-t-[32px] p-6 min-h-[60vh] max-h-[85vh] justify-start'
+                    }
                     ${overlayState.type === 'success' ? 'bg-emerald-600' :
                       overlayState.type === 'already_checked_in' ? 'bg-amber-600' :
                       overlayState.type === 'payment_pending' ? 'bg-red-600' :
@@ -952,7 +1075,7 @@ export default function CheckInModule() {
                       'bg-slate-700'}
                 `}>
                     {/* Top Slider indicator */}
-                    <div className="w-12 h-1.5 bg-white/20 rounded-full shrink-0"></div>
+                    {!isMobile && <div className="w-12 h-1.5 bg-white/20 rounded-full shrink-0"></div>}
 
                     {/* Result Icon */}
                     <div className="p-4 bg-white/10 border border-white/20 rounded-full scale-110 mt-2 animate-bounce">
@@ -1026,22 +1149,44 @@ export default function CheckInModule() {
                     )}
 
                     {/* Action buttons with countdown timer label */}
-                    <div className="w-full max-w-xs mt-auto space-y-3">
-                        <Button 
-                            className={`w-full h-12 rounded-xl text-sm font-bold tracking-wide shadow-lg border border-white/10 active:scale-95 transition-all
-                                ${overlayState.type === 'success' 
-                                    ? 'bg-white text-emerald-800 hover:bg-slate-100' 
-                                    : 'bg-black/20 text-white hover:bg-black/35'
-                                }
-                            `}
-                            onClick={handleDismissOverlay}
-                        >
-                            {overlayState.type === 'success' ? 'Next' : 'Dismiss'}
-                        </Button>
-                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest block">
-                            Auto-dismissing in {countdown}s
-                        </span>
-                    </div>
+                    {isMobile ? (
+                        <div className="w-full max-w-xs mt-auto space-y-3 px-4">
+                            <Button 
+                                type="button"
+                                onClick={handleScanAnother}
+                                className="w-full h-12 rounded-xl text-sm font-bold tracking-wide shadow-lg bg-orange-500 hover:bg-orange-600 text-white border-none active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+                                style={{ minHeight: '48px' }}
+                            >
+                                Scan Another Code
+                            </Button>
+                            <Button 
+                                type="button"
+                                variant="outline"
+                                onClick={handleExitScanner}
+                                className="w-full h-12 rounded-xl text-sm font-bold tracking-wide border border-white/50 text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer bg-transparent flex items-center justify-center font-bold"
+                                style={{ minHeight: '48px' }}
+                            >
+                                Exit Scanner
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="w-full max-w-xs mt-auto space-y-3">
+                            <Button 
+                                className={`w-full h-12 rounded-xl text-sm font-bold tracking-wide shadow-lg border border-white/10 active:scale-95 transition-all
+                                    ${overlayState.type === 'success' 
+                                        ? 'bg-white text-emerald-800 hover:bg-slate-100' 
+                                        : 'bg-black/20 text-white hover:bg-black/35'
+                                    }
+                                `}
+                                onClick={handleDismissOverlay}
+                            >
+                                {overlayState.type === 'success' ? 'Next' : 'Dismiss'}
+                            </Button>
+                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest block">
+                                Auto-dismissing in {countdown}s
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
