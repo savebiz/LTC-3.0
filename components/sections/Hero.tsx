@@ -106,7 +106,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 2, duration: 1 }}
-                className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 md:hidden flex flex-col items-center gap-2 md:gap-3 z-30"
+                className="absolute bottom-20 md:bottom-10 left-1/2 -translate-x-1/2 md:hidden flex flex-col items-center gap-2 md:gap-3 z-30"
             >
                 <span className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-gray-400">Scroll</span>
                 <motion.div
