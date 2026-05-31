@@ -21,7 +21,7 @@ const Gallery: React.FC = () => {
                         <p className="text-base md:text-xl text-gray-400 max-w-md font-light">Fragments of time from our last convergence.</p>
                     </motion.div>
                     <a
-                        href="https://instagram.com/p/DYralkoClJs/"
+                        href="https://www.instagram.com/rccg.c3tc/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hidden md:flex"
@@ -58,7 +58,7 @@ const Gallery: React.FC = () => {
 
                 <div className="mt-8 flex justify-center md:hidden">
                     <a
-                        href="https://instagram.com/p/DYralkoClJs/"
+                        href="https://www.instagram.com/rccg.c3tc/"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
