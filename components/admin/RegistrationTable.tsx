@@ -17,7 +17,7 @@ interface Registration {
   email: string;
   phone: string;
   region: string;
-  church?: string;
+  province: string;
   category: string;
   amount_due: number;
   payment_method: string;
@@ -27,6 +27,7 @@ interface Registration {
   checked_in: boolean;
   checked_in_at?: string;
   rejection_reason?: string;
+  batch_reference: string;
 }
 
 export default function RegistrationTable() {
@@ -296,7 +297,7 @@ export default function RegistrationTable() {
 
   function exportCSV() {
     const headers = [
-      'Reference Code', 'Full Name', 'Church', 'Region', 'Category', 
+      'Reference Code', 'Full Name', 'Region', 'Province', 'Category', 
       'Amount Due', 'Payment Method', 'Payment Reference', 'Payment Status', 'Checked In', 'Date Registered'
     ];
     const csvContent = [
@@ -304,8 +305,8 @@ export default function RegistrationTable() {
       ...filteredData.map(r => [
         `"${r.batch_reference || ''}"`, 
         `"${r.full_name || ''}"`, 
-        `"${r.church || ''}"`, 
         `"${r.region || ''}"`, 
+        `"${r.province || ''}"`, 
         `"${r.category || ''}"`, 
         r.amount_due || 0,
         `"${r.payment_method || ''}"`, 
@@ -328,59 +329,59 @@ export default function RegistrationTable() {
     <div className="space-y-6">
       
       {/* Dashboard Summary Bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-blue-50 text-blue-500 rounded-xl">
-              <Users size={20} />
+      <div className="grid grid-cols-5 gap-2 md:gap-4">
+        <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden w-full">
+          <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
+              <Users size={16} className="md:w-5 md:h-5" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Registered</p>
-              <h3 className="text-xl font-bold text-slate-800 mt-0.5">{totalRegistered.toLocaleString()}</h3>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-emerald-50 text-emerald-500 rounded-xl">
-              <CheckCircle2 size={20} />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Cleared</p>
-              <h3 className="text-xl font-bold mt-0.5 text-emerald-600">{totalCleared.toLocaleString()}</h3>
+            <div className="min-w-0 w-full">
+              <p className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-wider truncate" title="Registered">Registered</p>
+              <h3 className="text-xs sm:text-base md:text-xl font-black text-slate-800 mt-0.5">{totalRegistered.toLocaleString()}</h3>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-orange-50 text-orange-500 rounded-xl">
-              <AlertCircle size={20} />
+        <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden w-full">
+          <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <div className="p-2 md:p-3 bg-emerald-50 text-emerald-500 rounded-xl shrink-0">
+              <CheckCircle2 size={16} className="md:w-5 md:h-5" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Pending</p>
-              <h3 className="text-xl font-bold mt-0.5 text-orange-600">{totalPending.toLocaleString()}</h3>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-blue-50 text-blue-500 rounded-xl">
-              <MapPin size={20} />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pay-on-Arrival</p>
-              <h3 className="text-xl font-bold mt-0.5 text-blue-600">{totalPayOnArrival.toLocaleString()}</h3>
+            <div className="min-w-0 w-full">
+              <p className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-wider truncate" title="Cleared">Cleared</p>
+              <h3 className="text-xs sm:text-base md:text-xl font-black mt-0.5 text-emerald-600">{totalCleared.toLocaleString()}</h3>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden col-span-2 lg:col-span-1">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-violet-50 text-violet-500 rounded-xl">
-              <CreditCard size={20} />
+        <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden w-full">
+          <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <div className="p-2 md:p-3 bg-orange-50 text-orange-500 rounded-xl shrink-0">
+              <AlertCircle size={16} className="md:w-5 md:h-5" />
             </div>
-            <div className="w-full">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Amt Collected</p>
-              <h3 className="text-xl font-bold mt-0.5 text-violet-600 font-mono">₦{totalAmountCollected.toLocaleString()}</h3>
+            <div className="min-w-0 w-full">
+              <p className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-wider truncate" title="Pending">Pending</p>
+              <h3 className="text-xs sm:text-base md:text-xl font-black mt-0.5 text-orange-600">{totalPending.toLocaleString()}</h3>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden w-full">
+          <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
+              <MapPin size={16} className="md:w-5 md:h-5" />
+            </div>
+            <div className="min-w-0 w-full">
+              <p className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-wider truncate" title="On Arrival">On Arrival</p>
+              <h3 className="text-xs sm:text-base md:text-xl font-black mt-0.5 text-blue-600">{totalPayOnArrival.toLocaleString()}</h3>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden w-full">
+          <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <div className="p-2 md:p-3 bg-violet-50 text-violet-500 rounded-xl shrink-0">
+              <CreditCard size={16} className="md:w-5 md:h-5" />
+            </div>
+            <div className="min-w-0 w-full">
+              <p className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-wider truncate" title="Collected">Collected</p>
+              <h3 className="text-xs sm:text-base md:text-xl font-black mt-0.5 text-violet-600 font-mono">₦{totalAmountCollected.toLocaleString()}</h3>
             </div>
           </CardContent>
         </Card>
@@ -454,8 +455,8 @@ export default function RegistrationTable() {
               <tr>
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Ref Code</th>
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Full Name</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Church</th>
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Region</th>
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Province</th>
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Category</th>
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Amt Due</th>
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Method</th>
@@ -485,13 +486,20 @@ export default function RegistrationTable() {
                   const isCleared = reg.payment_status?.toLowerCase() === 'cleared' || reg.status?.toLowerCase() === 'confirmed';
                   const isPending = reg.payment_status?.toLowerCase() === 'pending' || reg.status?.toLowerCase() === 'pending_payment' || reg.status?.toLowerCase() === 'pending_verification';
                   const isArrival = reg.payment_status?.toLowerCase() === 'pay_on_arrival' || reg.status?.toLowerCase() === 'pay_on_arrival';
+                  const isRejected = reg.status?.toLowerCase() === 'rejected' || reg.payment_status?.toLowerCase() === 'rejected';
+                  const isCheckInDisabled = isRejected || !isCleared;
+                  const checkInTooltip = isRejected 
+                    ? "Cannot check in — registration rejected" 
+                    : !isCleared 
+                      ? "Payment must be cleared before check-in" 
+                      : undefined;
 
                   return (
                     <tr key={reg.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-4 font-mono font-bold text-xs text-orange-600">{reg.batch_reference}</td>
                       <td className="px-4 py-4 font-semibold text-slate-900">{reg.full_name}</td>
-                      <td className="px-4 py-4 text-slate-500 truncate max-w-[120px]" title={reg.church}>{reg.church || '-'}</td>
                       <td className="px-4 py-4 text-slate-600 truncate max-w-[100px]">{reg.region}</td>
+                      <td className="px-4 py-4 text-slate-500 truncate max-w-[120px]" title={reg.province}>{reg.province || '-'}</td>
                       <td className="px-4 py-4 text-xs">
                         <span className={`px-2 py-0.5 rounded font-semibold capitalize ${
                           reg.category?.toLowerCase() === 'teenager' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'
@@ -521,20 +529,21 @@ export default function RegistrationTable() {
                       </td>
                       <td className="px-4 py-4 text-center">
                         {reg.checked_in ? (
-                          <div className="mx-auto flex items-center justify-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded text-xs w-fit font-bold">
-                            <UserCheck size={12} />
-                            <span>In</span>
+                          <div className="mx-auto flex items-center justify-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded text-xs w-fit font-bold">
+                            <span>Checked In ✓</span>
                           </div>
                         ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-[11px] font-bold border-zinc-300 hover:bg-zinc-50"
-                            onClick={() => handleCheckIn(reg.id, reg.full_name)}
-                            disabled={isSubmitting}
-                          >
-                            Check In
-                          </Button>
+                          <div title={checkInTooltip} className="inline-block">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-[11px] font-bold border-zinc-300 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={() => handleCheckIn(reg.id, reg.full_name)}
+                              disabled={isCheckInDisabled || isSubmitting}
+                            >
+                              Check In
+                            </Button>
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-4 text-right">
@@ -599,6 +608,13 @@ export default function RegistrationTable() {
             const isCleared = reg.payment_status?.toLowerCase() === 'cleared' || reg.status?.toLowerCase() === 'confirmed';
             const isPending = reg.payment_status?.toLowerCase() === 'pending' || reg.status?.toLowerCase() === 'pending_payment' || reg.status?.toLowerCase() === 'pending_verification';
             const isArrival = reg.payment_status?.toLowerCase() === 'pay_on_arrival' || reg.status?.toLowerCase() === 'pay_on_arrival';
+            const isRejected = reg.status?.toLowerCase() === 'rejected' || reg.payment_status?.toLowerCase() === 'rejected';
+            const isCheckInDisabled = isRejected || !isCleared;
+            const checkInTooltip = isRejected 
+              ? "Cannot check in — registration rejected" 
+              : !isCleared 
+                ? "Payment must be cleared before check-in" 
+                : undefined;
 
             return (
               <div key={reg.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
@@ -618,13 +634,17 @@ export default function RegistrationTable() {
 
                 <div className="space-y-0.5">
                   <h4 className="font-bold text-slate-900 text-base">{reg.full_name}</h4>
-                  <p className="text-xs text-slate-400">{reg.church || 'No Church Specified'}</p>
+                  <p className="text-xs text-slate-400">{reg.province || 'No Province Specified'}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs border-t border-b border-slate-100 py-3">
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Region</span>
                     <span className="font-semibold text-slate-700 mt-0.5 block">{reg.region}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Province</span>
+                    <span className="font-semibold text-slate-700 mt-0.5 block">{reg.province || '-'}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Category</span>
@@ -655,7 +675,7 @@ export default function RegistrationTable() {
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Check In</span>
                     {reg.checked_in ? (
-                      <span className="text-emerald-600 font-bold mt-0.5 block">✓ Checked In</span>
+                      <span className="text-emerald-600 font-bold mt-0.5 block">Checked In ✓</span>
                     ) : (
                       <span className="text-slate-400 mt-0.5 block">Not Checked In</span>
                     )}
@@ -697,19 +717,20 @@ export default function RegistrationTable() {
                   </div>
 
                   {!reg.checked_in ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 px-3.5 rounded-xl"
-                      onClick={() => handleCheckIn(reg.id, reg.full_name)}
-                      disabled={isSubmitting}
-                    >
-                      Check In
-                    </Button>
+                    <div title={checkInTooltip} className="inline-block">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 px-3.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => handleCheckIn(reg.id, reg.full_name)}
+                        disabled={isCheckInDisabled || isSubmitting}
+                      >
+                        Check In
+                      </Button>
+                    </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1 rounded-xl text-xs font-bold">
-                      <UserCheck size={14} />
-                      <span>Checked In</span>
+                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3.5 py-1.5 rounded-xl text-xs font-bold">
+                      <span>Checked In ✓</span>
                     </div>
                   )}
                 </div>

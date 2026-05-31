@@ -14,21 +14,82 @@ export default function DashboardOverview() {
     const [vols, setVols] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const formatCategory = (cat: string) => {
+        if (!cat) return '';
+        const lowercaseCat = cat.toLowerCase();
+        if (lowercaseCat.includes('teacher')) return 'Teacher / Adult';
+        if (lowercaseCat === 'teenager') return 'Teenager';
+        return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    };
+
+    const getStatusLabel = (r: any) => {
+        const ps = r.payment_status?.toLowerCase();
+        const st = r.status?.toLowerCase();
+        if (ps === 'cleared' || st === 'confirmed') return 'Cleared';
+        if (ps === 'pay_on_arrival' || st === 'pay_on_arrival') return 'Pay on Arrival';
+        if (ps === 'rejected' || st === 'rejected') return 'Rejected';
+        if (ps === 'pending' || st === 'pending_payment' || st === 'pending_verification') return 'Pending';
+        return ps || st || 'Pending';
+    };
+
+    const getStatusStyle = (r: any) => {
+        const label = getStatusLabel(r);
+        switch (label) {
+            case 'Cleared':
+                return 'bg-emerald-50 border border-emerald-100 text-emerald-700';
+            case 'Pay on Arrival':
+                return 'bg-blue-50 border border-blue-100 text-blue-700';
+            case 'Rejected':
+                return 'bg-red-50 border border-red-100 text-red-700';
+            case 'Pending':
+            default:
+                return 'bg-amber-50 border border-amber-100 text-amber-700';
+        }
+    };
+
     useEffect(() => {
-        async function loadData() {
-            setLoading(true);
+        async function loadData(showSpinner = true) {
+            if (showSpinner) setLoading(true);
             try {
-                const { data: rData } = await supabase.from('registrations').select('*');
-                const { data: vData } = await supabase.from('volunteers').select('*');
+                const { data: rData } = await supabase
+                    .from('registrations')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                const { data: vData } = await supabase
+                    .from('volunteers')
+                    .select('*')
+                    .order('created_at', { ascending: false });
                 if (rData) setRegs(rData);
                 if (vData) setVols(vData);
             } catch (err) {
                 console.error('Error fetching dashboard overview data:', err);
             } finally {
-                setLoading(false);
+                if (showSpinner) setLoading(false);
             }
         }
-        loadData();
+
+        loadData(true);
+
+        // Subscriptions
+        const channel = supabase
+            .channel('dashboard-overview-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations' }, () => {
+                loadData(false);
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'volunteers' }, () => {
+                loadData(false);
+            })
+            .subscribe();
+
+        // 30-second polling fallback
+        const intervalId = setInterval(() => {
+            loadData(false);
+        }, 30000);
+
+        return () => {
+            supabase.removeChannel(channel);
+            clearInterval(intervalId);
+        };
     }, []);
 
     // Compute metrics
@@ -47,8 +108,11 @@ export default function DashboardOverview() {
     const getRegistrationTrendData = () => {
         const countsByDay: Record<string, number> = {};
         
+        // Sort copy of regs chronologically ascending before grouping
+        const sortedRegs = [...regs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        
         // Let's look at the last 7 days of registrations
-        regs.forEach(r => {
+        sortedRegs.forEach(r => {
             if (!r.created_at) return;
             const dateStr = new Date(r.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' });
             countsByDay[dateStr] = (countsByDay[dateStr] || 0) + 1;
@@ -136,28 +200,24 @@ export default function DashboardOverview() {
                     <CardHeader>
                         <CardTitle className="text-lg">Recent Registrants</CardTitle>
                     </CardHeader>
-                    <CardContent className="overflow-y-auto max-h-[300px]">
+                    <CardContent className="overflow-y-auto max-h-[340px]">
                         <div className="space-y-4">
                             {regs.length === 0 ? (
                                 <p className="text-sm text-slate-500 py-6 text-center">No registrants found.</p>
                             ) : (
-                                regs.slice(0, 5).map((r, index) => (
+                                regs.slice(0, 10).map((r, index) => (
                                     <div key={r.id || index} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors border-b last:border-0 border-slate-100">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
-                                                {r.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'SA'}
+                                                {r.full_name?.trim().split(/\s+/).map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'SA'}
                                             </div>
                                             <div>
                                                 <p className="text-sm font-bold text-slate-800">{r.full_name}</p>
-                                                <p className="text-xs text-slate-500">{r.region} • {r.category}</p>
+                                                <p className="text-xs text-slate-500">{r.region} • {formatCategory(r.category)}</p>
                                             </div>
                                         </div>
-                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${
-                                            r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed'
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-orange-100 text-orange-700'
-                                        }`}>
-                                            {r.payment_status || r.status}
+                                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border capitalize ${getStatusStyle(r)}`}>
+                                            {getStatusLabel(r)}
                                         </span>
                                     </div>
                                 ))
