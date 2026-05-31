@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
-import { toast } from '@/components/ui/Toast';
+import { useDialog } from '../ui/DialogProvider';
 import { Plus, Trash2, Loader2, Users } from 'lucide-react';
 
 export default function SettingsPage() {
+    const { toast } = useDialog();
     const [volunteers, setVolunteers] = useState<string[]>([]);
     const [newName, setNewName] = useState('');
     const [loading, setLoading] = useState(true);

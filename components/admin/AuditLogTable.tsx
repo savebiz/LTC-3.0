@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
-import { toast } from '@/components/ui/Toast';
+import { useDialog } from '../ui/DialogProvider';
 import { 
     Search, Download, Loader2, ChevronRight, ChevronDown, 
     Calendar, ShieldAlert, CheckCircle2, XCircle, AlertTriangle, RefreshCw
@@ -25,6 +25,7 @@ interface AuditLogEntry {
 }
 
 export default function AuditLogTable() {
+    const { toast } = useDialog();
     const [logs, setLogs] = useState<AuditLogEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalCount, setTotalCount] = useState(0);
