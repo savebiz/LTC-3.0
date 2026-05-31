@@ -33,7 +33,7 @@ export default function SettingsPage() {
     // Verify role permissions
     const volunteerRole = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_role') : null;
     const volunteerName = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_volunteer') : null;
-    const isSuperAdmin = volunteerRole === 'Super Admin';
+    const isSuperAdmin = (volunteerRole || 'Super Admin') === 'Super Admin';
 
     // Fetch users list
     async function fetchUsers() {
