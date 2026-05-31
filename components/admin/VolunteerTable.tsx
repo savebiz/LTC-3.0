@@ -58,8 +58,16 @@ export default function VolunteerTable() {
                 throw new Error(errData.error || `HTTP error ${res.status}`);
             }
 
+            const resData = await res.json();
+            const emailSent = resData.emailSent;
+
             setData(prev => prev.map(v => v.id === id ? { ...v, status: 'confirmed' } : v));
-            toast.success('Volunteer Approved', 'The application has been successfully confirmed.');
+            
+            if (emailSent) {
+                toast.success('Volunteer Approved', 'Volunteer notified by email');
+            } else {
+                toast.warning('Volunteer Approved', 'Action saved — email notification failed');
+            }
             fetchVolunteers();
         } catch (err: any) {
             console.error(err);
@@ -70,7 +78,7 @@ export default function VolunteerTable() {
     }
 
     async function handleRejectClick(id: string) {
-        const { confirmed } = await confirm({
+        const { confirmed, value: reason } = await confirm({
             type: 'danger',
             title: 'Reject Volunteer Application',
             body: 'Are you sure you want to reject this volunteer application?',
@@ -88,7 +96,7 @@ export default function VolunteerTable() {
                     'Content-Type': 'application/json',
                     'x-admin-key': 'C3TC@admin2026'
                 },
-                body: JSON.stringify({ id, status: 'rejected' })
+                body: JSON.stringify({ id, status: 'rejected', rejection_reason: reason?.trim() || '' })
             });
 
             if (!res.ok) {
@@ -96,8 +104,16 @@ export default function VolunteerTable() {
                 throw new Error(errData.error || `HTTP error ${res.status}`);
             }
 
-            setData(prev => prev.map(v => v.id === id ? { ...v, status: 'rejected' } : v));
-            toast.success('Volunteer Rejected', 'The application has been successfully rejected.');
+            const resData = await res.json();
+            const emailSent = resData.emailSent;
+
+            setData(prev => prev.map(v => v.id === id ? { ...v, status: 'rejected', rejection_reason: reason?.trim() || '' } : v));
+            
+            if (emailSent) {
+                toast.success('Volunteer Rejected', 'Volunteer notified by email');
+            } else {
+                toast.warning('Volunteer Rejected', 'Action saved — email notification failed');
+            }
             fetchVolunteers();
         } catch (err: any) {
             console.error(err);
