@@ -110,7 +110,6 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
         <meta charset="utf-8">
         <title>You're In! Your C3TC '26 Registration is Confirmed ✅</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@900&display=swap" rel="stylesheet">
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; color: #27272a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
         <div style="max-width: 600px; margin: 40px auto; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
@@ -118,7 +117,6 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
             <!-- Header Banner -->
             <div style="background-color: #0a0f1e; padding: 40px 20px; text-align: center;">
                 <img src="${logoUrl}" alt="C3TC Logo" style="height: 80px; width: auto; display: block; margin: 0 auto 16px auto;" />
-                <h2 style="color: #ffffff; font-family: 'Syne', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 30px; font-weight: 900; margin: 0 0 8px 0; letter-spacing: -0.02em; text-transform: none; line-height: 1.2;">C3TC 3.0</h2>
                 <h3 style="color: #f97316; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.5px;">T.I.M.E '26</h3>
             </div>
 
