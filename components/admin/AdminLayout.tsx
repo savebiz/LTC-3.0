@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import {
     LayoutDashboard, Users, CreditCard, QrCode,
-    Settings, LogOut, Menu, X
+    Settings, LogOut, Menu, X, ClipboardList
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -17,11 +16,20 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children, activePage, onNavigate, onLogout }: AdminLayoutProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    // Read volunteer name from session storage
+    const volunteerName = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_volunteer') : null;
+
+    // Calculate volunteer initials (e.g. "VS" for Victor Sabo)
+    const initials = volunteerName 
+        ? volunteerName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)
+        : 'AD';
+
     const NAV_ITEMS = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'registrations', label: 'Registrations', icon: Users },
         { id: 'volunteers', label: 'Volunteers', icon: Users },
         { id: 'finances', label: 'Finances', icon: CreditCard },
+        { id: 'auditlog', label: 'Audit Log', icon: ClipboardList },
         { id: 'checkin', label: 'Check-in', icon: QrCode },
         { id: 'settings', label: 'Settings', icon: Settings },
     ];
@@ -59,9 +67,9 @@ export default function AdminLayout({ children, activePage, onNavigate, onLogout
                                 setIsSidebarOpen(false);
                             }}
                             className={cn(
-                                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer",
                                 activePage === item.id
-                                    ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                                    ? "bg-orange-50 text-white shadow-lg shadow-orange-500/20"
                                     : "text-slate-400 hover:bg-slate-800 hover:text-white"
                             )}
                         >
@@ -74,7 +82,7 @@ export default function AdminLayout({ children, activePage, onNavigate, onLogout
                 <div className="absolute bottom-0 w-full p-4 border-t border-slate-800">
                     <Button 
                         variant="ghost" 
-                        className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-900/20 gap-2"
+                        className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-900/20 gap-2 cursor-pointer"
                         onClick={onLogout}
                     >
                         <LogOut size={18} />
@@ -96,11 +104,13 @@ export default function AdminLayout({ children, activePage, onNavigate, onLogout
 
                     <div className="flex items-center gap-4 ml-auto">
                         <div className="text-right hidden md:block">
-                            <p className="text-sm font-bold text-slate-900">Admin User</p>
-                            <p className="text-xs text-slate-500">Super Admin</p>
+                            <p className="text-sm font-bold text-slate-900">Super Admin</p>
+                            <p className="text-xs text-slate-500">
+                                {volunteerName ? `Logged in as: ${volunteerName}` : 'Session Active'}
+                            </p>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold border-2 border-orange-200">
-                            AD
+                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold border-2 border-orange-200 shadow-sm" title={volunteerName || 'Super Admin'}>
+                            {initials}
                         </div>
                     </div>
                 </header>

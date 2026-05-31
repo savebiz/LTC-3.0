@@ -298,6 +298,35 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             if (regError) throw regError;
 
             console.log("Registrations Saved:", regData);
+            
+            // Log registration_created for each delegate in the batch (non-blocking)
+            if (regData && regData.length > 0) {
+                try {
+                    const auditLogs = regData.map((r: any) => ({
+                        action: 'registration_created',
+                        registration_id: r.id,
+                        batch_reference: r.batch_reference,
+                        registrant_name: r.full_name,
+                        performed_by: 'self',
+                        device_info: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
+                        new_value: {
+                            id: r.id,
+                            full_name: r.full_name,
+                            category: r.category,
+                            batch_reference: r.batch_reference,
+                            payment_status: r.payment_status,
+                            amount_due: r.amount_due
+                        }
+                    }));
+                    
+                    supabase.from('audit_log').insert(auditLogs).then(({ error }) => {
+                        if (error) console.error("Error inserting audit logs for registration:", error);
+                    });
+                } catch (e) {
+                    console.error("Failed to build audit logs for registration:", e);
+                }
+            }
+
             setRegistrationData(regData);
             setStep('step3');
             onStepChange?.('upload');

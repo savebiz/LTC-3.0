@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
   Download, Search, Loader2, Users, CheckCircle2, 
-  AlertCircle, MapPin, CreditCard, UserCheck, Trash2
+  AlertCircle, MapPin, CreditCard, UserCheck, Trash2,
+  History, X, Clock
 } from 'lucide-react';
 import { LAGOS_REGIONS, OGUN_REGIONS } from "@/constants";
 import { useDialog } from '../ui/DialogProvider';
@@ -39,11 +40,62 @@ export default function RegistrationTable() {
   const [regionFilter, setRegionFilter] = useState('all');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { confirm, toast } = useDialog();
+  // Volunteer session identity
+  const volunteer = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_volunteer') || 'admin' : 'admin';
+
+  // Audit history states
+  const [historyRegistrant, setHistoryRegistrant] = useState<Registration | null>(null);
+  const [historyLogs, setHistoryLogs] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const { confirm } = useDialog();
 
   useEffect(() => {
     fetchRegistrations();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('table-registration-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations' }, () => {
+        fetchRegistrations();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
+
+  // Fetch registrant history trail when sliding panel opens
+  useEffect(() => {
+    async function fetchHistory() {
+      if (!historyRegistrant) return;
+      setHistoryLoading(true);
+      try {
+        const { data: logs, error } = await supabase
+          .from('audit_log')
+          .select('*')
+          .eq('registration_id', historyRegistrant.id)
+          .order('created_at', { ascending: false });
+        if (!error && logs) {
+          setHistoryLogs(logs);
+        } else {
+          setHistoryLogs([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch history logs:', err);
+        setHistoryLogs([]);
+      } finally {
+        setHistoryLoading(false);
+      }
+    }
+
+    fetchHistory();
+  }, [historyRegistrant]);
+
+  const handleShowHistory = (registrant: Registration) => {
+    setHistoryRegistrant(registrant);
+  };
 
   async function fetchRegistrations() {
     setLoading(true);
@@ -65,7 +117,7 @@ export default function RegistrationTable() {
         'Content-Type': 'application/json',
         'x-admin-key': 'C3TC@admin2026',
       },
-      body: JSON.stringify({ id, updates }),
+      body: JSON.stringify({ id, updates, performed_by: volunteer }),
     });
 
     if (!res.ok) {
@@ -89,7 +141,7 @@ export default function RegistrationTable() {
       await updateRegistration(id, {
         payment_status: 'cleared',
         status: 'confirmed',
-        cleared_by: 'admin',
+        cleared_by: volunteer,
         cleared_at: new Date().toISOString()
       });
 
@@ -97,7 +149,7 @@ export default function RegistrationTable() {
         ...r,
         payment_status: 'cleared',
         status: 'confirmed',
-        cleared_by: 'admin',
+        cleared_by: volunteer,
         cleared_at: new Date().toISOString()
       } : r));
 
@@ -125,7 +177,7 @@ export default function RegistrationTable() {
       await updateRegistration(id, {
         payment_status: 'cleared',
         status: 'confirmed',
-        cleared_by: 'admin',
+        cleared_by: volunteer,
         cleared_at: new Date().toISOString()
       });
 
@@ -133,7 +185,7 @@ export default function RegistrationTable() {
         ...r,
         payment_status: 'cleared',
         status: 'confirmed',
-        cleared_by: 'admin',
+        cleared_by: volunteer,
         cleared_at: new Date().toISOString()
       } : r));
 
@@ -196,7 +248,7 @@ export default function RegistrationTable() {
         status: 'rejected',
         payment_status: 'rejected',
         rejection_reason: reason?.trim() || '',
-        cleared_by: 'admin',
+        cleared_by: volunteer,
         cleared_at: new Date().toISOString()
       });
 
@@ -205,7 +257,7 @@ export default function RegistrationTable() {
         status: 'rejected',
         payment_status: 'rejected',
         rejection_reason: reason?.trim() || '',
-        cleared_by: 'admin',
+        cleared_by: volunteer,
         cleared_at: new Date().toISOString()
       } : r));
 
@@ -393,91 +445,92 @@ export default function RegistrationTable() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <Input
               placeholder="Search reference, name, payment ref..."
-              className="pl-10 h-10 border-slate-200 rounded-xl"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
+              className="pl-10 h-11 border-slate-200 rounded-xl bg-slate-50/50"
             />
           </div>
-          <div>
+
+          <div className="col-span-1">
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="w-full h-10 border border-slate-200 rounded-xl px-3 bg-white text-sm text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="w-full h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none"
             >
-              <option value="all">All Payment Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="cleared">Cleared</option>
+              <option value="all">All Payments</option>
+              <option value="pending">Pending Verification</option>
+              <option value="cleared">Cleared Payments</option>
               <option value="pay_on_arrival">Pay on Arrival</option>
             </select>
           </div>
-          <div>
+
+          <div className="col-span-1">
             <select
               value={categoryFilter}
               onChange={e => setCategoryFilter(e.target.value)}
-              className="w-full h-10 border border-slate-200 rounded-xl px-3 bg-white text-sm text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="w-full h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none"
             >
               <option value="all">All Categories</option>
-              <option value="teenager">Teenager</option>
-              <option value="teacher">Teacher / Adult</option>
+              <option value="teenager">Teenagers</option>
+              <option value="teacher">Teachers / Adults</option>
             </select>
           </div>
-          <div>
+
+          <div className="col-span-1 flex gap-2">
             <select
               value={regionFilter}
               onChange={e => setRegionFilter(e.target.value)}
-              className="w-full h-10 border border-slate-200 rounded-xl px-3 bg-white text-sm text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="flex-1 h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none"
             >
               <option value="all">All Regions</option>
-              <option value="Lagos">Lagos</option>
-              <option value="Ogun">Ogun</option>
-              <option value="Other">Other</option>
+              <option value="Lagos">Lagos State</option>
+              <option value="Ogun">Ogun State</option>
+              <option value="Other">Other Regions</option>
             </select>
+            <Button
+              variant="outline"
+              onClick={exportCSV}
+              className="h-11 px-3 border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl cursor-pointer"
+              title="Export Current View as CSV"
+            >
+              <Download size={18} />
+            </Button>
           </div>
-        </div>
-
-        <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Matching Registrations: {filteredData.length}
-          </p>
-          <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2 h-9 text-xs font-bold border-zinc-200 rounded-xl">
-            <Download size={14} />
-            Export CSV
-          </Button>
         </div>
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block bg-white border rounded-2xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 border-b text-slate-500 font-medium">
-              <tr>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Ref Code</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Full Name</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Region</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Province</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Category</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Amt Due</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Method</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Payment Ref</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Status</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Date</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-center">Check In</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-right">Actions</th>
+      <div className="hidden md:block bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-100">
+                <th className="py-4 px-4">Ref Code</th>
+                <th className="py-4 px-4">Full Name</th>
+                <th className="py-4 px-4">Region</th>
+                <th className="py-4 px-4">Province</th>
+                <th className="py-4 px-4">Category</th>
+                <th className="py-4 px-4">Amt Due</th>
+                <th className="py-4 px-4">Method</th>
+                <th className="py-4 px-4">Payment Ref</th>
+                <th className="py-4 px-4">Status</th>
+                <th className="py-4 px-4">Date</th>
+                <th className="py-4 px-4 text-center">Check In</th>
+                <th className="py-4 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y text-slate-700">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={12} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={12} className="py-12 text-center text-slate-500">
                     <Loader2 className="mx-auto h-8 w-8 animate-spin mb-2" />
-                    Loading data...
+                    Loading registrations...
                   </td>
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-4 py-12 text-center text-slate-500">
-                    No registrations found.
+                  <td colSpan={12} className="py-12 text-center text-slate-500">
+                    No registrations found matching filters.
                   </td>
                 </tr>
               ) : (
@@ -494,9 +547,9 @@ export default function RegistrationTable() {
                       : undefined;
 
                   return (
-                    <tr key={reg.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-4 font-mono font-bold text-xs text-orange-600">{reg.batch_reference}</td>
-                      <td className="px-4 py-4 font-semibold text-slate-900">{reg.full_name}</td>
+                    <tr key={reg.id} className="hover:bg-slate-50/50 transition-colors text-slate-700 text-xs font-semibold">
+                      <td className="px-4 py-4 font-mono font-bold text-orange-600">{reg.batch_reference}</td>
+                      <td className="px-4 py-4 text-slate-900 font-bold truncate max-w-[120px]" title={reg.full_name}>{reg.full_name}</td>
                       <td className="px-4 py-4 text-slate-600 truncate max-w-[100px]">{reg.region}</td>
                       <td className="px-4 py-4 text-slate-500 truncate max-w-[120px]" title={reg.province}>{reg.province || '-'}</td>
                       <td className="px-4 py-4 text-xs">
@@ -536,7 +589,7 @@ export default function RegistrationTable() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-7 text-[11px] font-bold border-zinc-300 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="h-7 text-[11px] font-bold border-zinc-300 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                               onClick={() => handleCheckIn(reg.id, reg.full_name)}
                               disabled={isCheckInDisabled || isSubmitting}
                             >
@@ -547,11 +600,21 @@ export default function RegistrationTable() {
                       </td>
                       <td className="px-4 py-4 text-right">
                         <div className="flex gap-1.5 justify-end items-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-slate-200 text-slate-500 hover:bg-slate-50 font-bold flex items-center gap-1 cursor-pointer"
+                            onClick={() => handleShowHistory(reg)}
+                            title="View History"
+                          >
+                            <History size={13} />
+                            History
+                          </Button>
                           {isPending && (
                             <>
                               <Button
                                 size="sm"
-                                className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white font-bold"
+                                className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white font-bold cursor-pointer"
                                 onClick={() => handleMarkAsCleared(reg.id)}
                                 disabled={isSubmitting}
                               >
@@ -559,7 +622,7 @@ export default function RegistrationTable() {
                               </Button>
                               <Button
                                 size="sm"
-                                className="h-7 text-xs bg-red-500 hover:bg-red-600 text-white font-bold"
+                                className="h-7 text-xs bg-red-500 hover:bg-red-600 text-white font-bold cursor-pointer"
                                 onClick={() => handleRejectClick(reg.id)}
                                 disabled={isSubmitting}
                               >
@@ -570,15 +633,12 @@ export default function RegistrationTable() {
                           {isArrival && (
                             <Button
                               size="sm"
-                              className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                              className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer"
                               onClick={() => handleMarkAsPaid(reg.id)}
                               disabled={isSubmitting}
                             >
                               Mark as Paid
                             </Button>
-                          )}
-                          {!isPending && !isArrival && (
-                            <span className="text-xs text-slate-400">-</span>
                           )}
                         </div>
                       </td>
@@ -682,12 +742,21 @@ export default function RegistrationTable() {
                 </div>
 
                 <div className="flex justify-between items-center gap-2 pt-1">
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs border-slate-200 text-slate-500 hover:bg-slate-50 font-bold px-2 rounded-xl flex items-center gap-1 cursor-pointer"
+                      onClick={() => handleShowHistory(reg)}
+                    >
+                      <History size={12} />
+                      History
+                    </Button>
                     {isPending && (
                       <>
                         <Button
                           size="sm"
-                          className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-3.5 rounded-xl"
+                          className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-2.5 rounded-xl cursor-pointer"
                           onClick={() => handleMarkAsCleared(reg.id)}
                           disabled={isSubmitting}
                         >
@@ -695,7 +764,7 @@ export default function RegistrationTable() {
                         </Button>
                         <Button
                           size="sm"
-                          className="h-8 text-xs bg-red-500 hover:bg-red-600 text-white font-bold px-3.5 rounded-xl"
+                          className="h-8 text-xs bg-red-500 hover:bg-red-600 text-white font-bold px-2.5 rounded-xl cursor-pointer"
                           onClick={() => handleRejectClick(reg.id)}
                           disabled={isSubmitting}
                         >
@@ -706,7 +775,7 @@ export default function RegistrationTable() {
                     {isArrival && (
                       <Button
                         size="sm"
-                        className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-3.5 rounded-xl"
+                        className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 rounded-xl cursor-pointer"
                         onClick={() => handleMarkAsPaid(reg.id)}
                         disabled={isSubmitting}
                       >
@@ -720,7 +789,7 @@ export default function RegistrationTable() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 px-3.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 px-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         onClick={() => handleCheckIn(reg.id, reg.full_name)}
                         disabled={isCheckInDisabled || isSubmitting}
                       >
@@ -728,7 +797,7 @@ export default function RegistrationTable() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3.5 py-1.5 rounded-xl text-xs font-bold">
+                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold">
                       <span>Checked In ✓</span>
                     </div>
                   )}
@@ -738,6 +807,105 @@ export default function RegistrationTable() {
           })
         )}
       </div>
+
+      {/* Slide-in History Panel */}
+      {historyRegistrant && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/45 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in" onClick={() => setHistoryRegistrant(null)} />
+          
+          {/* Panel Content */}
+          <div className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col p-6 overflow-y-auto animate-in slide-in-from-right duration-300 z-10 border-l border-slate-200">
+            <div className="flex items-center justify-between border-b pb-4 mb-4">
+              <div>
+                <h3 className="font-bold text-lg text-slate-800">Registration History</h3>
+                <p className="text-xs text-slate-500 font-semibold">{historyRegistrant.full_name} ({historyRegistrant.batch_reference})</p>
+              </div>
+              <button 
+                onClick={() => setHistoryRegistrant(null)} 
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {historyLoading ? (
+              <div className="flex flex-col items-center justify-center flex-1 py-12 gap-2 text-slate-400">
+                <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
+                <span className="text-xs font-semibold">Loading history logs...</span>
+              </div>
+            ) : historyLogs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400 border border-dashed rounded-xl bg-slate-50/50">
+                <Clock className="h-8 w-8 text-slate-300 mb-2" />
+                <span className="text-xs font-medium">No actions logged for this registrant.</span>
+              </div>
+            ) : (
+              <div className="flex-1 space-y-6 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                {historyLogs.map((log) => {
+                  let statusColor = "bg-slate-550 border-slate-650 text-white";
+                  let actionText = log.action;
+
+                  if (log.action === 'payment_cleared') {
+                      statusColor = "bg-emerald-500 text-white";
+                      actionText = "Payment Cleared";
+                  } else if (log.action === 'check_in_success') {
+                      statusColor = "bg-emerald-500 text-white";
+                      actionText = "Checked In Successfully";
+                  } else if (log.action === 'registration_created') {
+                      statusColor = "bg-blue-500 text-white";
+                      actionText = "Registration Created";
+                  } else if (log.action === 'payment_rejected') {
+                      statusColor = "bg-red-500 text-white";
+                      actionText = "Payment Rejected";
+                  } else if (log.action === 'check_in_blocked_rejected') {
+                      statusColor = "bg-red-500 text-white";
+                      actionText = "Check-in Blocked (Rejected Status)";
+                  } else if (log.action === 'check_in_blocked_pending') {
+                      statusColor = "bg-amber-500 text-white";
+                      actionText = "Check-in Blocked (Pending Status)";
+                  } else if (log.action === 'check_in_duplicate') {
+                      statusColor = "bg-amber-500 text-white";
+                      actionText = "Duplicate Check-in Attempted";
+                  } else if (log.action === 'db_update') {
+                      statusColor = "bg-slate-400 text-white";
+                      actionText = "Database Row Updated";
+                  }
+
+                  return (
+                    <div key={log.id} className="flex gap-4 relative">
+                      {/* Timeline dot */}
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white font-bold text-[10px] ${statusColor}`}>
+                        •
+                      </div>
+
+                      {/* Timeline Content */}
+                      <div className="flex-1 bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-2 shadow-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-1 border-b border-slate-200/60 pb-1.5">
+                          <span className="font-bold text-xs text-slate-800">{actionText}</span>
+                          <span className="text-[10px] font-semibold text-slate-400">{new Date(log.created_at).toLocaleString()}</span>
+                        </div>
+                        <div className="text-xs space-y-1">
+                          <p className="text-slate-600"><strong>Operator:</strong> <span className="font-bold text-slate-800">{log.performed_by}</span></p>
+                          {log.notes && (
+                            <p className="text-slate-500 italic mt-1 font-medium bg-slate-100/50 p-1.5 rounded-lg border border-slate-200/30">
+                              Note: {log.notes}
+                            </p>
+                          )}
+                          {log.device_info && (
+                            <p className="text-[10px] text-slate-400 truncate max-w-xs" title={log.device_info}>
+                              Device: {log.device_info}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );
