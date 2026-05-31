@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Loader2 } from "lucide-react"
+import { QRCodeSVG } from "qrcode.react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -156,6 +157,19 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     const [paymentRefError, setPaymentRefError] = useState('');
 
     const [delegates, setDelegates] = useState<any[]>([]);
+
+    const [qrSize, setQrSize] = useState(180);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const handleResize = () => {
+                setQrSize(window.innerWidth >= 768 ? 220 : 180);
+            };
+            handleResize();
+            window.addEventListener("resize", handleResize);
+            return () => window.removeEventListener("resize", handleResize);
+        }
+    }, []);
 
     const form = useForm<z.infer<typeof delegateSchema>>({
         resolver: zodResolver(delegateSchema),
@@ -465,7 +479,11 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
     if (step === 'step3') {
         const batchRef = registrationData && registrationData.length > 0 ? registrationData[0].batch_reference : 'C3TC-CONFIRMED';
+        const qrCodeHash = registrationData && registrationData.length > 0 ? registrationData[0].qr_code_hash : '';
         
+        const shareText = "I just registered for the Continent 3 Teens Conference — T.I.M.E '26! 🎉 Join me at Glory Arena, Redemption City of God, Ogun State on Saturday, 19th September 2026. Register at continent3teens.cc";
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+
         return (
             <div className="space-y-6 py-4 animate-in fade-in slide-in-from-bottom-4">
                 <div className="text-center space-y-2">
@@ -485,6 +503,24 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Batch Reference Code</h2>
                         <p className="text-3xl font-black text-orange-400 tracking-wider font-mono mt-1">{batchRef}</p>
                         <p className="text-[10px] text-gray-400 mt-2">Screenshot or note your reference code. You will need it on arrival.</p>
+                    </div>
+
+                    {/* QR Code Container */}
+                    <div className="flex flex-col items-center justify-center mb-6 mt-2 relative z-10">
+                        <div className="bg-white p-3 rounded-2xl inline-block shadow-lg">
+                            <QRCodeSVG 
+                                value={JSON.stringify({
+                                    ref: batchRef,
+                                    hash: qrCodeHash
+                                })} 
+                                size={qrSize} 
+                                level="M"
+                                includeMargin={true}
+                            />
+                        </div>
+                        <p className="text-xs text-zinc-300 mt-2.5 font-medium tracking-wide">
+                            Show this QR code at the venue for check-in
+                        </p>
                     </div>
 
                     <div className="space-y-3 text-sm">
@@ -536,22 +572,36 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                     <div>
                         <a
                             href={`/check-status?ref=${batchRef}`}
-                            target="_blank"
-                            rel="noreferrer"
                             className="inline-block text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                         >
-                            Check your registration status anytime at check-status →
+                            Check your registration status anytime at continent3teens.cc/check-status →
                         </a>
                     </div>
                 </div>
 
-                <Button
-                    type="button"
-                    className="w-full h-12 bg-zinc-900 hover:bg-black text-white font-bold"
-                    onClick={onSuccess}
-                >
-                    Close Window
-                </Button>
+                <div className="space-y-4 pt-4">
+                    <a
+                        href={whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center w-full h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold rounded-xl shadow-sm transition-colors text-base"
+                    >
+                        <svg className="w-5 h-5 mr-2 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.965C16.638 1.977 14.168.953 11.54.953c-5.441 0-9.866 4.372-9.87 9.802 0 1.814.492 3.587 1.429 5.161l-.98 3.58 3.687-.956zm11.233-5.836c-.3-.15-1.774-.865-2.048-.963-.274-.1-.474-.15-.674.15-.2.3-.774.963-.948 1.162-.174.2-.347.225-.647.075-.3-.15-1.264-.462-2.408-1.472-.89-.785-1.49-1.755-1.665-2.055-.174-.3-.018-.462.13-.61.135-.133.3-.347.45-.52.15-.174.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.674-1.606-.924-2.196-.243-.58-.49-.5-.674-.51-.174-.01-.374-.01-.574-.01-.2 0-.524.075-.798.375-.274.3-1.047 1.01-1.047 2.463 0 1.453 1.073 2.855 1.223 3.054.15.2 2.112 3.187 5.117 4.469.715.305 1.273.487 1.708.625.718.227 1.372.195 1.888.118.574-.085 1.774-.716 2.023-1.408.249-.693.249-1.285.174-1.408-.075-.125-.275-.2-.575-.35z"/>
+                        </svg>
+                        Share on WhatsApp
+                    </a>
+                    
+                    <div className="text-center pt-1.5">
+                        <button
+                            type="button"
+                            onClick={onSuccess}
+                            className="inline-block text-orange-400 hover:text-orange-300 font-bold text-sm transition-colors cursor-pointer"
+                        >
+                            ← Back to Home
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
