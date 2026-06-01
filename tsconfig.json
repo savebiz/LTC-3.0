@@ -30,6 +30,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "antigravity-kit"
+    "antigravity-kit",
+    "scratch"
   ]
 }

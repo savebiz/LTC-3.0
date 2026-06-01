@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { 
   Download, Search, Loader2, Users, CheckCircle2, 
   AlertCircle, MapPin, CreditCard, UserCheck, Trash2,
-  History, X, Clock
+  History, X, Clock, FileText
 } from 'lucide-react';
 import { LAGOS_REGIONS, OGUN_REGIONS } from "@/constants";
 import { useDialog } from '../ui/DialogProvider';
@@ -29,6 +29,7 @@ interface Registration {
   checked_in_at?: string;
   rejection_reason?: string;
   batch_reference: string;
+  receipt_url?: string;
 }
 
 export default function RegistrationTable() {
@@ -39,6 +40,10 @@ export default function RegistrationTable() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [regionFilter, setRegionFilter] = useState('all');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Receipt view state
+  const [previewReceiptUrl, setPreviewReceiptUrl] = useState<string | null>(null);
+  const [previewReceiptOwner, setPreviewReceiptOwner] = useState<string | null>(null);
 
   // Volunteer session identity
   const volunteer = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_volunteer') || 'admin' : 'admin';
@@ -622,6 +627,21 @@ export default function RegistrationTable() {
                             <History size={13} />
                             History
                           </Button>
+                          {reg.receipt_url && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs border-blue-200 text-blue-600 hover:bg-blue-50 font-bold flex items-center gap-1 cursor-pointer"
+                              onClick={() => {
+                                setPreviewReceiptUrl(reg.receipt_url!);
+                                setPreviewReceiptOwner(`${reg.full_name} (${reg.batch_reference})`);
+                              }}
+                              title="View Payment Receipt"
+                            >
+                              <FileText size={13} />
+                              Receipt
+                            </Button>
+                          )}
                           {isPending && (
                             <>
                               <Button
@@ -764,6 +784,20 @@ export default function RegistrationTable() {
                       <History size={12} />
                       History
                     </Button>
+                    {reg.receipt_url && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs border-blue-200 text-blue-600 hover:bg-blue-50 font-bold px-2 rounded-xl flex items-center gap-1 cursor-pointer"
+                        onClick={() => {
+                          setPreviewReceiptUrl(reg.receipt_url!);
+                          setPreviewReceiptOwner(`${reg.full_name} (${reg.batch_reference})`);
+                        }}
+                      >
+                        <FileText size={12} />
+                        Receipt
+                      </Button>
+                    )}
                     {isPending && (
                       <>
                         <Button
@@ -925,6 +959,61 @@ export default function RegistrationTable() {
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Receipt Preview Modal */}
+      {previewReceiptUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in" onClick={() => setPreviewReceiptUrl(null)} />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col p-6 overflow-hidden animate-in zoom-in-95 duration-200 z-10 border border-slate-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b pb-4 mb-4">
+              <div className="min-w-0 pr-2">
+                <h3 className="font-bold text-lg text-slate-800 break-words">Payment Receipt Preview</h3>
+                <p className="text-xs text-slate-500 font-semibold break-all">{previewReceiptOwner}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewReceiptUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                  title="Open in new tab"
+                >
+                  <Download size={14} />
+                  Open in New Tab
+                </a>
+                <button 
+                  onClick={() => setPreviewReceiptUrl(null)} 
+                  className="text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer h-10 w-10 flex items-center justify-center border-0 bg-transparent shrink-0"
+                  title="Close preview"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Preview Body */}
+            <div className="flex-1 bg-slate-50 rounded-xl overflow-y-auto flex items-center justify-center p-4 min-h-0 border border-slate-100">
+              {previewReceiptUrl.toLowerCase().endsWith('.pdf') ? (
+                <iframe 
+                  src={previewReceiptUrl} 
+                  className="w-full h-full min-h-[60vh] border-0 rounded-lg" 
+                  title="Receipt PDF Preview"
+                />
+              ) : (
+                <img 
+                  src={previewReceiptUrl} 
+                  alt="Payment Receipt" 
+                  className="max-w-full max-h-[65vh] object-contain rounded-lg shadow-sm"
+                />
+              )}
+            </div>
           </div>
         </div>
       )}
