@@ -74,7 +74,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
               src="/logos/LTC_Logo_white.png"
               alt="C3TC Logo"
               className={`block md:hidden w-auto object-contain transition-all duration-300 ${
-                isScrolled ? 'h-9 max-w-[40%]' : 'h-14 max-w-[70%]'
+                isScrolled ? 'h-[38px] max-w-[45%]' : 'h-14 max-w-[70%]'
               }`}
             />
           </a>

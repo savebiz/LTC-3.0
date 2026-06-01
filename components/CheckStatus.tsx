@@ -190,10 +190,17 @@ export default function CheckStatus() {
                                 <p className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Batch Reference Code</p>
                                 <h3 className="text-xl font-bold font-mono text-orange-400 mt-1">{batchCode}</h3>
                             </div>
-                            <div className="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
-                                <p className="text-[10px] uppercase text-zinc-500 font-bold">Total Amount Due</p>
-                                <p className="text-lg font-bold font-mono text-white mt-0.5">₦{totalAmount.toLocaleString()}</p>
-                            </div>
+                            {['cleared', 'confirmed'].includes(paymentStatus?.toLowerCase()) ? (
+                                <div className="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
+                                    <p className="text-[10px] uppercase text-emerald-500 font-bold">Total Amount Paid</p>
+                                    <p className="text-lg font-bold font-mono text-emerald-400 mt-0.5">₦{totalAmount.toLocaleString()}</p>
+                                </div>
+                            ) : (
+                                <div className="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
+                                    <p className="text-[10px] uppercase text-zinc-500 font-bold">Total Amount Due</p>
+                                    <p className="text-lg font-bold font-mono text-white mt-0.5">₦{totalAmount.toLocaleString()}</p>
+                                </div>
+                            )}
                         </div>
 
                         <CardContent className="p-6 space-y-6">

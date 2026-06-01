@@ -233,7 +233,7 @@ export default function VolunteerTable() {
                 </div>
             </div>
 
-            <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+            <div className="hidden md:block bg-white border rounded-xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-slate-50 border-b text-slate-500 font-medium">
@@ -324,6 +324,78 @@ export default function VolunteerTable() {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Mobile Card List View (Visible only below 768px) */}
+            <div className="block md:hidden space-y-3">
+                {loading ? (
+                    <div className="bg-white border rounded-xl p-6 text-center text-slate-500 shadow-sm">
+                        <Loader2 className="mx-auto h-8 w-8 animate-spin mb-2 text-orange-500" />
+                        Loading data...
+                    </div>
+                ) : filteredData.length === 0 ? (
+                    <div className="bg-white border rounded-xl p-6 text-center text-slate-500 shadow-sm">
+                        No volunteers found.
+                    </div>
+                ) : (
+                    filteredData.map((vol) => {
+                        const statusVal = vol.status || 'pending';
+                        const isPending = statusVal === 'pending';
+
+                        return (
+                            <div key={vol.id} className="bg-white border rounded-xl p-4 shadow-sm space-y-3 text-sm">
+                                <div className="flex justify-between items-start gap-2">
+                                    <h4 className="font-bold text-base text-slate-900 leading-tight">{vol.full_name}</h4>
+                                    <span className={`status-badge px-2.5 py-0.5 rounded-full text-[11px] font-bold border capitalize shrink-0 whitespace-nowrap
+                                        ${statusVal === 'confirmed' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
+                                          statusVal === 'rejected' ? 'bg-red-50 border-red-100 text-red-700' :
+                                          'bg-amber-50 border-amber-100 text-amber-700'}
+                                    `}>
+                                        {statusVal}
+                                    </span>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="status-badge px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 capitalize shrink-0 whitespace-nowrap">
+                                        {vol.role}
+                                    </span>
+                                    <span className="text-slate-600 font-semibold">{vol.department}</span>
+                                </div>
+
+                                <div className="space-y-0.5 text-slate-500 text-xs">
+                                    <div className="font-medium text-slate-700 break-all">{vol.email}</div>
+                                    <div>{vol.phone}</div>
+                                </div>
+
+                                <div className="flex justify-between items-center text-xs text-slate-500 border-t border-slate-100 pt-2.5">
+                                    <span>Region: <strong className="text-slate-700 font-semibold">{vol.region}</strong></span>
+                                    <span>{new Date(vol.created_at).toLocaleDateString()}</span>
+                                </div>
+
+                                {isPending && (
+                                    <div className="flex gap-2 pt-2 border-t border-slate-100 w-full">
+                                        <Button
+                                            size="sm"
+                                            className="flex-1 h-9 text-xs bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg cursor-pointer active:scale-95 transition-all"
+                                            onClick={() => handleApprove(vol.id)}
+                                            disabled={isSubmitting}
+                                        >
+                                            Approve
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            className="flex-1 h-9 text-xs bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg cursor-pointer active:scale-95 transition-all"
+                                            onClick={() => handleRejectClick(vol.id)}
+                                            disabled={isSubmitting}
+                                        >
+                                            Reject
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                )}
             </div>
         </div>
     );

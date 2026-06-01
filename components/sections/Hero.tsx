@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
@@ -9,6 +9,16 @@ interface HeroProps {
 }
 
 const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
+    const [isHeroScrolled, setIsHeroScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsHeroScrolled(window.scrollY > 40);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
         <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-black pb-12 md:pb-0">
             {/* Video Background */}
@@ -104,8 +114,9 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
             {/* Scroll Indicator */}
             <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 2, duration: 1 }}
+                animate={{ opacity: isHeroScrolled ? 0 : 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                style={{ pointerEvents: isHeroScrolled ? 'none' : 'auto' }}
                 className="absolute bottom-20 md:bottom-10 left-1/2 -translate-x-1/2 md:hidden flex flex-col items-center gap-2 md:gap-3 z-30"
             >
                 <span className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-gray-400">Scroll</span>

@@ -801,6 +801,9 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
                         margin: 0 !important;
                         padding: 0 !important;
                     }
+                    #qr-viewfinder > *:not(video):not(canvas) {
+                        display: none !important;
+                    }
                 }
             `}} />
 
@@ -940,10 +943,10 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
                                     {isMobile && isMobileScannerOpen ? (
                                         <div className="w-[70vw] h-[70vw] max-w-[320px] max-h-[320px] relative flex items-center justify-center">
                                             {/* White corner markers */}
-                                            <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
-                                            <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
-                                            <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
-                                            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-lg"></div>
+                                            <div className="absolute top-0 left-0 w-6 h-6 border-t-[3px] border-l-[3px] border-white rounded-tl-[4px]"></div>
+                                            <div className="absolute top-0 right-0 w-6 h-6 border-t-[3px] border-r-[3px] border-white rounded-tr-[4px]"></div>
+                                            <div className="absolute bottom-0 left-0 w-6 h-6 border-b-[3px] border-l-[3px] border-white rounded-bl-[4px]"></div>
+                                            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-[3px] border-r-[3px] border-white rounded-br-[4px]"></div>
                                             
                                             {/* Orange dashed inner box */}
                                             <div className="absolute inset-1.5 border-2 border-dashed border-orange-500 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.2)]">

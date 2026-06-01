@@ -360,7 +360,7 @@ export default function AuditLogTable() {
             </Card>
 
             {/* TABLE DISPLAY */}
-            <Card className="shadow-sm border-slate-200 bg-white rounded-2xl overflow-hidden">
+            <Card className="hidden md:block shadow-sm border-slate-200 bg-white rounded-2xl overflow-hidden">
                 <CardContent className="p-0">
                     {loading ? (
                         <div className="py-24 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
@@ -469,6 +469,96 @@ export default function AuditLogTable() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Mobile Card List View (Visible only below 768px) */}
+            <div className="block md:hidden space-y-3">
+                {loading ? (
+                    <div className="bg-white border rounded-xl p-6 text-center text-slate-500 shadow-sm">
+                        <Loader2 className="mx-auto h-8 w-8 animate-spin mb-2 text-orange-500" />
+                        Loading data...
+                    </div>
+                ) : logs.length === 0 ? (
+                    <div className="bg-white border rounded-xl p-6 text-center text-slate-500 shadow-sm">
+                        No matching audit log entries found.
+                    </div>
+                ) : (
+                    logs.map((log) => {
+                        const isExpanded = !!expandedRows[log.id];
+                        return (
+                            <div 
+                                key={log.id} 
+                                onClick={() => toggleRow(log.id)}
+                                className="bg-white border rounded-xl p-4 shadow-sm space-y-3 text-sm cursor-pointer"
+                            >
+                                <div className="flex justify-between items-center gap-2">
+                                    {getActionBadge(log.action)}
+                                    {isExpanded ? <ChevronDown size={18} className="text-slate-400 shrink-0" /> : <ChevronRight size={18} className="text-slate-400 shrink-0" />}
+                                </div>
+
+                                <div className="space-y-0.5">
+                                    <div className="font-bold text-base text-slate-900 leading-tight">
+                                        {log.registrant_name || '-'}
+                                    </div>
+                                    <div className="font-mono text-xs text-slate-600 font-bold">
+                                        {log.batch_reference || '-'}
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-between items-center text-xs text-slate-500">
+                                    <span>Performed by: <strong className="text-slate-700 font-semibold">{log.performed_by}</strong></span>
+                                    <span>{new Date(log.created_at).toLocaleString()}</span>
+                                </div>
+
+                                {log.notes && (
+                                    <div className="text-xs text-slate-500 italic bg-amber-50/50 border border-amber-100 p-2.5 rounded-lg">
+                                        Notes: {log.notes}
+                                    </div>
+                                )}
+
+                                {isExpanded && (
+                                    <div 
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="space-y-4 pt-3 border-t border-slate-100 text-xs font-medium cursor-default"
+                                    >
+                                        <div className="flex flex-col gap-1 text-[11px] text-slate-500 font-semibold border-b border-slate-100 pb-2">
+                                            <span><strong>Log ID:</strong> {log.id}</span>
+                                            <span><strong>Device:</strong> {log.device_info || 'N/A'}</span>
+                                            <span><strong>IP Address:</strong> {log.ip_address || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <div>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Previous Values Snapshot</span>
+                                                {log.previous_value ? (
+                                                    <pre className="bg-slate-900 text-slate-100 p-3 rounded-xl text-xs overflow-auto max-h-48 font-mono border shadow-inner leading-relaxed">
+                                                        {JSON.stringify(log.previous_value, null, 2)}
+                                                    </pre>
+                                                ) : (
+                                                    <div className="p-3 bg-slate-100 text-slate-400 rounded-xl italic border border-slate-200 font-mono text-center">
+                                                        No previous record values (creation event)
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">New Values Snapshot</span>
+                                                {log.new_value ? (
+                                                    <pre className="bg-slate-900 text-slate-100 p-3 rounded-xl text-xs overflow-auto max-h-48 font-mono border shadow-inner leading-relaxed">
+                                                        {JSON.stringify(log.new_value, null, 2)}
+                                                    </pre>
+                                                ) : (
+                                                    <div className="p-3 bg-slate-100 text-slate-400 rounded-xl italic border border-slate-200 font-mono text-center">
+                                                        No new record values (deletion/block event)
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                )}
+            </div>
 
             {/* PAGINATION PANEL */}
             {totalPages > 1 && (
