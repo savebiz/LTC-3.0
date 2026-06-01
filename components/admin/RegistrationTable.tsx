@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { 
   Download, Search, Loader2, Users, CheckCircle2, 
   AlertCircle, MapPin, CreditCard, UserCheck, Trash2,
-  History, X, Clock, FileText
+  History, X, Clock, FileText, Paperclip, Eye
 } from 'lucide-react';
 import { LAGOS_REGIONS, OGUN_REGIONS } from "@/constants";
 import { useDialog } from '../ui/DialogProvider';
@@ -42,8 +42,8 @@ export default function RegistrationTable() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Receipt view state
-  const [previewReceiptUrl, setPreviewReceiptUrl] = useState<string | null>(null);
-  const [previewReceiptOwner, setPreviewReceiptOwner] = useState<string | null>(null);
+  const [previewRegistration, setPreviewRegistration] = useState<Registration | null>(null);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   // Volunteer session identity
   const volunteer = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_volunteer') || 'admin' : 'admin';
@@ -329,8 +329,6 @@ export default function RegistrationTable() {
       matchesStatus = payStatus === 'pending' || status === 'pending_payment' || status === 'pending_verification';
     } else if (statusFilter === 'cleared') {
       matchesStatus = payStatus === 'cleared' || status === 'confirmed';
-    } else if (statusFilter === 'pay_on_arrival') {
-      matchesStatus = payStatus === 'pay_on_arrival' || status === 'pay_on_arrival';
     }
 
     // 3. Category filter match
@@ -382,13 +380,27 @@ export default function RegistrationTable() {
     a.click();
   }
 
+  const handleClearFromModal = async () => {
+    if (!previewRegistration) return;
+    const regId = previewRegistration.id;
+    setPreviewRegistration(null);
+    await handleMarkAsCleared(regId);
+  };
+
+  const handleRejectFromModal = async () => {
+    if (!previewRegistration) return;
+    const regId = previewRegistration.id;
+    setPreviewRegistration(null);
+    await handleRejectClick(regId);
+  };
+
   return (
     <div className="space-y-6">
       
       {/* Dashboard Summary Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-5 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 md:gap-4">
         {/* Card 1: Registered */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+        <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
           <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
             <Users size={16} className="md:w-5 md:h-5" />
           </div>
@@ -399,7 +411,7 @@ export default function RegistrationTable() {
         </Card>
 
         {/* Card 2: Cleared */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+        <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
           <div className="p-2 md:p-3 bg-emerald-50 text-emerald-500 rounded-xl shrink-0">
             <CheckCircle2 size={16} className="md:w-5 md:h-5" />
           </div>
@@ -410,7 +422,7 @@ export default function RegistrationTable() {
         </Card>
 
         {/* Card 3: Pending */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+        <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
           <div className="p-2 md:p-3 bg-orange-50 text-orange-500 rounded-xl shrink-0">
             <AlertCircle size={16} className="md:w-5 md:h-5" />
           </div>
@@ -420,19 +432,8 @@ export default function RegistrationTable() {
           </div>
         </Card>
 
-        {/* Card 4: On Arrival */}
-        <Card className="col-span-1 md:col-span-3 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
-          <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
-            <MapPin size={16} className="md:w-5 md:h-5" />
-          </div>
-          <div className="mt-2 w-full">
-            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">On Arrival</p>
-            <h3 className="text-lg md:text-2xl font-black text-blue-600 mt-1">{totalPayOnArrival.toLocaleString()}</h3>
-          </div>
-        </Card>
-
         {/* Card 5: Collected */}
-        <Card className="col-span-2 md:col-span-3 lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+        <Card className="col-span-2 sm:col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
           <div className="p-2 md:p-3 bg-violet-50 text-violet-500 rounded-xl shrink-0">
             <CreditCard size={16} className="md:w-5 md:h-5" />
           </div>
@@ -471,7 +472,6 @@ export default function RegistrationTable() {
                 <option value="all">All Payments</option>
                 <option value="pending">Pending Verification</option>
                 <option value="cleared">Cleared Payments</option>
-                <option value="pay_on_arrival">Pay on Arrival</option>
               </select>
             </div>
 
@@ -627,20 +627,24 @@ export default function RegistrationTable() {
                             <History size={13} />
                             History
                           </Button>
-                          {reg.receipt_url && (
+                          {reg.receipt_url ? (
                             <Button
                               size="sm"
                               variant="outline"
                               className="h-7 text-xs border-blue-200 text-blue-600 hover:bg-blue-50 font-bold flex items-center gap-1 cursor-pointer"
                               onClick={() => {
-                                setPreviewReceiptUrl(reg.receipt_url!);
-                                setPreviewReceiptOwner(`${reg.full_name} (${reg.batch_reference})`);
+                                setPreviewRegistration(reg);
+                                setIsZoomed(false);
                               }}
                               title="View Payment Receipt"
                             >
-                              <FileText size={13} />
-                              Receipt
+                              <Paperclip size={13} />
+                              View Receipt
                             </Button>
+                          ) : (
+                            <span className="h-7 px-2.5 rounded-md text-[11px] font-bold text-slate-400 bg-slate-100 flex items-center justify-center cursor-not-allowed shrink-0 select-none whitespace-nowrap">
+                              No Receipt
+                            </span>
                           )}
                           {isPending && (
                             <>
@@ -784,19 +788,23 @@ export default function RegistrationTable() {
                       <History size={12} />
                       History
                     </Button>
-                    {reg.receipt_url && (
+                    {reg.receipt_url ? (
                       <Button
                         size="sm"
                         variant="outline"
                         className="h-8 text-xs border-blue-200 text-blue-600 hover:bg-blue-50 font-bold px-2 rounded-xl flex items-center gap-1 cursor-pointer"
                         onClick={() => {
-                          setPreviewReceiptUrl(reg.receipt_url!);
-                          setPreviewReceiptOwner(`${reg.full_name} (${reg.batch_reference})`);
+                          setPreviewRegistration(reg);
+                          setIsZoomed(false);
                         }}
                       >
-                        <FileText size={12} />
-                        Receipt
+                        <Paperclip size={12} />
+                        View Receipt
                       </Button>
+                    ) : (
+                      <span className="h-8 px-2 rounded-xl text-[11px] font-bold text-slate-400 bg-slate-100 flex items-center justify-center cursor-not-allowed shrink-0 select-none whitespace-nowrap">
+                        No Receipt
+                      </span>
                     )}
                     {isPending && (
                       <>
@@ -964,22 +972,24 @@ export default function RegistrationTable() {
       )}
 
       {/* Receipt Preview Modal */}
-      {previewReceiptUrl && (
+      {previewRegistration && previewRegistration.receipt_url && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in" onClick={() => setPreviewReceiptUrl(null)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in" onClick={() => setPreviewRegistration(null)} />
           
           {/* Modal Content */}
-          <div className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col p-6 overflow-hidden animate-in zoom-in-95 duration-200 z-10 border border-slate-200">
+          <div className="relative bg-white w-full max-w-4xl max-h-[95vh] rounded-2xl shadow-2xl flex flex-col p-4 md:p-6 overflow-hidden animate-in zoom-in-95 duration-200 z-10 border border-slate-200">
             {/* Header */}
             <div className="flex items-center justify-between border-b pb-4 mb-4">
               <div className="min-w-0 pr-2">
                 <h3 className="font-bold text-lg text-slate-800 break-words">Payment Receipt Preview</h3>
-                <p className="text-xs text-slate-500 font-semibold break-all">{previewReceiptOwner}</p>
+                <p className="text-xs text-slate-500 font-semibold break-all">
+                  {previewRegistration.full_name} ({previewRegistration.batch_reference})
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <a
-                  href={previewReceiptUrl}
+                  href={previewRegistration.receipt_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl transition-colors cursor-pointer"
@@ -989,7 +999,7 @@ export default function RegistrationTable() {
                   Open in New Tab
                 </a>
                 <button 
-                  onClick={() => setPreviewReceiptUrl(null)} 
+                  onClick={() => setPreviewRegistration(null)} 
                   className="text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer h-10 w-10 flex items-center justify-center border-0 bg-transparent shrink-0"
                   title="Close preview"
                 >
@@ -1000,20 +1010,75 @@ export default function RegistrationTable() {
 
             {/* Preview Body */}
             <div className="flex-1 bg-slate-50 rounded-xl overflow-y-auto flex items-center justify-center p-4 min-h-0 border border-slate-100">
-              {previewReceiptUrl.toLowerCase().endsWith('.pdf') ? (
-                <iframe 
-                  src={previewReceiptUrl} 
-                  className="w-full h-full min-h-[60vh] border-0 rounded-lg" 
-                  title="Receipt PDF Preview"
-                />
+              {previewRegistration.receipt_url.toLowerCase().endsWith('.pdf') ? (
+                <div className="w-full h-full flex flex-col items-center gap-4">
+                  <iframe 
+                    src={previewRegistration.receipt_url} 
+                    className="w-full h-full min-h-[50vh] border-0 rounded-lg" 
+                    title="Receipt PDF Preview"
+                  />
+                  <a
+                    href={previewRegistration.receipt_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl transition-colors cursor-pointer text-sm shadow-md"
+                  >
+                    <Eye size={14} />
+                    Open PDF in New Tab
+                  </a>
+                </div>
               ) : (
                 <img 
-                  src={previewReceiptUrl} 
+                  src={previewRegistration.receipt_url} 
                   alt="Payment Receipt" 
-                  className="max-w-full max-h-[65vh] object-contain rounded-lg shadow-sm"
+                  onClick={() => setIsZoomed(!isZoomed)}
+                  className={`object-contain rounded-lg shadow-sm transition-all duration-200 cursor-pointer select-none ${
+                    isZoomed ? 'w-full max-h-none' : 'max-w-full max-h-[50vh]'
+                  }`}
+                  title={isZoomed ? "Click to shrink" : "Click to zoom"}
                 />
               )}
             </div>
+
+            {/* Context Info (Below the receipt) */}
+            <div className="mt-4 bg-slate-50 border border-slate-100 rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold text-slate-700">
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Registrant Name</span>
+                <span className="text-slate-900 font-bold break-words">{previewRegistration.full_name}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Batch Reference</span>
+                <span className="text-slate-900 font-mono font-bold break-all">{previewRegistration.batch_reference}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Payment Reference</span>
+                <span className="text-slate-900 font-mono font-bold break-all">{previewRegistration.payment_reference || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Amount Due</span>
+                <span className="text-slate-900 font-bold">₦{previewRegistration.amount_due.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Actions at the bottom of the modal (Clear/Reject) */}
+            {['pending', 'pending_verification', 'pending_payment'].includes(previewRegistration.payment_status?.toLowerCase() || '') && (
+              <div className="flex gap-3 mt-4 pt-4 border-t border-slate-100">
+                <Button
+                  onClick={handleClearFromModal}
+                  disabled={isSubmitting}
+                  className="flex-1 h-11 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md cursor-pointer active:scale-95 transition-all text-xs sm:text-sm"
+                >
+                  Clear Payment
+                </Button>
+                <Button
+                  onClick={handleRejectFromModal}
+                  disabled={isSubmitting}
+                  className="flex-1 h-11 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-md cursor-pointer active:scale-95 transition-all text-xs sm:text-sm"
+                >
+                  Reject
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

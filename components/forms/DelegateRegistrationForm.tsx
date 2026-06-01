@@ -158,7 +158,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     const [paymentRef, setPaymentRef] = useState('');
     const [paymentRefError, setPaymentRefError] = useState('');
 
-    const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'pay_on_arrival'>('bank_transfer');
+    const [paymentMethod] = useState<'bank_transfer'>('bank_transfer');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [fileError, setFileError] = useState('');
     const [filePreview, setFilePreview] = useState<string | null>(null);
@@ -332,10 +332,9 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 category: d.category === "Teenager" ? "teenager" : "teacher",
                 // Redesigned columns:
                 batch_id: batchId,
-                payment_method: paymentMethod,
-                payment_reference: paymentMethod === 'pay_on_arrival' ? 'Pay on Arrival' : paymentRef.trim(),
-                payment_status: paymentMethod === 'pay_on_arrival' ? 'pay_on_arrival' : 'pending',
-                ...(paymentMethod === 'pay_on_arrival' ? { status: 'pay_on_arrival' } : {})
+                payment_method: 'bank_transfer',
+                payment_reference: paymentRef.trim(),
+                payment_status: 'pending'
             }));
 
             const { data: regData, error: regError } = await supabase
@@ -742,14 +741,10 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         <div className="grid grid-cols-2 gap-4 pt-1">
                             <div>
                                 <p className="text-[10px] text-gray-500 uppercase font-bold">Payment Method</p>
-                                <p className="font-semibold text-white">
-                                    {registrationData && registrationData[0]?.payment_method === 'pay_on_arrival' ? 'Pay on Arrival' : 'Bank Transfer'}
-                                </p>
+                                <p className="font-semibold text-white">Bank Transfer</p>
                             </div>
                             <div>
-                                <p className="text-[10px] text-gray-500 uppercase font-bold">
-                                    {registrationData && registrationData[0]?.payment_method === 'pay_on_arrival' ? 'Amount Due (at Gate)' : 'Total Paid'}
-                                </p>
+                                <p className="text-[10px] text-gray-500 uppercase font-bold">Total Paid</p>
                                 <p className="font-semibold text-white font-mono">₦{totalAmount.toLocaleString()}</p>
                             </div>
                         </div>

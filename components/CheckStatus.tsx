@@ -140,7 +140,7 @@ export default function CheckStatus() {
                     <CardHeader className="pb-4">
                         <CardTitle className="text-lg font-bold">Search Batch</CardTitle>
                         <CardDescription className="text-zinc-500 text-xs">
-                            Format example: C3TC-2026-00142
+                            Format example: C3TC-K7MX2PQR
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
