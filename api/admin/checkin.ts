@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from './db_helper';
+import { getSupabaseAdmin } from './db_helper.js';
 
 function parseCookies(req: any) {
     const list: Record<string, string> = {};

@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { getAdminUsers } from './db_helper';
+import { getAdminUsers } from './db_helper.js';
 
 export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') {

@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from './admin/db_helper';
+import { getSupabaseAdmin } from './admin/db_helper.js';
 
 const FROM_EMAIL = `C3TC Team <${process.env.RESEND_FROM_EMAIL || 'team@continent3teens.cc'}>`;
 const resendApiKey = process.env.RESEND_API_KEY || '';

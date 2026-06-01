@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { getAdminUsers, saveAdminUsers, AdminUser } from './db_helper';
+import { getAdminUsers, saveAdminUsers, AdminUser } from './db_helper.js';
 
 function parseCookies(req: any) {
     const list: Record<string, string> = {};
