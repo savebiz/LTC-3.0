@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
     LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-    Legend, ResponsiveContainer, PieChart, Pie, Cell
+    Legend, ResponsiveContainer, Cell
 } from 'recharts';
 import {
     Users, CreditCard, CheckCircle2, Award, QrCode, TrendingUp, Calendar,
@@ -243,26 +243,6 @@ export default function AnalyticsDashboard() {
         return dataPoints;
     }, [filteredRegs, dateRange]);
 
-    // Chart 2: Payment Method Breakdown (Donut Chart)
-    const paymentBreakdownData = useMemo(() => {
-        const bank = filteredRegs.filter(r => r.payment_method?.toLowerCase() === 'bank_transfer' || (!r.payment_method && r.payment_status !== 'pay_on_arrival')).length;
-        const poa = filteredRegs.filter(r => r.payment_method?.toLowerCase() === 'pay_on_arrival' || r.payment_status?.toLowerCase() === 'pay_on_arrival').length;
-
-        return [
-            { name: 'Bank Transfer', value: bank, color: '#f97316' },
-            { name: 'Pay on Arrival', value: poa, color: '#3b82f6' }
-        ].filter(item => item.value > 0);
-    }, [filteredRegs]);
-
-    const totalPayments = useMemo(() => {
-        return paymentBreakdownData.reduce((sum, item) => sum + item.value, 0);
-    }, [paymentBreakdownData]);
-
-    const renderPieLegend = (value: string, entry: any) => {
-        const item = entry.payload;
-        const pct = totalPayments > 0 ? ((item.value / totalPayments) * 100).toFixed(1) : '0.0';
-        return <span className="text-slate-600 text-xs font-semibold">{`${value}: ${item.value} (${pct}%)`}</span>;
-    };
 
     // Chart 3: Category Breakdown (Bar Chart)
     const categoryChartData = useMemo(() => {
@@ -678,177 +658,148 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* CHARTS GRID */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* CHART 1: Registration Trend */}
-                <Card className="shadow-sm border-slate-200 bg-white">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <TrendingUp size={18} className="text-orange-500" />
-                            Registration Trend
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px] flex items-center justify-center">
-                        {trendChartData.length === 0 ? (
-                            <p className="text-slate-400 text-sm">No data for this selection</p>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={trendChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                    <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }} />
-                                    <Line type="monotone" dataKey="Registrations" stroke="#f97316" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 6 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* CHART 2: Payment Method Breakdown */}
-                <Card className="shadow-sm border-slate-200 bg-white">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <CreditCard size={18} className="text-orange-500" />
-                            Payment Method Breakdown
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px] flex items-center justify-center">
-                        {paymentBreakdownData.length === 0 ? (
-                            <p className="text-slate-400 text-sm">No data for this selection</p>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={paymentBreakdownData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={85}
-                                        paddingAngle={4}
-                                        dataKey="value"
-                                    >
-                                        {paymentBreakdownData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0' }} />
-                                    <Legend formatter={renderPieLegend} layout="vertical" align="right" verticalAlign="middle" />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* CHART 3: Category Breakdown */}
-                <Card className="shadow-sm border-slate-200 bg-white">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <Users size={18} className="text-orange-500" />
-                            Category Breakdown
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px] flex items-center justify-center">
-                        {categoryChartData.every(c => c.count === 0) ? (
-                            <p className="text-slate-400 text-sm">No data for this selection</p>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={categoryChartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                    <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0' }} />
-                                    <Bar dataKey="count" radius={[8, 8, 0, 0]} barSize={55} label={{ position: 'top', fill: '#475569', fontSize: 12, fontWeight: 'bold' }}>
-                                        {categoryChartData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* CHART 6: Check-in Progress */}
-                <Card className="shadow-sm border-slate-200 bg-white">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <CheckCircle2 size={18} className="text-orange-500" />
-                            Check-in Progress
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px] flex flex-col items-center justify-center p-6 space-y-6">
-                        <div className="text-center">
-                            <span className="text-5xl font-black leading-none block" style={{ color: progressColor }}>
-                                {checkInPercent.percent}%
-                            </span>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 block">Attendance Checked In</span>
-                        </div>
-
-                        {/* Progress Bar Container */}
-                        <div className="w-full bg-slate-100 rounded-full h-6 border border-slate-200 p-0.5 overflow-hidden flex items-center">
-                            <div
-                                className="h-full rounded-full transition-all duration-500 ease-out shadow-inner"
-                                style={{
-                                    width: `${checkInPercent.percent}%`,
-                                    backgroundColor: progressColor
-                                }}
-                            />
-                        </div>
-
-                        <div className="text-slate-600 text-sm font-semibold text-center leading-relaxed">
-                            {checkInPercent.checkedIn.toLocaleString()} of {checkInPercent.cleared.toLocaleString()} cleared delegates checked in
-                            <p className="text-xs text-slate-400 font-medium mt-1">Only cleared payments are eligible for check-in</p>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* CHART 4: Regional Distribution (Click region for drill-down) */}
-                <Card className="shadow-sm border-slate-200 bg-white">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold text-slate-800 flex items-center justify-between">
-                            <span className="flex items-center gap-2">
-                                <MapPin size={18} className="text-orange-500" />
-                                Regional Distribution
-                            </span>
-                            {drillDownRegion && (
-                                <Button
-                                    onClick={() => setDrillDownRegion(null)}
-                                    size="xs"
-                                    variant="link"
-                                    className="text-orange-500 hover:text-orange-600 text-xs font-semibold p-0 h-auto cursor-pointer"
-                                >
-                                    Clear Drill-down
-                                </Button>
+            <div className="space-y-6">
+                {/* ROW 1: Trend (60%) + Category (40%) on desktop */}
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    {/* CHART 1: Registration Trend (60% width) */}
+                    <Card className="lg:col-span-3 shadow-sm border-slate-200 bg-white">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <TrendingUp size={18} className="text-orange-500" />
+                                Registration Trend
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[300px] flex items-center justify-center">
+                            {trendChartData.length === 0 ? (
+                                <p className="text-slate-400 text-sm">No data for this selection</p>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%" className="outline-none" tabIndex={-1}>
+                                    <LineChart data={trendChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} style={{ outline: 'none' }} tabIndex={-1}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                                        <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }} />
+                                        <Line type="monotone" dataKey="Registrations" stroke="#f97316" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 6 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
                             )}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px] flex items-center justify-center">
-                        {regionalDistributionData.length === 0 ? (
-                            <p className="text-slate-400 text-sm">No data for this selection</p>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={regionalDistributionData.slice(0, 10)} layout="vertical" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#eee" />
-                                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} width={80} />
-                                    <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0' }} />
-                                    <Bar dataKey="count" fill="#f97316" radius={[0, 6, 6, 0]} barSize={16}>
-                                        {regionalDistributionData.slice(0, 10).map((entry, index) => (
-                                            <Cell
-                                                key={`cell-${index}`}
-                                                className="cursor-pointer transition-opacity"
-                                                fill={entry.name === drillDownRegion ? '#ea580c' : '#f97316'}
-                                                onClick={() => setDrillDownRegion(entry.name)}
-                                            />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        )}
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
 
-                {/* CHART 5: Payment Status Distribution per Region */}
+                    {/* CHART 3: Category Breakdown (40% width) */}
+                    <Card className="lg:col-span-2 shadow-sm border-slate-200 bg-white">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <Users size={18} className="text-orange-500" />
+                                Category Breakdown
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[300px] flex items-center justify-center">
+                            {categoryChartData.every(c => c.count === 0) ? (
+                                <p className="text-slate-400 text-sm">No data for this selection</p>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%" className="outline-none" tabIndex={-1}>
+                                    <BarChart data={categoryChartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }} style={{ outline: 'none' }} tabIndex={-1}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                                        <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0' }} />
+                                        <Bar dataKey="count" radius={[8, 8, 0, 0]} barSize={55} label={{ position: 'top', fill: '#475569', fontSize: 12, fontWeight: 'bold' }}>
+                                            {categoryChartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* ROW 2: Check-in Progress + Regional Distribution (50% each on desktop) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* CHART 6: Check-in Progress */}
+                    <Card className="shadow-sm border-slate-200 bg-white">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <CheckCircle2 size={18} className="text-orange-500" />
+                                Check-in Progress
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[300px] flex flex-col items-center justify-center p-6 space-y-6">
+                            <div className="text-center">
+                                <span className="text-5xl font-black leading-none block" style={{ color: progressColor }}>
+                                    {checkInPercent.percent}%
+                                </span>
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 block">Attendance Checked In</span>
+                            </div>
+
+                            {/* Progress Bar Container */}
+                            <div className="w-full bg-slate-100 rounded-full h-6 border border-slate-200 p-0.5 overflow-hidden flex items-center">
+                                <div
+                                    className="h-full rounded-full transition-all duration-500 ease-out shadow-inner"
+                                    style={{
+                                        width: `${checkInPercent.percent}%`,
+                                        backgroundColor: progressColor
+                                    }}
+                                />
+                            </div>
+
+                            <div className="text-slate-600 text-sm font-semibold text-center leading-relaxed">
+                                {checkInPercent.checkedIn.toLocaleString()} of {checkInPercent.cleared.toLocaleString()} cleared delegates checked in
+                                <p className="text-xs text-slate-400 font-medium mt-1">Only cleared payments are eligible for check-in</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* CHART 4: Regional Distribution (Click region for drill-down) */}
+                    <Card className="shadow-sm border-slate-200 bg-white">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-bold text-slate-800 flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                    <MapPin size={18} className="text-orange-500" />
+                                    Regional Distribution
+                                </span>
+                                {drillDownRegion && (
+                                    <Button
+                                        onClick={() => setDrillDownRegion(null)}
+                                        size="xs"
+                                        variant="link"
+                                        className="text-orange-500 hover:text-orange-600 text-xs font-semibold p-0 h-auto cursor-pointer"
+                                    >
+                                        Clear Drill-down
+                                    </Button>
+                                )}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[300px] flex items-center justify-center">
+                            {regionalDistributionData.length === 0 ? (
+                                <p className="text-slate-400 text-sm">No data for this selection</p>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%" className="outline-none" tabIndex={-1}>
+                                    <BarChart data={regionalDistributionData.slice(0, 10)} layout="vertical" margin={{ top: 10, right: 10, left: 10, bottom: 0 }} style={{ outline: 'none' }} tabIndex={-1}>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#eee" />
+                                        <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                                        <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} width={80} />
+                                        <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0' }} />
+                                        <Bar dataKey="count" fill="#f97316" radius={[0, 6, 6, 0]} barSize={16}>
+                                            {regionalDistributionData.slice(0, 10).map((entry, index) => (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    className="cursor-pointer transition-opacity"
+                                                    fill={entry.name === drillDownRegion ? '#ea580c' : '#f97316'}
+                                                    onClick={() => setDrillDownRegion(entry.name)}
+                                                />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* ROW 3: Payment Status Distribution per Region (Full width on desktop) */}
                 <Card className="shadow-sm border-slate-200 bg-white">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -860,8 +811,8 @@ export default function AnalyticsDashboard() {
                         {paymentStatusDistributionData.length === 0 ? (
                             <p className="text-slate-400 text-sm">No data for this selection</p>
                         ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={paymentStatusDistributionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <ResponsiveContainer width="100%" height="100%" className="outline-none" tabIndex={-1}>
+                                <BarChart data={paymentStatusDistributionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} style={{ outline: 'none' }} tabIndex={-1}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
@@ -901,8 +852,8 @@ export default function AnalyticsDashboard() {
                             {provinceDrillDownData.length === 0 ? (
                                 <div className="h-full flex items-center justify-center text-slate-400 text-sm">No province data found</div>
                             ) : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={provinceDrillDownData.slice(0, 10)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <ResponsiveContainer width="100%" height="100%" className="outline-none" tabIndex={-1}>
+                                    <BarChart data={provinceDrillDownData.slice(0, 10)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} style={{ outline: 'none' }} tabIndex={-1}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />

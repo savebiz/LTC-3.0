@@ -237,8 +237,8 @@ export default function DashboardOverview() {
                       <CardTitle className="text-lg">Registration Trend</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={trendData}>
+                      <ResponsiveContainer width="100%" height="100%" className="outline-none" tabIndex={-1}>
+                          <AreaChart data={trendData} style={{ outline: 'none' }} tabIndex={-1}>
                               <defs>
                                   <linearGradient id="colorRegs" x1="0" y1="0" x2="0" y2="1">
                                       <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />

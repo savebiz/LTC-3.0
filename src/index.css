@@ -213,4 +213,29 @@
   .touch-target {
     min-height: 44px !important;
   }
-}
+}
+
+/* Remove Recharts Chart Focus Outline (Black Border) */
+.recharts-wrapper:focus,
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus,
+[tabindex]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Retain normal focus outlines for interactive elements like buttons, inputs, selects, textareas, and links even if they have tabindex */
+button[tabindex]:focus,
+button[tabindex]:focus-visible,
+input[tabindex]:focus,
+input[tabindex]:focus-visible,
+select[tabindex]:focus,
+select[tabindex]:focus-visible,
+textarea[tabindex]:focus,
+textarea[tabindex]:focus-visible,
+a[tabindex]:focus,
+a[tabindex]:focus-visible {
+  outline: revert !important;
+  box-shadow: revert !important;
+}
+
