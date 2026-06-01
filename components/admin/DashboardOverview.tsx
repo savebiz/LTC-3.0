@@ -107,31 +107,41 @@ export default function DashboardOverview() {
     const checkInRate = totalRegs > 0 ? Math.round((checkedInCount / totalRegs) * 100) : 0;
     const totalVolunteers = vols.length;
 
-    // Daily registration numbers for graph
+    // Daily registration numbers for graph (last 7 days ending today, inclusive)
     const getRegistrationTrendData = () => {
-        const countsByDay: Record<string, number> = {};
+        const dataPoints = [];
+        const now = new Date();
         
-        // Sort copy of regs chronologically ascending before grouping
-        const sortedRegs = [...regs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        
-        // Let's look at the last 7 days of registrations
-        sortedRegs.forEach(r => {
+        // Formatter for "DD MMM" e.g., "01 Jun", "26 May"
+        const formatDayMonth = (date: Date) => {
+            const day = String(date.getDate()).padStart(2, '0');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = months[date.getMonth()];
+            return `${day} ${month}`;
+        };
+
+        // Group registration counts by local date keys
+        const counts: Record<string, number> = {};
+        regs.forEach(r => {
             if (!r.created_at) return;
-            const dateStr = new Date(r.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' });
-            countsByDay[dateStr] = (countsByDay[dateStr] || 0) + 1;
+            const date = new Date(r.created_at);
+            const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+            counts[key] = (counts[key] || 0) + 1;
         });
 
-        // Convert to array and take the latest 7 days (or fill in with some defaults if empty)
-        const entries = Object.entries(countsByDay).map(([name, regs]) => ({ name, regs }));
-        if (entries.length === 0) {
-            return [
-                { name: 'Day 1', regs: 0 },
-                { name: 'Day 2', regs: 0 },
-                { name: 'Day 3', regs: 0 },
-            ];
+        // Generate last 7 days ending today (inclusive)
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(now.getDate() - i);
+            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            const label = formatDayMonth(d);
+            dataPoints.push({
+                name: label,
+                regs: counts[key] || 0
+            });
         }
-        // Return sorted or latest entries
-        return entries.slice(-7);
+
+        return dataPoints;
     };
 
     const trendData = getRegistrationTrendData();
