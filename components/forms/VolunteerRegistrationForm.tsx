@@ -77,7 +77,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
     const { toast } = useDialog()
 
     const form = useForm<z.infer<typeof volunteerSchema>>({
-        resolver: zodResolver(volunteerSchema),
+        resolver: zodResolver(volunteerSchema) as any,
         defaultValues: { fullName: "", email: "", phone: "", age: 15, region: "", province: "", otherRegionSpecified: "", role: "Teenager", department: "" },
     })
     const watchRegion = form.watch("region")
@@ -121,19 +121,19 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                 toast.error("Registration failed. Please try again.", "Please correct the highlighted errors in the form.");
             })} className="space-y-6 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="fullName" render={({ field }) => (
+                    <FormField control={form.control as any} name="fullName" render={({ field }) => (
                         <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <FormField control={form.control} name="email" render={({ field }) => (
+                    <FormField control={form.control as any} name="email" render={({ field }) => (
                         <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="hello@example.com" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="phone" render={({ field }) => (
+                    <FormField control={form.control as any} name="phone" render={({ field }) => (
                         <FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="080..." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                     <FormField control={form.control} name="role" render={({ field }) => (
+                     <FormField control={form.control as any} name="role" render={({ field }) => (
                          <FormItem className="space-y-3"><FormLabel className="font-semibold text-slate-800">I am a...</FormLabel>
                              <FormControl>
                                  <div className="flex flex-row flex-wrap items-center gap-6 mt-1.5 h-11">
@@ -171,7 +171,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                  </div>
 
                 <div className={watchRole === "Teenager" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
-                    <FormField control={form.control} name="gender" render={({ field }) => (
+                    <FormField control={form.control as any} name="gender" render={({ field }) => (
                         <FormItem><FormLabel>Gender</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
@@ -179,7 +179,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                             </Select><FormMessage /></FormItem>
                     )} />
                     {watchRole === "Teenager" && (
-                        <FormField control={form.control} name="age" render={({ field }) => (
+                        <FormField control={form.control as any} name="age" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Age</FormLabel>
                                 <FormControl>
@@ -201,7 +201,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="region" render={({ field }) => (
+                    <FormField control={form.control as any} name="region" render={({ field }) => (
                         <FormItem><FormLabel>Region</FormLabel>
                             <Select 
                                 onValueChange={(val) => {
@@ -235,7 +235,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                     )} />
 
                     {watchRegion === "Other (Outside Lagos/Ogun)" ? (
-                        <FormField control={form.control} name="otherRegionSpecified" render={({ field }) => (
+                        <FormField control={form.control as any} name="otherRegionSpecified" render={({ field }) => (
                             <FormItem><FormLabel>Please specify your Region / Continent</FormLabel>
                                 <FormControl>
                                     <Input placeholder="e.g. Region 5 / Europe" {...field} />
@@ -244,7 +244,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                             </FormItem>
                         )} />
                     ) : (
-                        <FormField control={form.control} name="province" render={({ field }) => (
+                        <FormField control={form.control as any} name="province" render={({ field }) => (
                             <FormItem><FormLabel>Province</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ""} disabled={!watchRegion}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger></FormControl>
@@ -258,7 +258,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                     )}
                 </div>
 
-                <FormField control={form.control} name="department" render={({ field }) => (
+                <FormField control={form.control as any} name="department" render={({ field }) => (
                     <FormItem><FormLabel>Preferred Department</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Select Department" /></SelectTrigger></FormControl>

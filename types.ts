@@ -37,3 +37,13 @@ export interface GalleryItem {
   url: string;
   caption: string;
 }
+
+export interface RegistrationData {
+  fullName: string;
+  email: string;
+  age: number;
+  school?: string;
+  interests: string[];
+  zoneParish: string;
+}
+

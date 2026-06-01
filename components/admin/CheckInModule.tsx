@@ -26,6 +26,7 @@ interface Registrant {
     checked_in: boolean;
     checked_in_at?: string;
     qr_code_hash?: string;
+    phone?: string;
 }
 
 interface ActivityLogItem {
@@ -968,7 +969,7 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
                             )}
 
                             {/* Camera Permissions Blocked Error screen */}
-                            {hasCameraPermission === false && (
+                            {(hasCameraPermission as any) === false && (
                                 <div className="absolute inset-0 bg-slate-900 p-6 flex flex-col items-center justify-center text-center gap-4 z-20">
                                     <div className="p-3 bg-red-950/50 border border-red-500/20 text-red-500 rounded-full">
                                         <XCircle size={32} />

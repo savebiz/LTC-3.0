@@ -154,7 +154,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const { toast } = useDialog()
     const [registrationData, setRegistrationData] = useState<any>(null); // Store reg data after initial save
-    const [step, setStep] = useState<'step1' | 'step2' | 'step3'>('step1');
+    const [step, setStep] = useState<'step1' | 'step2' | 'step3' | 'upload'>('step1');
     const [paymentRef, setPaymentRef] = useState('');
     const [paymentRefError, setPaymentRefError] = useState('');
 
@@ -174,7 +174,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     }, []);
 
     const form = useForm<z.infer<typeof delegateSchema>>({
-        resolver: zodResolver(delegateSchema),
+        resolver: zodResolver(delegateSchema) as any,
         defaultValues: { 
             fullName: "", email: "", phone: "", category: "Teenager", age: 15, region: "", province: "", otherRegionSpecified: "", role: "Member", 
             registrationType: "individual", emergencyContactName: "", emergencyContactPhone: "",
@@ -857,14 +857,14 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         )} />
                         {watchRole === "Teens Executive" && (
                             <div className="p-4 bg-muted/50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in">
-                                <FormField control={form.control} name="execLevel" render={({ field }) => (
+                                <FormField control={form.control as any} name="execLevel" render={({ field }) => (
                                     <FormItem><FormLabel>Level</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value || ""}>
                                             <FormControl><SelectTrigger><SelectValue placeholder="Select Level" /></SelectTrigger></FormControl>
                                             <SelectContent>{EXEC_LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                         </Select><FormMessage /></FormItem>
                                 )} />
-                                <FormField control={form.control} name="execPosition" render={({ field }) => (
+                                <FormField control={form.control as any} name="execPosition" render={({ field }) => (
                                     <FormItem><FormLabel>Position</FormLabel><FormControl><Input placeholder="President" {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                             </div>

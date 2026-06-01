@@ -7,7 +7,7 @@ export const generatePersonalizedWelcome = async (data: RegistrationData): Promi
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = `
-      You are the official AI ambassador for the ${EVENT_DETAILS.name} (Theme: ${EVENT_DETAILS.theme}).
+      You are the official AI ambassador for the ${EVENT_DETAILS.name} (Theme: ${EVENT_DETAILS.fullTheme}).
       A new teen attendee has registered:
       Name: ${data.fullName}
       Age: ${data.age}

@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 let cachedSupabaseAdmin: ReturnType<typeof createClient> | null = null;
 
-export function getSupabaseAdmin() {
+export function getSupabaseAdmin(): any {
     if (cachedSupabaseAdmin) return cachedSupabaseAdmin;
     const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';

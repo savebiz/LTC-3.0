@@ -48,7 +48,7 @@ export default function RegistrationTable() {
   const [historyLogs, setHistoryLogs] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const { confirm } = useDialog();
+  const { confirm, toast } = useDialog();
 
   useEffect(() => {
     fetchRegistrations();

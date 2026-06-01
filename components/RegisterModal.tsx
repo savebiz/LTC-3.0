@@ -50,7 +50,7 @@ export default function RegisterModal({ open, onOpenChange, defaultTab = "delega
                         Join us for {EVENT_DETAILS.fullTheme}. Register as a delegate or join the workforce.
                     </DialogDescription>
                 </DialogHeader>
-                <Tabs defaultValue="delegate" value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <Tabs defaultValue="delegate" value={activeTab} onValueChange={(val) => setActiveTab(val as "delegate" | "volunteer")} className="w-full">
                     <TabsList className="grid w-full grid-cols-2 h-11 bg-[#f3f4f6] p-[4px] rounded-full md:inline-flex md:h-9 md:bg-muted md:p-1 md:rounded-lg">
                         <TabsTrigger 
                             value="delegate" 
