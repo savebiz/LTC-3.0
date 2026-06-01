@@ -1002,15 +1002,6 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
                                             <Button 
                                                 size="sm" 
                                                 variant="secondary"
-                                                onClick={toggleFlashlight}
-                                                className="absolute bottom-8 left-8 bg-slate-900/85 hover:bg-slate-900 border border-slate-700/60 text-white rounded-xl h-12 w-12 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer z-20 backdrop-blur-sm"
-                                                title="Toggle Flashlight"
-                                            >
-                                                <Lightbulb size={20} className={isFlashlightOn ? "text-yellow-400" : "text-white"} />
-                                            </Button>
-                                            <Button 
-                                                size="sm" 
-                                                variant="secondary"
                                                 onClick={toggleCamera}
                                                 className="absolute bottom-8 right-8 bg-slate-900/85 hover:bg-slate-900 border border-slate-700/60 text-white rounded-xl h-12 w-12 p-0 flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer z-20 backdrop-blur-sm"
                                                 title="Switch Camera"

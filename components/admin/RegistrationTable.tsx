@@ -755,7 +755,26 @@ export default function RegistrationTable() {
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Payment Method</span>
-                    <span className="font-semibold text-slate-700 mt-0.5 block capitalize">{reg.payment_method?.replace('_', ' ') || 'Bank Transfer'}</span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="font-semibold text-slate-700 capitalize">{reg.payment_method?.replace('_', ' ') || 'Bank Transfer'}</span>
+                      {reg.receipt_url ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewRegistration(reg);
+                            setIsZoomed(false);
+                          }}
+                          className="inline-flex items-center justify-center p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg active:scale-95 transition-all cursor-pointer"
+                          title="View Receipt"
+                        >
+                          <Paperclip size={14} className="text-blue-500" />
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center justify-center p-1 text-slate-300 cursor-not-allowed select-none" title="No Receipt">
+                          <Paperclip size={14} />
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {reg.payment_reference && (
                     <div className="col-span-2">
@@ -777,73 +796,57 @@ export default function RegistrationTable() {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center gap-2 pt-1">
-                  <div className="flex gap-1.5">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs border-slate-200 text-slate-500 hover:bg-slate-50 font-bold px-2 rounded-xl flex items-center gap-1 cursor-pointer"
-                      onClick={() => handleShowHistory(reg)}
-                    >
-                      <History size={12} />
-                      History
-                    </Button>
-                    {reg.receipt_url ? (
+                <div className={`grid gap-1.5 pt-2 border-t border-slate-100 w-full ${
+                  isPending ? 'grid-cols-4' : isArrival ? 'grid-cols-3' : 'grid-cols-2'
+                }`}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs border-slate-200 text-slate-500 hover:bg-slate-50 font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer w-full"
+                    onClick={() => handleShowHistory(reg)}
+                  >
+                    <History size={12} />
+                    <span className="truncate">History</span>
+                  </Button>
+
+                  {isPending && (
+                    <>
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="h-8 text-xs border-blue-200 text-blue-600 hover:bg-blue-50 font-bold px-2 rounded-xl flex items-center gap-1 cursor-pointer"
-                        onClick={() => {
-                          setPreviewRegistration(reg);
-                          setIsZoomed(false);
-                        }}
-                      >
-                        <Paperclip size={12} />
-                        View Receipt
-                      </Button>
-                    ) : (
-                      <span className="h-8 px-2 rounded-xl text-[11px] font-bold text-slate-400 bg-slate-100 flex items-center justify-center cursor-not-allowed shrink-0 select-none whitespace-nowrap">
-                        No Receipt
-                      </span>
-                    )}
-                    {isPending && (
-                      <>
-                        <Button
-                          size="sm"
-                          className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-2.5 rounded-xl cursor-pointer"
-                          onClick={() => handleMarkAsCleared(reg.id)}
-                          disabled={isSubmitting}
-                        >
-                          Clear
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="h-8 text-xs bg-red-500 hover:bg-red-600 text-white font-bold px-2.5 rounded-xl cursor-pointer"
-                          onClick={() => handleRejectClick(reg.id)}
-                          disabled={isSubmitting}
-                        >
-                          Reject
-                        </Button>
-                      </>
-                    )}
-                    {isArrival && (
-                      <Button
-                        size="sm"
-                        className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 rounded-xl cursor-pointer"
-                        onClick={() => handleMarkAsPaid(reg.id)}
+                        className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl cursor-pointer w-full flex items-center justify-center"
+                        onClick={() => handleMarkAsCleared(reg.id)}
                         disabled={isSubmitting}
                       >
-                        Mark as Paid
+                        Clear
                       </Button>
-                    )}
-                  </div>
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl cursor-pointer w-full flex items-center justify-center"
+                        onClick={() => handleRejectClick(reg.id)}
+                        disabled={isSubmitting}
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  )}
+
+                  {isArrival && (
+                    <Button
+                      size="sm"
+                      className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer w-full flex items-center justify-center"
+                      onClick={() => handleMarkAsPaid(reg.id)}
+                      disabled={isSubmitting}
+                    >
+                      Paid
+                    </Button>
+                  )}
 
                   {!reg.checked_in ? (
-                    <div title={checkInTooltip} className="inline-block">
+                    <div title={checkInTooltip} className="w-full">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 px-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer w-full flex items-center justify-center"
                         onClick={() => handleCheckIn(reg.id, reg.full_name)}
                         disabled={isCheckInDisabled || isSubmitting}
                       >
@@ -851,7 +854,7 @@ export default function RegistrationTable() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="status-badge flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0">
+                    <div className="status-badge flex items-center justify-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-bold w-full h-8 shrink-0">
                       <span>Checked In ✓</span>
                     </div>
                   )}

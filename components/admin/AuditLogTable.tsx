@@ -562,21 +562,21 @@ export default function AuditLogTable() {
 
             {/* PAGINATION PANEL */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t border-slate-200 text-xs font-semibold text-slate-500">
-                    <span>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 text-xs font-semibold text-slate-500">
+                    <span className="hidden sm:inline">
                         Showing {(page - 1) * 20 + 1} to {Math.min(page * 20, totalCount)} of {totalCount} records
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between w-full sm:w-auto sm:justify-start gap-4">
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setPage(prev => Math.max(1, prev - 1))}
                             disabled={page === 1}
-                            className="h-8 rounded-lg border-slate-200 text-slate-600 cursor-pointer active:scale-95 transition-all"
+                            className="h-11 sm:h-8 rounded-lg border-slate-200 text-slate-600 cursor-pointer active:scale-95 transition-all flex items-center justify-center min-w-[80px]"
                         >
                             Previous
                         </Button>
-                        <span className="px-2 text-slate-700 font-bold">
+                        <span className="px-2 text-slate-700 font-bold whitespace-nowrap text-center flex-1 sm:flex-initial">
                             Page {page} of {totalPages}
                         </span>
                         <Button
@@ -584,7 +584,7 @@ export default function AuditLogTable() {
                             size="sm"
                             onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={page === totalPages}
-                            className="h-8 rounded-lg border-slate-200 text-slate-600 cursor-pointer active:scale-95 transition-all"
+                            className="h-11 sm:h-8 rounded-lg border-slate-200 text-slate-600 cursor-pointer active:scale-95 transition-all flex items-center justify-center min-w-[80px]"
                         >
                             Next
                         </Button>
