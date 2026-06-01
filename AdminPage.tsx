@@ -7,6 +7,7 @@ import VolunteerTable from './components/admin/VolunteerTable';
 import CheckInModule from './components/admin/CheckInModule';
 import SettingsPage from './components/admin/SettingsPage';
 import AuditLogTable from './components/admin/AuditLogTable';
+import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -351,13 +352,8 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
 
             {activePage === 'settings' && <SettingsPage />}
 
-            {/* Placeholder for Analytics Page */}
-            {activePage === 'analytics' && (
-                <div className="flex flex-col items-center justify-center h-96 text-slate-400">
-                    <h2 className="text-2xl font-bold capitalize">Analytics</h2>
-                    <p>Module under construction</p>
-                </div>
-            )}
+            {/* Render Analytics Page */}
+            {activePage === 'analytics' && <AnalyticsDashboard />}
         </AdminLayout>
     );
 }
