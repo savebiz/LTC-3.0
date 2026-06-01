@@ -231,7 +231,7 @@ export default function DashboardOverview() {
             </div>
 
             {/* CHARTS ROW */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[400px]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[400px]">
                 <Card className="shadow-sm border-slate-200">
                   <CardHeader>
                       <CardTitle className="text-lg">Registration Trend</CardTitle>
