@@ -271,12 +271,9 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
                                                         setUsername(user.full_name);
                                                         setShowDropdown(false);
                                                     }}
-                                                    className="flex items-center justify-between px-4 py-3 hover:bg-slate-800 cursor-pointer text-sm font-medium transition-colors"
+                                                    className="flex items-center px-4 py-3 hover:bg-slate-800 cursor-pointer text-sm font-medium transition-colors"
                                                 >
                                                     <span>{user.full_name}</span>
-                                                    <span className="text-[10px] text-slate-400 font-bold bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded uppercase">
-                                                        {user.role}
-                                                    </span>
                                                 </div>
                                             ))}
                                             {username.trim() !== '' && !filteredUsers.some(u => u.full_name.toLowerCase() === username.trim().toLowerCase()) && (
