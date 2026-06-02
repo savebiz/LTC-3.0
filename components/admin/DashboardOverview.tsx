@@ -168,7 +168,7 @@ export default function DashboardOverview() {
                 const d = new Date(startOfCurrentWeek);
                 d.setDate(startOfCurrentWeek.getDate() - i * 7);
                 const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-                const label = `W/C ${formatDayMonth(d)}`;
+                const label = formatDayMonth(d);
                 dataPoints.push({
                     date: label,
                     Registrations: counts[key] || 0
@@ -352,14 +352,9 @@ export default function DashboardOverview() {
                             ) : (
                                 regs.slice(0, 10).map((r, index) => (
                                     <div key={r.id || index} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors border-b last:border-0 border-slate-100">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
-                                                {r.full_name?.trim().split(/\s+/).map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'SA'}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-800">{r.full_name}</p>
-                                                <p className="text-xs text-slate-500">{r.region} • {formatCategory(r.category)}</p>
-                                            </div>
+                                        <div className="min-w-0 flex-1 pr-2">
+                                            <p className="text-sm font-bold text-slate-800 truncate">{r.full_name}</p>
+                                            <p className="text-xs text-slate-500 truncate">{r.region} • {formatCategory(r.category)}</p>
                                         </div>
                                         <span className={`status-badge text-[10px] font-bold px-2.5 py-0.5 rounded-full border capitalize shrink-0 ${getStatusStyle(r)}`}>
                                             {getStatusLabel(r)}

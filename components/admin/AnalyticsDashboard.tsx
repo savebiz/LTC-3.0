@@ -249,7 +249,7 @@ export default function AnalyticsDashboard() {
                 const d = new Date(startOfCurrentWeek);
                 d.setDate(startOfCurrentWeek.getDate() - i * 7);
                 const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-                const label = `W/C ${formatDayMonth(d)}`;
+                const label = formatDayMonth(d);
                 dataPoints.push({
                     date: label,
                     Registrations: counts[key] || 0
