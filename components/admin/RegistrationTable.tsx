@@ -1021,9 +1021,9 @@ export default function RegistrationTable() {
                 <div className="w-full flex flex-col items-center gap-4">
                   {/* Desktop View: Iframe Preview */}
                   <iframe 
-                    src={previewRegistration.receipt_url} 
+                    src={`${previewRegistration.receipt_url}#toolbar=0&navpanes=0&view=FitH`} 
                     className="hidden md:block w-full h-[70vh] rounded-lg" 
-                    style={{ border: 'none' }}
+                    style={{ border: 'none', width: '100%' }}
                     title="Receipt PDF Preview"
                   />
                   {/* Mobile View: Single Button to open native viewer */}
