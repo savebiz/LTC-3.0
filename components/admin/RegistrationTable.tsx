@@ -576,7 +576,7 @@ export default function RegistrationTable() {
                           {reg.category}
                         </span>
                       </td>
-                      <td className="px-4 py-4 font-mono font-semibold">₦{Number(reg.amount_due || 0).toLocaleString()}</td>
+                      <td className="px-4 py-4 font-mono font-semibold whitespace-nowrap">₦{Number(reg.amount_due || 0).toLocaleString()}</td>
                       <td className="px-4 py-4 text-xs text-slate-600 capitalize">
                         {reg.payment_method?.replace('_', ' ') || 'Bank Transfer'}
                       </td>
@@ -854,8 +854,10 @@ export default function RegistrationTable() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="status-badge flex items-center justify-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-bold w-full h-8 shrink-0">
-                      <span>Checked In ✓</span>
+                    <div className="w-full">
+                      <div className="status-badge flex items-center justify-center gap-1.5 bg-[#22c55e] border border-[#22c55e] text-white rounded-xl text-xs font-bold w-full h-8 shrink-0 select-none whitespace-nowrap">
+                        <span>Checked In ✓</span>
+                      </div>
                     </div>
                   )}
                 </div>

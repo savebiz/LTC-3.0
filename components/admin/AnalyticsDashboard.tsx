@@ -863,7 +863,7 @@ export default function AnalyticsDashboard() {
                                 </ResponsiveContainer>
                             )}
                         </div>
-                        <div className="w-full md:w-2/5 border rounded-xl overflow-hidden self-stretch max-h-[300px] overflow-y-auto">
+                        <div className="w-full md:w-2/5 border rounded-xl overflow-x-auto self-stretch max-h-[300px] overflow-y-auto">
                             <table className="w-full text-sm divide-y text-left">
                                 <thead className="bg-slate-50 text-slate-500 font-semibold text-xs sticky top-0">
                                     <tr>
@@ -915,17 +915,17 @@ export default function AnalyticsDashboard() {
                         <table className="w-full text-left border-collapse text-sm">
                             <thead className="bg-slate-50/50 text-slate-500 font-semibold border-b">
                                 <tr>
-                                    <th className="px-6 py-3 cursor-pointer select-none hover:bg-slate-100" onClick={() => handleSort('region')}>
+                                    <th className="px-6 py-3 cursor-pointer select-none hover:bg-slate-100 col-region" onClick={() => handleSort('region')}>
                                         <div className="flex items-center gap-1">
                                             Region <ArrowUpDown size={12} />
                                         </div>
                                     </th>
-                                    <th className="px-6 py-3 cursor-pointer select-none hover:bg-slate-100 text-center" onClick={() => handleSort('total')}>
+                                    <th className="px-6 py-3 cursor-pointer select-none hover:bg-slate-100 text-center col-total-registered" onClick={() => handleSort('total')}>
                                         <div className="flex items-center gap-1 justify-center">
                                             Total Registered <ArrowUpDown size={12} />
                                         </div>
                                     </th>
-                                    <th className="px-6 py-3 cursor-pointer select-none hover:bg-slate-100 text-center" onClick={() => handleSort('cleared')}>
+                                    <th className="px-6 py-3 cursor-pointer select-none hover:bg-slate-100 text-center col-cleared-payments" onClick={() => handleSort('cleared')}>
                                         <div className="flex items-center gap-1 justify-center">
                                             Cleared Payments <ArrowUpDown size={12} />
                                         </div>
@@ -950,9 +950,9 @@ export default function AnalyticsDashboard() {
                             <tbody className="divide-y text-slate-700 font-medium">
                                 {regionalTableStats.map((row, index) => (
                                     <tr key={row.region || index} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-slate-800">{row.region}</td>
-                                        <td className="px-6 py-4 text-center text-slate-600 font-semibold">{row.total.toLocaleString()}</td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="px-6 py-4 font-bold text-slate-800 col-region">{row.region}</td>
+                                        <td className="px-6 py-4 text-center text-slate-600 font-semibold col-total-registered">{row.total.toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-center col-cleared-payments">
                                             <span className="text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 rounded-full text-xs font-bold">
                                                 {row.cleared.toLocaleString()}
                                             </span>
@@ -967,7 +967,7 @@ export default function AnalyticsDashboard() {
                                                 {row.checkedIn.toLocaleString()}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-right font-black text-emerald-600">₦{row.revenue.toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-right font-black text-emerald-600 whitespace-nowrap">₦{row.revenue.toLocaleString()}</td>
                                     </tr>
                                 ))}
                             </tbody>
