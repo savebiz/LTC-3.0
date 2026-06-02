@@ -571,88 +571,76 @@ export default function AnalyticsDashboard() {
             </Card>
 
             {/* SUMMARY CARDS ROW */}
-            <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 md:flex md:flex-row gap-3">
                 {/* 1. Total Registered */}
-                <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
-                    <div className="flex justify-between items-start w-full">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">Registered</span>
+                <Card className="col-span-1 md:flex-1 md:min-w-0 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
+                    <div className="flex justify-end w-full">
                         <div className="p-1.5 rounded-lg bg-orange-50 text-orange-500">
                             <Users size={14} />
                         </div>
                     </div>
-                    <div className="mt-2">
-                        <h3 className="text-xl md:text-2xl font-black text-slate-800 leading-none">{metrics.total.toLocaleString()}</h3>
-                        <p className="text-[9px] text-slate-400 mt-1 font-semibold">Total submissions</p>
+                    <div className="mt-1 flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap block">Registered</span>
+                        <h3 className="text-xl md:text-2xl font-black text-slate-800 leading-none mt-1 whitespace-nowrap block">{metrics.total.toLocaleString()}</h3>
+                        <p className="text-[9px] text-slate-400 mt-1 font-semibold whitespace-nowrap block">Total submissions</p>
                     </div>
                 </Card>
 
                 {/* 2. Total Cleared */}
-                <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
-                    <div className="flex justify-between items-start w-full">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">Cleared</span>
+                <Card className="col-span-1 md:flex-1 md:min-w-0 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
+                    <div className="flex justify-end w-full">
                         <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-500">
                             <CheckCircle2 size={14} />
                         </div>
                     </div>
-                    <div className="mt-2">
-                        <h3 className="text-xl md:text-2xl font-black text-emerald-600 leading-none">{metrics.cleared.toLocaleString()}</h3>
-                        <p className="text-[9px] text-slate-400 mt-1 font-semibold">Verified payments</p>
+                    <div className="mt-1 flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap block">Cleared</span>
+                        <h3 className="text-xl md:text-2xl font-black text-emerald-600 leading-none mt-1 whitespace-nowrap block">{metrics.cleared.toLocaleString()}</h3>
+                        <p className="text-[9px] text-slate-400 mt-1 font-semibold whitespace-nowrap block">Verified payments</p>
                     </div>
                 </Card>
 
                 {/* 3. Total Pending */}
-                <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
-                    <div className="flex justify-between items-start w-full">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">Pending</span>
+                <Card className="col-span-1 md:flex-1 md:min-w-0 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
+                    <div className="flex justify-end w-full">
                         <div className="p-1.5 rounded-lg bg-amber-50 text-amber-500">
                             <ClockIcon size={14} />
                         </div>
                     </div>
-                    <div className="mt-2">
-                        <h3 className="text-xl md:text-2xl font-black text-amber-600 leading-none">{metrics.pending.toLocaleString()}</h3>
-                        <p className="text-[9px] text-slate-400 mt-1 font-semibold">Awaiting review</p>
+                    <div className="mt-1 flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap block">Pending</span>
+                        <h3 className="text-xl md:text-2xl font-black text-amber-600 leading-none mt-1 whitespace-nowrap block">{metrics.pending.toLocaleString()}</h3>
+                        <p className="text-[9px] text-slate-400 mt-1 font-semibold whitespace-nowrap block">Awaiting review</p>
                     </div>
                 </Card>
 
-                {/* 4. Total Pay-on-Arrival */}
-                <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
-                    <div className="flex justify-between items-start w-full">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">On Arrival</span>
-                        <div className="p-1.5 rounded-lg bg-blue-50 text-blue-500">
-                            <CreditCard size={14} />
-                        </div>
-                    </div>
-                    <div className="mt-2">
-                        <h3 className="text-xl md:text-2xl font-black text-blue-600 leading-none">{metrics.poa.toLocaleString()}</h3>
-                        <p className="text-[9px] text-slate-400 mt-1 font-semibold">Historical records</p>
-                    </div>
-                </Card>
-
-                {/* 5. Total Checked In */}
-                <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
-                    <div className="flex justify-between items-start w-full">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">Checked In</span>
+                {/* 4. Total Checked In */}
+                <Card className="col-span-1 md:flex-1 md:min-w-0 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
+                    <div className="flex justify-end w-full">
                         <div className="p-1.5 rounded-lg bg-purple-50 text-purple-500">
                             <QrCode size={14} />
                         </div>
                     </div>
-                    <div className="mt-2">
-                        <h3 className="text-xl md:text-2xl font-black text-purple-600 leading-none">{metrics.checkedIn.toLocaleString()}</h3>
-                        <p className="text-[9px] text-slate-400 mt-1 font-semibold">Attendance count</p>
+                    <div className="mt-1 flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap block">Checked In</span>
+                        <h3 className="text-xl md:text-2xl font-black text-purple-600 leading-none mt-1 whitespace-nowrap block">{metrics.checkedIn.toLocaleString()}</h3>
+                        <p className="text-[9px] text-slate-400 mt-1 font-semibold whitespace-nowrap block">Attendance count</p>
                     </div>
                 </Card>
 
-                {/* 6. Total Revenue Collected */}
-                <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
-                    <div className="flex justify-between items-start w-full">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">Revenue</span>
+                {/* 5. Total Revenue Collected */}
+                <Card className="col-span-2 md:flex-1 md:min-w-0 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
+                    <div className="flex justify-end w-full">
                         <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-500">
                             <Award size={14} />
                         </div>
                     </div>
-                    <div className="mt-2">
-                        <h3 className="text-lg md:text-2xl font-black text-emerald-600 leading-none whitespace-normal break-all">₦{metrics.revenue.toLocaleString()}</h3>
-                        <p className="text-[9px] text-slate-400 mt-1 font-semibold">Cleared collections</p>
+                    <div className="mt-1 flex flex-col text-slate-800">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap block">Revenue</span>
+                        <h3 className="font-black text-emerald-600 leading-none mt-1 whitespace-nowrap block" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.8rem)' }}>
+                            ₦{metrics.revenue.toLocaleString()}
+                        </h3>
+                        <p className="text-[9px] text-slate-400 mt-1 font-semibold whitespace-nowrap block">Cleared collections</p>
                     </div>
                 </Card>
             </div>
