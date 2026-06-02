@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    AreaChart, Area
+    LineChart, Line
 } from 'recharts';
 import {
     Users, CreditCard, CheckCircle2, TrendingUp, Award, Loader2, QrCode
@@ -16,6 +16,7 @@ export default function DashboardOverview() {
     const [regs, setRegs] = useState<any[]>([]);
     const [vols, setVols] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [trendPeriod, setTrendPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
     const formatCategory = (cat: string) => {
         if (!cat) return '';
@@ -107,7 +108,7 @@ export default function DashboardOverview() {
     const checkInRate = totalRegs > 0 ? Math.round((checkedInCount / totalRegs) * 100) : 0;
     const totalVolunteers = vols.length;
 
-    // Daily registration numbers for graph (last 7 days ending today, inclusive)
+    // Registration numbers for graph grouped by Daily, Weekly, or Monthly
     const getRegistrationTrendData = () => {
         const dataPoints = [];
         const now = new Date();
@@ -120,25 +121,77 @@ export default function DashboardOverview() {
             return `${day} ${month}`;
         };
 
-        // Group registration counts by local date keys
-        const counts: Record<string, number> = {};
-        regs.forEach(r => {
-            if (!r.created_at) return;
-            const date = new Date(r.created_at);
-            const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-            counts[key] = (counts[key] || 0) + 1;
-        });
+        const formatMonthYear = (date: Date) => {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${months[date.getMonth()]} ${date.getFullYear()}`;
+        };
 
-        // Generate last 7 days ending today (inclusive)
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date(now);
-            d.setDate(now.getDate() - i);
-            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-            const label = formatDayMonth(d);
-            dataPoints.push({
-                name: label,
-                regs: counts[key] || 0
+        if (trendPeriod === 'daily') {
+            const counts: Record<string, number> = {};
+            regs.forEach(r => {
+                if (!r.created_at) return;
+                const date = new Date(r.created_at);
+                const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+                counts[key] = (counts[key] || 0) + 1;
             });
+
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(now.getDate() - i);
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                const label = formatDayMonth(d);
+                dataPoints.push({
+                    date: label,
+                    Registrations: counts[key] || 0
+                });
+            }
+        } else if (trendPeriod === 'weekly') {
+            const getStartOfWeek = (date: Date) => {
+                const d = new Date(date);
+                const day = d.getDay();
+                d.setDate(d.getDate() - day);
+                d.setHours(0, 0, 0, 0);
+                return d;
+            };
+
+            const counts: Record<string, number> = {};
+            regs.forEach(r => {
+                if (!r.created_at) return;
+                const date = new Date(r.created_at);
+                const weekStart = getStartOfWeek(date);
+                const key = `${weekStart.getFullYear()}-${weekStart.getMonth()}-${weekStart.getDate()}`;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+
+            const startOfCurrentWeek = getStartOfWeek(now);
+            for (let i = 4; i >= 0; i--) {
+                const d = new Date(startOfCurrentWeek);
+                d.setDate(startOfCurrentWeek.getDate() - i * 7);
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                const label = `W/C ${formatDayMonth(d)}`;
+                dataPoints.push({
+                    date: label,
+                    Registrations: counts[key] || 0
+                });
+            }
+        } else if (trendPeriod === 'monthly') {
+            const counts: Record<string, number> = {};
+            regs.forEach(r => {
+                if (!r.created_at) return;
+                const date = new Date(r.created_at);
+                const key = `${date.getFullYear()}-${date.getMonth()}`;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+
+            for (let i = 3; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const key = `${d.getFullYear()}-${d.getMonth()}`;
+                const label = formatMonthYear(d);
+                dataPoints.push({
+                    date: label,
+                    Registrations: counts[key] || 0
+                });
+            }
         }
 
         return dataPoints;
@@ -231,35 +284,68 @@ export default function DashboardOverview() {
             </div>
 
             {/* CHARTS ROW */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[400px]">
-                <Card className="shadow-sm border-slate-200">
-                  <CardHeader>
-                      <CardTitle className="text-lg">Registration Trend</CardTitle>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="lg:col-span-2 shadow-sm border-slate-200 bg-white">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                      <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                          <TrendingUp size={18} className="text-orange-500" />
+                          Registration Trend
+                      </CardTitle>
+                      {/* Period Toggle */}
+                      <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+                          <button
+                              type="button"
+                              onClick={() => setTrendPeriod('daily')}
+                              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all border-0 cursor-pointer ${
+                                  trendPeriod === 'daily'
+                                      ? 'bg-white text-slate-800 shadow-sm'
+                                      : 'text-slate-500 hover:text-slate-800 bg-transparent'
+                              }`}
+                          >
+                              Daily
+                          </button>
+                          <button
+                              type="button"
+                              onClick={() => setTrendPeriod('weekly')}
+                              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all border-0 cursor-pointer ${
+                                  trendPeriod === 'weekly'
+                                      ? 'bg-white text-slate-800 shadow-sm'
+                                      : 'text-slate-500 hover:text-slate-800 bg-transparent'
+                              }`}
+                          >
+                              Weekly
+                          </button>
+                          <button
+                              type="button"
+                              onClick={() => setTrendPeriod('monthly')}
+                              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all border-0 cursor-pointer ${
+                                  trendPeriod === 'monthly'
+                                      ? 'bg-white text-slate-800 shadow-sm'
+                                      : 'text-slate-500 hover:text-slate-800 bg-transparent'
+                              }`}
+                          >
+                              Monthly
+                          </button>
+                      </div>
                   </CardHeader>
-                  <CardContent className="h-80">
+                  <CardContent className="h-[380px]">
                       <ResponsiveContainer width="100%" height="100%" className="outline-none" tabIndex={-1}>
-                          <AreaChart data={trendData} style={{ outline: 'none' }} tabIndex={-1}>
-                              <defs>
-                                  <linearGradient id="colorRegs" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
-                                      <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                                  </linearGradient>
-                              </defs>
+                          <LineChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} style={{ outline: 'none' }} tabIndex={-1}>
                               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
-                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
-                              <Tooltip />
-                              <Area type="monotone" dataKey="regs" stroke="#f97316" fillOpacity={1} fill="url(#colorRegs)" strokeWidth={3} />
-                          </AreaChart>
+                              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }} />
+                              <Line type="monotone" dataKey="Registrations" stroke="#f97316" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 6 }} />
+                          </LineChart>
                       </ResponsiveContainer>
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border-slate-200">
+                <Card className="lg:col-span-1 shadow-sm border-slate-200 bg-white">
                     <CardHeader>
-                        <CardTitle className="text-lg">Recent Registrants</CardTitle>
+                        <CardTitle className="text-lg font-bold text-slate-800">Recent Registrants</CardTitle>
                     </CardHeader>
-                    <CardContent className="overflow-y-auto max-h-[340px]">
+                    <CardContent className="overflow-y-auto h-[380px]">
                         <div className="space-y-4">
                             {regs.length === 0 ? (
                                 <p className="text-sm text-slate-500 py-6 text-center">No registrants found.</p>

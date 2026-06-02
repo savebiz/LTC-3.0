@@ -25,6 +25,7 @@ export default function AnalyticsDashboard() {
     const [regionFilter, setRegionFilter] = useState<string>('all');
     const [provinceFilter, setProvinceFilter] = useState<string>('all');
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
+    const [trendPeriod, setTrendPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
     // Chart drill-downs
     const [drillDownRegion, setDrillDownRegion] = useState<string | null>(null);
@@ -192,56 +193,90 @@ export default function AnalyticsDashboard() {
     // Chart 1: Registration Trend (Line Chart)
     const trendChartData = useMemo(() => {
         const dataPoints = [];
-        const counts: Record<string, number> = {};
+        const now = new Date();
+        
+        const formatDayMonth = (date: Date) => {
+            const day = String(date.getDate()).padStart(2, '0');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = months[date.getMonth()];
+            return `${day} ${month}`;
+        };
 
-        filteredRegs.forEach(r => {
-            if (!r.created_at) return;
-            const date = new Date(r.created_at);
-            const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-            counts[key] = (counts[key] || 0) + 1;
-        });
+        const formatMonthYear = (date: Date) => {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${months[date.getMonth()]} ${date.getFullYear()}`;
+        };
 
-        let daysToGenerate = 30;
-        let startDate = new Date();
-        startDate.setDate(startDate.getDate() - 29);
+        if (trendPeriod === 'daily') {
+            const counts: Record<string, number> = {};
+            filteredRegs.forEach(r => {
+                if (!r.created_at) return;
+                const date = new Date(r.created_at);
+                const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+                counts[key] = (counts[key] || 0) + 1;
+            });
 
-        if (dateRange === 'today') {
-            daysToGenerate = 1;
-            startDate = new Date();
-        } else if (dateRange === '7days') {
-            daysToGenerate = 7;
-            startDate = new Date();
-            startDate.setDate(startDate.getDate() - 6);
-        } else if (dateRange === '30days') {
-            daysToGenerate = 30;
-            startDate = new Date();
-            startDate.setDate(startDate.getDate() - 29);
-        } else if (dateRange === 'all') {
-            if (filteredRegs.length > 0) {
-                const timestamps = filteredRegs.map(r => r.created_at ? new Date(r.created_at).getTime() : Date.now());
-                const minTime = Math.min(...timestamps);
-                startDate = new Date(minTime);
-                const diffTime = Math.abs(Date.now() - startDate.getTime());
-                daysToGenerate = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                if (daysToGenerate > 180) daysToGenerate = 180; // limit chart density
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(now.getDate() - i);
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                const label = formatDayMonth(d);
+                dataPoints.push({
+                    date: label,
+                    Registrations: counts[key] || 0
+                });
+            }
+        } else if (trendPeriod === 'weekly') {
+            const getStartOfWeek = (date: Date) => {
+                const d = new Date(date);
+                const day = d.getDay();
+                d.setDate(d.getDate() - day);
+                d.setHours(0, 0, 0, 0);
+                return d;
+            };
+
+            const counts: Record<string, number> = {};
+            filteredRegs.forEach(r => {
+                if (!r.created_at) return;
+                const date = new Date(r.created_at);
+                const weekStart = getStartOfWeek(date);
+                const key = `${weekStart.getFullYear()}-${weekStart.getMonth()}-${weekStart.getDate()}`;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+
+            const startOfCurrentWeek = getStartOfWeek(now);
+            for (let i = 4; i >= 0; i--) {
+                const d = new Date(startOfCurrentWeek);
+                d.setDate(startOfCurrentWeek.getDate() - i * 7);
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                const label = `W/C ${formatDayMonth(d)}`;
+                dataPoints.push({
+                    date: label,
+                    Registrations: counts[key] || 0
+                });
+            }
+        } else if (trendPeriod === 'monthly') {
+            const counts: Record<string, number> = {};
+            filteredRegs.forEach(r => {
+                if (!r.created_at) return;
+                const date = new Date(r.created_at);
+                const key = `${date.getFullYear()}-${date.getMonth()}`;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+
+            for (let i = 3; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const key = `${d.getFullYear()}-${d.getMonth()}`;
+                const label = formatMonthYear(d);
+                dataPoints.push({
+                    date: label,
+                    Registrations: counts[key] || 0
+                });
             }
         }
 
-        for (let i = 0; i < daysToGenerate; i++) {
-            const d = new Date(startDate);
-            d.setDate(startDate.getDate() + i);
-            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-            const day = String(d.getDate()).padStart(2, '0');
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const label = `${day} ${months[d.getMonth()]}`;
-            dataPoints.push({
-                date: label,
-                Registrations: counts[key] || 0
-            });
-        }
-
         return dataPoints;
-    }, [filteredRegs, dateRange]);
+    }, [filteredRegs, trendPeriod]);
 
 
     // Chart 3: Category Breakdown (Bar Chart)
@@ -647,17 +682,53 @@ export default function AnalyticsDashboard() {
 
             {/* CHARTS GRID */}
             <div className="space-y-6">
-                {/* ROW 1: Trend (60%) + Category (40%) on desktop */}
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                    {/* CHART 1: Registration Trend (60% width) */}
-                    <Card className="lg:col-span-3 shadow-sm border-slate-200 bg-white">
-                        <CardHeader className="pb-2">
+                {/* ROW 1: Trend (66%) + Category (33%) on desktop */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* CHART 1: Registration Trend (66% width) */}
+                    <Card className="lg:col-span-2 shadow-sm border-slate-200 bg-white">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                             <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <TrendingUp size={18} className="text-orange-500" />
                                 Registration Trend
                             </CardTitle>
+                            {/* Period Toggle */}
+                            <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+                                <button
+                                    type="button"
+                                    onClick={() => setTrendPeriod('daily')}
+                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all border-0 cursor-pointer ${
+                                        trendPeriod === 'daily'
+                                            ? 'bg-white text-slate-800 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-800 bg-transparent'
+                                    }`}
+                                >
+                                    Daily
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTrendPeriod('weekly')}
+                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all border-0 cursor-pointer ${
+                                        trendPeriod === 'weekly'
+                                            ? 'bg-white text-slate-800 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-800 bg-transparent'
+                                    }`}
+                                >
+                                    Weekly
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTrendPeriod('monthly')}
+                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all border-0 cursor-pointer ${
+                                        trendPeriod === 'monthly'
+                                            ? 'bg-white text-slate-800 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-800 bg-transparent'
+                                    }`}
+                                >
+                                    Monthly
+                                </button>
+                            </div>
                         </CardHeader>
-                        <CardContent className="h-[300px] flex items-center justify-center">
+                        <CardContent className="h-[380px] flex items-center justify-center">
                             {trendChartData.length === 0 ? (
                                 <p className="text-slate-400 text-sm">No data for this selection</p>
                             ) : (
@@ -674,15 +745,15 @@ export default function AnalyticsDashboard() {
                         </CardContent>
                     </Card>
 
-                    {/* CHART 3: Category Breakdown (40% width) */}
-                    <Card className="lg:col-span-2 shadow-sm border-slate-200 bg-white">
+                    {/* CHART 3: Category Breakdown (33% width) */}
+                    <Card className="lg:col-span-1 shadow-sm border-slate-200 bg-white">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <Users size={18} className="text-orange-500" />
                                 Category Breakdown
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="h-[300px] flex items-center justify-center">
+                        <CardContent className="h-[380px] flex items-center justify-center">
                             {categoryChartData.every(c => c.count === 0) ? (
                                 <p className="text-slate-400 text-sm">No data for this selection</p>
                             ) : (
@@ -692,7 +763,13 @@ export default function AnalyticsDashboard() {
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                                         <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0' }} />
-                                        <Bar dataKey="count" radius={[8, 8, 0, 0]} barSize={55} label={{ position: 'top', fill: '#475569', fontSize: 12, fontWeight: 'bold' }}>
+                                        <Bar 
+                                            dataKey="count" 
+                                            radius={[8, 8, 0, 0]} 
+                                            barSize={55} 
+                                            label={{ position: 'top', fill: '#475569', fontSize: 12, fontWeight: 'bold' }}
+                                            isAnimationActive={false}
+                                        >
                                             {categoryChartData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                                             ))}
