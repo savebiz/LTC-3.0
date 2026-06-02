@@ -44,6 +44,8 @@ export default function RegistrationTable() {
   // Receipt view state
   const [previewRegistration, setPreviewRegistration] = useState<Registration | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
+  const isPdf = previewRegistration?.receipt_url ? previewRegistration.receipt_url.toLowerCase().split('?')[0].endsWith('.pdf') : false;
+
 
   // Volunteer session identity
   const volunteer = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_volunteer') || 'admin' : 'admin';
@@ -983,7 +985,7 @@ export default function RegistrationTable() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in" onClick={() => setPreviewRegistration(null)} />
           
           {/* Modal Content */}
-          <div className="relative bg-white w-full max-w-4xl max-h-[95vh] rounded-2xl shadow-2xl flex flex-col p-4 md:p-6 overflow-hidden animate-in zoom-in-95 duration-200 z-10 border border-slate-200">
+          <div className={`relative bg-white w-full max-h-[95vh] rounded-2xl shadow-2xl flex flex-col p-4 md:p-6 overflow-hidden animate-in zoom-in-95 duration-200 z-10 border border-slate-200 ${isPdf ? 'max-w-md md:max-w-[900px]' : 'max-w-4xl'}`}>
             {/* Header */}
             <div className="flex items-center justify-between border-b pb-4 mb-4">
               <div className="min-w-0 pr-2">
@@ -997,7 +999,7 @@ export default function RegistrationTable() {
                   href={previewRegistration.receipt_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                  className={`inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl transition-colors cursor-pointer ${isPdf ? 'hidden md:inline-flex' : ''}`}
                   title="Open in new tab"
                 >
                   <Download size={14} />
@@ -1015,22 +1017,23 @@ export default function RegistrationTable() {
 
             {/* Preview Body */}
             <div className="flex-1 bg-slate-50 rounded-xl overflow-y-auto flex items-center justify-center p-4 min-h-0 border border-slate-100">
-              {previewRegistration.receipt_url.toLowerCase().endsWith('.pdf') ? (
-                <div className="w-full h-full flex flex-col items-center gap-4">
+              {isPdf ? (
+                <div className="w-full flex flex-col items-center gap-4">
+                  {/* Desktop View: Iframe Preview */}
                   <iframe 
                     src={previewRegistration.receipt_url} 
-                    className="w-full h-full min-h-[50vh] border-0 rounded-lg" 
+                    className="hidden md:block w-full h-[70vh] rounded-lg" 
+                    style={{ border: 'none' }}
                     title="Receipt PDF Preview"
                   />
-                  <a
-                    href={previewRegistration.receipt_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl transition-colors cursor-pointer text-sm shadow-md"
+                  {/* Mobile View: Single Button to open native viewer */}
+                  <button
+                    type="button"
+                    onClick={() => window.open(previewRegistration.receipt_url, '_blank')}
+                    className="block md:hidden w-full h-12 bg-[#f97316] hover:bg-[#ea580c] text-white font-bold rounded-xl shadow-md transition-colors text-sm flex items-center justify-center gap-2 cursor-pointer border-0"
                   >
-                    <Eye size={14} />
-                    Open PDF in New Tab
-                  </a>
+                    📄 Open Receipt
+                  </button>
                 </div>
               ) : (
                 <img 
@@ -1067,7 +1070,7 @@ export default function RegistrationTable() {
 
             {/* Actions at the bottom of the modal (Clear/Reject) */}
             {['pending', 'pending_verification', 'pending_payment'].includes(previewRegistration.payment_status?.toLowerCase() || '') && (
-              <div className="flex gap-3 mt-4 pt-4 border-t border-slate-100">
+              <div className={`flex gap-3 mt-4 pt-4 border-t border-slate-100 ${isPdf ? 'flex-col md:flex-row' : 'flex-row'}`}>
                 <Button
                   onClick={handleClearFromModal}
                   disabled={isSubmitting}
