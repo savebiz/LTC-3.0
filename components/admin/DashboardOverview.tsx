@@ -353,7 +353,7 @@ export default function DashboardOverview() {
                                 regs.slice(0, 10).map((r, index) => (
                                     <div key={r.id || index} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors border-b last:border-0 border-slate-100">
                                         <div className="min-w-0 flex-1 pr-2">
-                                            <p className="text-sm font-bold text-slate-800 truncate">{r.full_name}</p>
+                                            <p className="text-sm font-bold text-slate-800 whitespace-normal break-words">{r.full_name}</p>
                                             <p className="text-xs text-slate-500 truncate">{r.region}</p>
                                             <p className="text-[10px] text-slate-400 font-semibold mt-0.5 whitespace-normal break-words">{formatCategory(r.category)}</p>
                                         </div>
