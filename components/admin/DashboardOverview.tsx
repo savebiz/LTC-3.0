@@ -354,7 +354,8 @@ export default function DashboardOverview() {
                                     <div key={r.id || index} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors border-b last:border-0 border-slate-100">
                                         <div className="min-w-0 flex-1 pr-2">
                                             <p className="text-sm font-bold text-slate-800 truncate">{r.full_name}</p>
-                                            <p className="text-xs text-slate-500 truncate">{r.region} • {formatCategory(r.category)}</p>
+                                            <p className="text-xs text-slate-500 truncate">{r.region}</p>
+                                            <p className="text-[10px] text-slate-400 font-semibold mt-0.5 whitespace-normal break-words">{formatCategory(r.category)}</p>
                                         </div>
                                         <span className={`status-badge text-[10px] font-bold px-2.5 py-0.5 rounded-full border capitalize shrink-0 ${getStatusStyle(r)}`}>
                                             {getStatusLabel(r)}
