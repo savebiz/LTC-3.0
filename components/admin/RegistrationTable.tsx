@@ -627,7 +627,7 @@ export default function RegistrationTable() {
                             <History size={13} />
                             History
                           </Button>
-                          {reg.receipt_url ? (
+                          {reg.receipt_url && reg.receipt_url.length > 0 ? (
                             <Button
                               size="sm"
                               variant="outline"
@@ -757,7 +757,7 @@ export default function RegistrationTable() {
                     <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Payment Method</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="font-semibold text-slate-700 capitalize">{reg.payment_method?.replace('_', ' ') || 'Bank Transfer'}</span>
-                      {reg.receipt_url ? (
+                      {reg.receipt_url && reg.receipt_url.length > 0 ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -977,7 +977,7 @@ export default function RegistrationTable() {
       )}
 
       {/* Receipt Preview Modal */}
-      {previewRegistration && previewRegistration.receipt_url && (
+      {previewRegistration && previewRegistration.receipt_url && previewRegistration.receipt_url.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in" onClick={() => setPreviewRegistration(null)} />

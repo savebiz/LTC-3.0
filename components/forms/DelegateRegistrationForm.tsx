@@ -310,8 +310,33 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
         setIsSubmitting(true);
         let insertedIds: string[] = [];
+        const batchId = self.crypto.randomUUID();
         try {
-            const batchId = self.crypto.randomUUID();
+            let receiptUrl = null;
+
+            if (paymentMethod === 'bank_transfer' && selectedFile) {
+                const fileExt = selectedFile.name.split('.').pop() || 'jpg';
+                const fileName = `${batchId}-receipt.${fileExt}`;
+
+                // Upload to Supabase Storage before inserting registration
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('payment_receipts')
+                    .upload(fileName, selectedFile, {
+                        cacheControl: '3600',
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    throw new Error("Receipt upload failed. Please try again.");
+                }
+
+                // Get public URL
+                const { data: urlData } = supabase.storage
+                    .from('payment_receipts')
+                    .getPublicUrl(fileName);
+                receiptUrl = urlData.publicUrl;
+            }
+
             const payload = delegates.map(d => ({
                 full_name: d.fullName,
                 email: d.email,
@@ -334,7 +359,8 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 batch_id: batchId,
                 payment_method: 'bank_transfer',
                 payment_reference: paymentRef.trim(),
-                payment_status: 'pending'
+                payment_status: 'pending',
+                receipt_url: receiptUrl
             }));
 
             const { data: regData, error: regError } = await supabase
@@ -345,38 +371,6 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             if (regError) throw regError;
 
             insertedIds = regData.map((r: any) => r.id);
-            const batchRef = regData[0].batch_reference;
-
-            if (paymentMethod === 'bank_transfer' && selectedFile) {
-                const fileExt = selectedFile.name.split('.').pop() || 'jpg';
-                const fileName = `${batchRef}-receipt.${fileExt}`;
-
-                // Upload to Supabase Storage
-                const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('payment_receipts')
-                    .upload(fileName, selectedFile, {
-                        cacheControl: '3600',
-                        upsert: true
-                    });
-
-                if (uploadError) {
-                    throw new Error("Receipt upload failed. Please try again.");
-                }
-
-                // Get public URL
-                const { data: urlData } = supabase.storage
-                    .from('payment_receipts')
-                    .getPublicUrl(fileName);
-                const receiptUrl = urlData.publicUrl;
-
-                // Update registrations with the receipt_url
-                const { error: updateError } = await supabase
-                    .from('registrations')
-                    .update({ receipt_url: receiptUrl })
-                    .in('id', insertedIds);
-
-                if (updateError) throw updateError;
-            }
 
             console.log("Registrations Saved:", regData);
             
@@ -413,6 +407,12 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             onStepChange?.('upload');
         } catch (error: any) {
             console.error("FULL Submit Error:", error);
+            // Delete uploaded storage file if insertion fails
+            if (paymentMethod === 'bank_transfer' && selectedFile) {
+                const fileExt = selectedFile.name.split('.').pop() || 'jpg';
+                const fileName = `${batchId}-receipt.${fileExt}`;
+                await supabase.storage.from('payment_receipts').remove([fileName]).catch(e => console.error("Error removing uploaded file on rollback:", e));
+            }
             // Rollback inserted registrations to prevent orphaned records without receipt
             if (insertedIds.length > 0) {
                 await supabase.from('registrations').delete().in('id', insertedIds);
