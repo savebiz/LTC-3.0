@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { 
   Download, Search, Loader2, Users, CheckCircle2, 
   AlertCircle, MapPin, CreditCard, UserCheck, Trash2,
-  History, X, Clock, FileText, Paperclip, Eye
+  History, X, Clock, FileText, Paperclip, Eye, Zap
 } from 'lucide-react';
 import { LAGOS_REGIONS, OGUN_REGIONS } from "@/constants";
 import { useDialog } from '../ui/DialogProvider';
@@ -33,6 +34,7 @@ interface Registration {
 }
 
 export default function RegistrationTable() {
+  const navigate = useNavigate();
   const [data, setData] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -399,6 +401,25 @@ export default function RegistrationTable() {
   return (
     <div className="space-y-6">
       
+      {/* Event Day Express Registration Banner */}
+      <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md animate-in slide-in-from-top duration-300">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white/20 rounded-xl shrink-0">
+            <Zap size={20} className="animate-pulse" />
+          </div>
+          <div>
+            <h4 className="font-bold text-sm sm:text-base">Event Day? Use Express Registration</h4>
+            <p className="text-xs text-orange-50/90 mt-0.5">Quickly register and check in walk-in delegates at Channel C in under 60 seconds.</p>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/admin/express-register')}
+          className="w-full sm:w-auto bg-white text-orange-600 hover:bg-orange-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow-sm transition-colors border-0 cursor-pointer shrink-0"
+        >
+          Express Register →
+        </button>
+      </div>
+
       {/* Dashboard Summary Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 md:gap-4">
         {/* Card 1: Registered */}

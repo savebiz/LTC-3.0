@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
     LayoutDashboard, Users, BarChart3, QrCode,
-    Settings, LogOut, Menu, X, ClipboardList
+    Settings, LogOut, Menu, X, ClipboardList, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils';
 export type UserRole = 'Super Admin' | 'Access Admin' | 'Volunteer' | 'Supervisor';
 
 export const ROLE_ACCESS: Record<UserRole, string[]> = {
-    'Super Admin': ['overview', 'registrations', 'volunteers', 'analytics', 'auditlog', 'checkin', 'settings'],
-    'Access Admin': ['overview', 'registrations', 'volunteers', 'analytics', 'checkin'],
+    'Super Admin': ['overview', 'registrations', 'express-register', 'volunteers', 'analytics', 'auditlog', 'checkin', 'settings'],
+    'Access Admin': ['overview', 'registrations', 'express-register', 'volunteers', 'analytics', 'checkin'],
     'Volunteer': ['overview', 'checkin'],
     'Supervisor': ['overview', 'analytics']
 };
@@ -50,6 +50,7 @@ export default function AdminLayout({
     const NAV_ITEMS = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'registrations', label: 'Registrations', icon: Users },
+        { id: 'express-register', label: '⚡ Express Register', icon: Zap, isSpecial: true },
         { id: 'volunteers', label: 'Volunteers', icon: Users },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
         { id: 'auditlog', label: 'Audit Log', icon: ClipboardList },
@@ -97,7 +98,9 @@ export default function AdminLayout({
                                 "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer",
                                 activePage === item.id
                                     ? "bg-orange-500 text-white font-bold shadow-lg shadow-orange-500/20"
-                                    : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                                    : item.id === 'express-register'
+                                        ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:text-white border border-amber-500/20"
+                                        : "text-slate-400 hover:bg-slate-800 hover:text-white"
                             )}
                         >
                             <item.icon size={18} />

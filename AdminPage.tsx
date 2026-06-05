@@ -8,6 +8,7 @@ import CheckInModule from './components/admin/CheckInModule';
 import SettingsPage from './components/admin/SettingsPage';
 import AuditLogTable from './components/admin/AuditLogTable';
 import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
+import ExpressRegister from './components/admin/ExpressRegister';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,7 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
 
     const getPageFromPath = () => {
         if (location.pathname === '/admin/checkin') return 'checkin';
+        if (location.pathname === '/admin/express-register') return 'express-register';
         return initialPage;
     };
 
@@ -51,8 +53,10 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
     useEffect(() => {
         if (location.pathname === '/admin/checkin') {
             setActivePage('checkin');
+        } else if (location.pathname === '/admin/express-register') {
+            setActivePage('express-register');
         } else if (location.pathname === '/admin') {
-            if (activePage === 'checkin') {
+            if (activePage === 'checkin' || activePage === 'express-register') {
                 setActivePage('overview');
             }
         }
@@ -182,6 +186,8 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
         const finalPage = page === 'finances' ? 'analytics' : page;
         if (finalPage === 'checkin') {
             navigate('/admin/checkin');
+        } else if (finalPage === 'express-register') {
+            navigate('/admin/express-register');
         } else {
             navigate('/admin');
             setActivePage(finalPage);
@@ -343,6 +349,8 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
             {activePage === 'overview' && <DashboardOverview />}
 
             {activePage === 'registrations' && <RegistrationTable />}
+
+            {activePage === 'express-register' && <ExpressRegister />}
 
             {activePage === 'volunteers' && <VolunteerTable />}
 
