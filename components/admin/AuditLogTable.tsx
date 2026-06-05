@@ -81,6 +81,8 @@ export default function AuditLogTable() {
                 query = query.in('action', ['payment_cleared', 'payment_rejected']);
             } else if (actionFilter === 'registrations') {
                 query = query.eq('action', 'registration_created');
+            } else if (actionFilter === 'express_registration') {
+                query = query.eq('action', 'express_registration');
             } else if (actionFilter === 'blocked') {
                 query = query.in('action', ['check_in_blocked_pending', 'check_in_blocked_rejected', 'check_in_duplicate']);
             } else if (actionFilter === 'system') {
@@ -164,6 +166,9 @@ export default function AuditLogTable() {
         } else if (action === 'check_in_duplicate') {
             badgeStyle = "bg-amber-50 border-amber-100 text-amber-700";
             label = "Duplicate Check-in Attempt";
+        } else if (action === 'express_registration') {
+            badgeStyle = "bg-orange-50 border-orange-100 text-orange-700";
+            label = "Express Registration";
         } else if (action === 'db_update') {
             badgeStyle = "bg-slate-100 border-slate-200 text-slate-600 font-mono";
             label = "System DB Update";
@@ -194,6 +199,8 @@ export default function AuditLogTable() {
                 query = query.in('action', ['payment_cleared', 'payment_rejected']);
             } else if (actionFilter === 'registrations') {
                 query = query.eq('action', 'registration_created');
+            } else if (actionFilter === 'express_registration') {
+                query = query.eq('action', 'express_registration');
             } else if (actionFilter === 'blocked') {
                 query = query.in('action', ['check_in_blocked_pending', 'check_in_blocked_rejected', 'check_in_duplicate']);
             } else if (actionFilter === 'system') {
@@ -288,6 +295,7 @@ export default function AuditLogTable() {
                                 <option value="check-ins">Check-in Success</option>
                                 <option value="payments">Payment Actions</option>
                                 <option value="registrations">Registrations</option>
+                                <option value="express_registration">Express Registration</option>
                                 <option value="blocked">Blocked Attempts</option>
                                 <option value="system">System Updates</option>
                             </select>
