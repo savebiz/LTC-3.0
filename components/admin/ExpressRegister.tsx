@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { useDialog } from '../ui/DialogProvider';
 import { LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVINCES } from '@/constants';
@@ -7,6 +8,8 @@ import { Zap, Wifi, WifiOff, Loader2, Search, Check, ChevronDown, User, Phone, M
 export default function ExpressRegister() {
   const { toast } = useDialog();
 
+  const [mounted, setMounted] = useState(false);
+
   // Basic authentication check
   const volunteerName = (typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_volunteer') : '') || 'admin';
   const userRole = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_role') : '';
@@ -14,7 +17,7 @@ export default function ExpressRegister() {
   // Form Fields State
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | ''>('');
+  const [gender, setGender] = useState<'Male' | 'Female' | ''>('');
   const [category, setCategory] = useState<'teenager' | 'teacher'>('teenager');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedProvince, setSelectedProvince] = useState('');
@@ -32,8 +35,18 @@ export default function ExpressRegister() {
   // Searchable Region Dropdown State
   const [regionSearch, setRegionSearch] = useState('');
   const [isRegionDropdownOpen, setIsRegionDropdownOpen] = useState(false);
+  const [regionCoords, setRegionCoords] = useState({ top: 0, left: 0, width: 0 });
+  const [regionPlacement, setRegionPlacement] = useState<'top' | 'bottom'>('bottom');
   const regionDropdownRef = useRef<HTMLDivElement>(null);
   const regionInputRef = useRef<HTMLInputElement>(null);
+
+  // Searchable Province Dropdown State
+  const [provinceSearch, setProvinceSearch] = useState('');
+  const [isProvinceDropdownOpen, setIsProvinceDropdownOpen] = useState(false);
+  const [provinceCoords, setProvinceCoords] = useState({ top: 0, left: 0, width: 0 });
+  const [provincePlacement, setProvincePlacement] = useState<'top' | 'bottom'>('bottom');
+  const provinceDropdownRef = useRef<HTMLDivElement>(null);
+  const provinceInputRef = useRef<HTMLInputElement>(null);
 
   // Validation & Animation State
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -95,6 +108,7 @@ export default function ExpressRegister() {
 
   // Wake Lock and Focus Setup on Mount
   useEffect(() => {
+    setMounted(true);
     requestWakeLock();
     
     // Autofocus name input on load
@@ -117,6 +131,148 @@ export default function ExpressRegister() {
       releaseWakeLock();
     };
   }, []);
+
+  // Update dropdown positions on resize / scroll
+  const updateDropdownCoords = useCallback(() => {
+    if (isRegionDropdownOpen && regionInputRef.current) {
+      const rect = regionInputRef.current.getBoundingClientRect();
+      const dropdownHeight = 192; // max-h-48 is 192px
+      const margin = 4;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        setRegionCoords({
+          top: rect.top - dropdownHeight - margin,
+          left: rect.left,
+          width: rect.width
+        });
+        setRegionPlacement('top');
+      } else {
+        setRegionCoords({
+          top: rect.bottom + margin,
+          left: rect.left,
+          width: rect.width
+        });
+        setRegionPlacement('bottom');
+      }
+    }
+    if (isProvinceDropdownOpen && provinceInputRef.current) {
+      const rect = provinceInputRef.current.getBoundingClientRect();
+      const dropdownHeight = 192;
+      const margin = 4;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        setProvinceCoords({
+          top: rect.top - dropdownHeight - margin,
+          left: rect.left,
+          width: rect.width
+        });
+        setProvincePlacement('top');
+      } else {
+        setProvinceCoords({
+          top: rect.bottom + margin,
+          left: rect.left,
+          width: rect.width
+        });
+        setProvincePlacement('bottom');
+      }
+    }
+  }, [isRegionDropdownOpen, isProvinceDropdownOpen]);
+
+  useEffect(() => {
+    if (isRegionDropdownOpen || isProvinceDropdownOpen) {
+      window.addEventListener('resize', updateDropdownCoords);
+      window.addEventListener('scroll', updateDropdownCoords, true);
+    }
+    return () => {
+      window.removeEventListener('resize', updateDropdownCoords);
+      window.removeEventListener('scroll', updateDropdownCoords, true);
+    };
+  }, [isRegionDropdownOpen, isProvinceDropdownOpen, updateDropdownCoords]);
+
+  // Click outside listener for both dropdowns
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        isRegionDropdownOpen &&
+        regionDropdownRef.current &&
+        !regionDropdownRef.current.contains(e.target as Node) &&
+        regionInputRef.current &&
+        !regionInputRef.current.contains(e.target as Node)
+      ) {
+        setIsRegionDropdownOpen(false);
+      }
+      if (
+        isProvinceDropdownOpen &&
+        provinceDropdownRef.current &&
+        !provinceDropdownRef.current.contains(e.target as Node) &&
+        provinceInputRef.current &&
+        !provinceInputRef.current.contains(e.target as Node)
+      ) {
+        setIsProvinceDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isRegionDropdownOpen, isProvinceDropdownOpen]);
+
+  const openRegionDropdown = () => {
+    if (regionInputRef.current) {
+      const rect = regionInputRef.current.getBoundingClientRect();
+      const dropdownHeight = 192;
+      const margin = 4;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      let top = rect.bottom + margin;
+      let placement: 'top' | 'bottom' = 'bottom';
+      
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        top = rect.top - dropdownHeight - margin;
+        placement = 'top';
+      }
+      
+      setRegionCoords({
+        top,
+        left: rect.left,
+        width: rect.width
+      });
+      setRegionPlacement(placement);
+      setIsRegionDropdownOpen(true);
+      setIsProvinceDropdownOpen(false); // Close the other
+    }
+  };
+
+  const openProvinceDropdown = () => {
+    if (!selectedRegion) return;
+    if (provinceInputRef.current) {
+      const rect = provinceInputRef.current.getBoundingClientRect();
+      const dropdownHeight = 192;
+      const margin = 4;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      let top = rect.bottom + margin;
+      let placement: 'top' | 'bottom' = 'bottom';
+      
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        top = rect.top - dropdownHeight - margin;
+        placement = 'top';
+      }
+      
+      setProvinceCoords({
+        top,
+        left: rect.left,
+        width: rect.width
+      });
+      setProvincePlacement(placement);
+      setIsProvinceDropdownOpen(true);
+      setIsRegionDropdownOpen(false); // Close the other
+    }
+  };
 
   // Fetch Today's Count from Audit Log
   const fetchTodayCount = async () => {
@@ -259,17 +415,6 @@ export default function ExpressRegister() {
     }
   };
 
-  // Close searchable region dropdown on click outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (regionDropdownRef.current && !regionDropdownRef.current.contains(e.target as Node)) {
-        setIsRegionDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   // Update sessionCount in sessionStorage helper
   const incrementSessionCount = () => {
     const nextVal = sessionCount + 1;
@@ -365,13 +510,6 @@ export default function ExpressRegister() {
       setLastRegisteredDelegate({ name: payload.full_name, ref: tempRef });
       setIsSuccessFlashOpen(true);
       setLoading(false);
-
-      // Trigger auto reset after 1.5s
-      setTimeout(() => {
-        setIsSuccessFlashOpen(false);
-        resetFormFields();
-      }, 1500);
-
       return;
     }
 
@@ -416,12 +554,6 @@ export default function ExpressRegister() {
       setLastRegisteredDelegate({ name: payload.full_name, ref: referenceCode });
       setIsSuccessFlashOpen(true);
 
-      // Trigger auto reset after 1.5s
-      setTimeout(() => {
-        setIsSuccessFlashOpen(false);
-        resetFormFields();
-      }, 1500);
-
     } catch (err: any) {
       console.error('Express registration submit error:', err);
       toast.error('Registration failed — please try again', err.message || '');
@@ -439,6 +571,7 @@ export default function ExpressRegister() {
     setSelectedRegion('');
     setSelectedProvince('');
     setRegionSearch('');
+    setProvinceSearch('');
     setErrors({});
     
     // Autofocus name input
@@ -456,6 +589,9 @@ export default function ExpressRegister() {
   );
 
   const provinces = selectedRegion ? REGIONS_AND_PROVINCES[selectedRegion] || [] : [];
+  const filteredProvinces = provinces.filter(p =>
+    p.toLowerCase().includes(provinceSearch.toLowerCase())
+  );
 
   return (
     <div className="w-full h-full max-h-[calc(100vh-6rem)] overflow-hidden flex flex-col justify-between p-1 select-none">
@@ -468,12 +604,26 @@ export default function ExpressRegister() {
         .animate-shake {
           animation: shake 0.4s ease-in-out;
         }
+        /* Custom thin scrollbar matching both dropdowns */
+        .dropdown-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .dropdown-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .dropdown-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+        .dropdown-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
       `}</style>
 
       {/* SUCCESS FLASH OVERLAY */}
       {isSuccessFlashOpen && lastRegisteredDelegate && (
         <div className="fixed inset-0 z-50 bg-[#16a34a] text-white flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in zoom-in-95 duration-200">
-          <div className="bg-white/10 p-5 rounded-full mb-6 animate-bounce">
+          <div className="bg-white/10 p-5 rounded-full mb-4 animate-bounce">
             <Check size={64} className="stroke-[4px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-black font-heading tracking-tight mb-2 uppercase break-words max-w-full">
@@ -482,8 +632,40 @@ export default function ExpressRegister() {
           <p className="text-xl sm:text-2xl font-semibold opacity-90 tracking-wider">
             REGISTERED & CHECKED IN
           </p>
-          <div className="mt-8 bg-black/20 border border-white/20 px-6 py-3 rounded-2xl font-mono text-2xl sm:text-3xl font-extrabold tracking-widest shadow-md">
+          <div className="mt-6 bg-black/20 border border-white/20 px-6 py-3 rounded-2xl font-mono text-2xl sm:text-3xl font-extrabold tracking-widest shadow-md">
             {lastRegisteredDelegate.ref}
+          </div>
+
+          {/* Success Screen Action Buttons */}
+          <div className="mt-8 flex flex-col gap-3 w-full max-w-md shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                // Same Region / Group click: clears Name, Phone, and Gender. Keeps Region, Province, Category
+                setFullName('');
+                setPhone('');
+                setGender('');
+                setErrors({});
+                setIsSuccessFlashOpen(false);
+                setTimeout(() => {
+                  if (fullNameRef.current) fullNameRef.current.focus();
+                }, 100);
+              }}
+              className="w-full h-14 bg-white text-[#16a34a] hover:bg-emerald-50 font-black text-base uppercase tracking-wider rounded-xl shadow-lg border-0 cursor-pointer flex items-center justify-center gap-2 select-none active:scale-[0.99] transition-all"
+            >
+              Same Region / Group
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                // New Registration click: clears everything
+                resetFormFields();
+                setIsSuccessFlashOpen(false);
+              }}
+              className="w-full h-14 bg-emerald-800 text-white hover:bg-emerald-900 font-black text-base uppercase tracking-wider rounded-xl shadow-lg border border-emerald-700 cursor-pointer flex items-center justify-center gap-2 select-none active:scale-[0.99] transition-all"
+            >
+              New Registration
+            </button>
           </div>
         </div>
       )}
@@ -536,10 +718,10 @@ export default function ExpressRegister() {
       {/* CORE DESIGN FORM CARD */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-sm mt-3 flex-1 flex flex-col justify-between overflow-hidden">
         <form onSubmit={handleRegisterSubmit} className="flex-1 flex flex-col justify-between gap-3 overflow-hidden">
-          {/* Responsive Grid Structure for Row-by-Row Layout */}
+          {/* Responsive Row-by-Row Grid Layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 overflow-y-auto pr-1">
             
-            {/* Row 1 Col 1: Full Name */}
+            {/* Row 1 Left: Full Name */}
             <div className="space-y-1">
               <label htmlFor="full-name-input" className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                 <User size={13} className="text-slate-400" /> Full Name <span className="text-red-500">*</span>
@@ -562,8 +744,8 @@ export default function ExpressRegister() {
               {errors.fullName && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.fullName}</p>}
             </div>
 
-            {/* Row 1 Col 2: Region */}
-            <div className="space-y-1 relative" ref={regionDropdownRef}>
+            {/* Row 1 Right: Region */}
+            <div className="space-y-1 relative">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                 <MapPin size={13} className="text-slate-400" /> Region <span className="text-red-500">*</span>
               </label>
@@ -575,7 +757,7 @@ export default function ExpressRegister() {
                   readOnly={!isRegionDropdownOpen}
                   placeholder={selectedRegion || "Select Region"}
                   value={isRegionDropdownOpen ? regionSearch : selectedRegion}
-                  onClick={() => setIsRegionDropdownOpen(true)}
+                  onClick={openRegionDropdown}
                   onChange={(e) => setRegionSearch(e.target.value)}
                   className={`w-full h-11 pl-3 pr-10 bg-white border rounded-xl text-slate-900 placeholder:text-slate-500 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 cursor-pointer transition-all font-medium ${
                     errors.region ? 'border-red-500 bg-red-50/50' : 'border-slate-200'
@@ -586,9 +768,20 @@ export default function ExpressRegister() {
                 </div>
               </div>
 
-              {/* Float Dropdown Menu */}
-              {isRegionDropdownOpen && (
-                <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl max-h-48 overflow-y-auto shadow-2xl animate-in fade-in duration-100">
+              {/* Fixed Searchable Region Dropdown Menu */}
+              {mounted && isRegionDropdownOpen && createPortal(
+                <div 
+                  ref={regionDropdownRef}
+                  style={{
+                    position: 'fixed',
+                    top: `${regionCoords.top}px`,
+                    left: `${regionCoords.left}px`,
+                    width: `${regionCoords.width}px`,
+                  }}
+                  className={`z-[9999] bg-white border border-slate-200 rounded-xl max-h-48 overflow-y-auto shadow-2xl animate-in fade-in duration-100 dropdown-scrollbar ${
+                    regionPlacement === 'top' ? 'mb-1 origin-bottom' : 'mt-1 origin-top'
+                  }`}
+                >
                   <div className="sticky top-0 bg-white p-2 border-b border-slate-100 z-10">
                     <div className="relative flex items-center w-full">
                       <Search size={14} className="absolute left-2.5 text-slate-400" />
@@ -657,12 +850,13 @@ export default function ExpressRegister() {
                       <div className="text-center py-4 text-xs text-slate-400">No regions found</div>
                     )}
                   </div>
-                </div>
+                </div>,
+                document.body
               )}
               {errors.region && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.region}</p>}
             </div>
 
-            {/* Row 2 Col 1: Phone Number */}
+            {/* Row 2 Left: Phone Number */}
             <div className="space-y-1">
               <label htmlFor="phone-input" className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                 <Phone size={13} className="text-slate-400" /> Phone Number <span className="text-red-500">*</span>
@@ -685,26 +879,89 @@ export default function ExpressRegister() {
               {errors.phone && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.phone}</p>}
             </div>
 
-            {/* Row 2 Col 2: Province */}
-            <div className="space-y-1">
-              <label htmlFor="province-select" className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                Province <span className="text-slate-400 font-normal">(Optional - Fallbacks to Region)</span>
+            {/* Row 2 Right: Province Dropdown */}
+            <div className="space-y-1 relative">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <MapPin size={13} className="text-slate-400" /> Province <span className="text-slate-400 font-normal lowercase">(optional - fallbacks to region)</span>
               </label>
-              <select
-                id="province-select"
-                value={selectedProvince}
-                onChange={(e) => setSelectedProvince(e.target.value)}
-                disabled={!selectedRegion}
-                className={`w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                <option value="">Select Province (Fallback to Region)</option>
-                {provinces.map(p => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
+              
+              <div className="relative">
+                <input
+                  ref={provinceInputRef}
+                  type="text"
+                  readOnly={!isProvinceDropdownOpen}
+                  placeholder={selectedProvince || "Select Province (Fallback to Region)"}
+                  value={isProvinceDropdownOpen ? provinceSearch : selectedProvince}
+                  onClick={openProvinceDropdown}
+                  onChange={(e) => setProvinceSearch(e.target.value)}
+                  disabled={!selectedRegion}
+                  className={`w-full h-11 pl-3 pr-10 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-500 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 cursor-pointer transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                  <ChevronDown size={18} />
+                </div>
+              </div>
+
+              {/* Fixed Searchable Province Dropdown Menu */}
+              {mounted && isProvinceDropdownOpen && selectedRegion && createPortal(
+                <div 
+                  ref={provinceDropdownRef}
+                  style={{
+                    position: 'fixed',
+                    top: `${provinceCoords.top}px`,
+                    left: `${provinceCoords.left}px`,
+                    width: `${provinceCoords.width}px`,
+                  }}
+                  className={`z-[9999] bg-white border border-slate-200 rounded-xl max-h-48 overflow-y-auto shadow-2xl animate-in fade-in duration-100 dropdown-scrollbar ${
+                    provincePlacement === 'top' ? 'mb-1 origin-bottom' : 'mt-1 origin-top'
+                  }`}
+                >
+                  <div className="sticky top-0 bg-white p-2 border-b border-slate-100 z-10">
+                    <div className="relative flex items-center w-full">
+                      <Search size={14} className="absolute left-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search provinces..."
+                        value={provinceSearch}
+                        onChange={(e) => setProvinceSearch(e.target.value)}
+                        className="w-full h-8 pl-8 pr-2 bg-slate-50 border border-slate-100 rounded-lg text-slate-800 placeholder:text-slate-400 text-xs focus:outline-none focus:border-orange-500"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-1">
+                    <div className="px-2.5 py-1 text-[10px] font-black uppercase text-orange-600 tracking-wider">
+                      Provinces under {selectedRegion}
+                    </div>
+                    {filteredProvinces.map(p => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => {
+                          setSelectedProvince(p);
+                          setProvinceSearch('');
+                          setIsProvinceDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-xs rounded-lg flex items-center justify-between hover:bg-slate-50 text-slate-700 ${
+                          selectedProvince === p ? 'bg-orange-50 text-orange-600 font-bold border-l-2 border-orange-500' : ''
+                        }`}
+                      >
+                        <span>{p}</span>
+                        {selectedProvince === p && <Check size={12} />}
+                      </button>
+                    ))}
+
+                    {filteredProvinces.length === 0 && (
+                      <div className="text-center py-4 text-xs text-slate-400">No provinces found</div>
+                    )}
+                  </div>
+                </div>,
+                document.body
+              )}
             </div>
 
-            {/* Row 3 Col 1: Gender Toggle */}
+            {/* Row 3 Left: Gender Toggle */}
             <div className="space-y-1">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                 Gender <span className="text-red-500">*</span>
@@ -746,7 +1003,7 @@ export default function ExpressRegister() {
               {errors.gender && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.gender}</p>}
             </div>
 
-            {/* Row 3 Col 2: Category Toggle */}
+            {/* Row 3 Right: Category Toggle */}
             <div className="space-y-1">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                 Category <span className="text-red-500">*</span>
