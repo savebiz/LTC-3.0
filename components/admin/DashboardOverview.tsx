@@ -29,8 +29,9 @@ export default function DashboardOverview() {
     const getStatusLabel = (r: any) => {
         const ps = r.payment_status?.toLowerCase();
         const st = r.status?.toLowerCase();
+        const pm = r.payment_method?.toLowerCase();
+        if (ps === 'pay_on_arrival' || st === 'pay_on_arrival' || pm === 'pay_on_arrival') return 'Pay on Arrival';
         if (ps === 'cleared' || st === 'confirmed') return 'Cleared';
-        if (ps === 'pay_on_arrival' || st === 'pay_on_arrival') return 'Pay on Arrival';
         if (ps === 'rejected' || st === 'rejected') return 'Rejected';
         if (ps === 'pending' || st === 'pending_payment' || st === 'pending_verification') return 'Pending';
         return ps || st || 'Pending';

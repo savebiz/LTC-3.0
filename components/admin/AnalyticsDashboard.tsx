@@ -177,7 +177,8 @@ export default function AnalyticsDashboard() {
         const poa = filteredRegs.filter(r => {
             const ps = r.payment_status?.toLowerCase();
             const st = r.status?.toLowerCase();
-            return ps === 'pay_on_arrival' || st === 'pay_on_arrival';
+            const pm = r.payment_method?.toLowerCase();
+            return ps === 'pay_on_arrival' || st === 'pay_on_arrival' || pm === 'pay_on_arrival';
         }).length;
         const checkedIn = filteredRegs.filter(r => r.checked_in).length;
         const revenue = filteredRegs.reduce((sum, r) => {
@@ -341,11 +342,12 @@ export default function AnalyticsDashboard() {
 
             const ps = r.payment_status?.toLowerCase();
             const st = r.status?.toLowerCase();
+            const pm = r.payment_method?.toLowerCase();
 
-            if (ps === 'cleared' || st === 'confirmed') {
-                dataMap[reg].Cleared += 1;
-            } else if (ps === 'pay_on_arrival' || st === 'pay_on_arrival') {
+            if (ps === 'pay_on_arrival' || st === 'pay_on_arrival' || pm === 'pay_on_arrival') {
                 dataMap[reg]['Pay on Arrival'] += 1;
+            } else if (ps === 'cleared' || st === 'confirmed') {
+                dataMap[reg].Cleared += 1;
             } else {
                 dataMap[reg].Pending += 1;
             }
@@ -646,6 +648,20 @@ export default function AnalyticsDashboard() {
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap block">Pending</span>
                         <h3 className="text-xl md:text-2xl font-black text-amber-600 leading-none mt-1 whitespace-nowrap block">{metrics.pending.toLocaleString()}</h3>
                         <p className="text-[9px] text-slate-400 mt-1 font-semibold whitespace-nowrap block">Awaiting review</p>
+                    </div>
+                </Card>
+
+                {/* 4. On Arrival */}
+                <Card className="col-span-1 md:flex-1 md:min-w-0 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card flex flex-col justify-between p-4 min-h-[110px]">
+                    <div className="flex justify-end w-full">
+                        <div className="p-1.5 rounded-lg bg-blue-50 text-blue-500">
+                            <CreditCard size={14} />
+                        </div>
+                    </div>
+                    <div className="mt-1 flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap block">On Arrival</span>
+                        <h3 className="text-xl md:text-2xl font-black text-blue-600 leading-none mt-1 whitespace-nowrap block">{metrics.poa.toLocaleString()}</h3>
+                        <p className="text-[9px] text-slate-400 mt-1 font-semibold whitespace-nowrap block">Pay on arrival</p>
                     </div>
                 </Card>
 

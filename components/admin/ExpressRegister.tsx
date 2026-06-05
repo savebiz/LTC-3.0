@@ -379,7 +379,8 @@ export default function ExpressRegister() {
               category: item.category,
               batch_reference: refCode,
               payment_status: item.payment_status,
-              amount_due: item.amount_due
+              amount_due: item.amount_due,
+              payment_method: item.payment_method
             }
           });
 
@@ -486,7 +487,7 @@ export default function ExpressRegister() {
       category: category,
       region: selectedRegion,
       province: selectedProvince || selectedRegion, // Fallback to region as province
-      payment_method: 'bank_transfer',
+      payment_method: 'pay_on_arrival',
       payment_status: 'cleared',
       cleared_by: volunteerName,
       cleared_at: new Date().toISOString(),
@@ -542,7 +543,8 @@ export default function ExpressRegister() {
             category: category,
             batch_reference: referenceCode,
             payment_status: 'cleared',
-            amount_due: amount
+            amount_due: amount,
+            payment_method: 'pay_on_arrival'
           }
         });
 

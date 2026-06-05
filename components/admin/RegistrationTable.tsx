@@ -307,7 +307,8 @@ export default function RegistrationTable() {
   const totalPayOnArrival = data.filter(r => {
     const ps = r.payment_status?.toLowerCase();
     const st = r.status?.toLowerCase();
-    return ps === 'pay_on_arrival' || st === 'pay_on_arrival';
+    const pm = r.payment_method?.toLowerCase();
+    return ps === 'pay_on_arrival' || st === 'pay_on_arrival' || pm === 'pay_on_arrival';
   }).length;
   const totalAmountCollected = data.reduce((sum, r) => {
     const ps = r.payment_status?.toLowerCase();
@@ -333,6 +334,8 @@ export default function RegistrationTable() {
       matchesStatus = payStatus === 'pending' || status === 'pending_payment' || status === 'pending_verification';
     } else if (statusFilter === 'cleared') {
       matchesStatus = payStatus === 'cleared' || status === 'confirmed';
+    } else if (statusFilter === 'pay_on_arrival') {
+      matchesStatus = payStatus === 'pay_on_arrival' || status === 'pay_on_arrival' || r.payment_method?.toLowerCase() === 'pay_on_arrival';
     }
 
     // 3. Category filter match
@@ -421,7 +424,7 @@ export default function RegistrationTable() {
       </div>
 
       {/* Dashboard Summary Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-5 gap-3 md:gap-4">
         {/* Card 1: Registered */}
         <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
           <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
@@ -452,6 +455,17 @@ export default function RegistrationTable() {
           <div className="mt-2 w-full">
             <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">Pending</p>
             <h3 className="text-lg md:text-2xl font-black text-orange-600 mt-1">{totalPending.toLocaleString()}</h3>
+          </div>
+        </Card>
+
+        {/* Card 4: On Arrival */}
+        <Card className="col-span-1 bg-white border border-slate-200 shadow-sm rounded-2xl stats-card">
+          <div className="p-2 md:p-3 bg-blue-50 text-blue-500 rounded-xl shrink-0">
+            <CreditCard size={16} className="md:w-5 md:h-5" />
+          </div>
+          <div className="mt-2 w-full">
+            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">On Arrival</p>
+            <h3 className="text-lg md:text-2xl font-black text-blue-600 mt-1">{totalPayOnArrival.toLocaleString()}</h3>
           </div>
         </Card>
 
@@ -495,6 +509,7 @@ export default function RegistrationTable() {
                 <option value="all">All Payments</option>
                 <option value="pending">Pending Verification</option>
                 <option value="cleared">Cleared Payments</option>
+                <option value="pay_on_arrival">Pay on Arrival</option>
               </select>
             </div>
 
@@ -577,7 +592,7 @@ export default function RegistrationTable() {
                 filteredData.map((reg) => {
                   const isCleared = reg.payment_status?.toLowerCase() === 'cleared' || reg.status?.toLowerCase() === 'confirmed';
                   const isPending = reg.payment_status?.toLowerCase() === 'pending' || reg.status?.toLowerCase() === 'pending_payment' || reg.status?.toLowerCase() === 'pending_verification';
-                  const isArrival = reg.payment_status?.toLowerCase() === 'pay_on_arrival' || reg.status?.toLowerCase() === 'pay_on_arrival';
+                  const isArrival = reg.payment_status?.toLowerCase() === 'pay_on_arrival' || reg.status?.toLowerCase() === 'pay_on_arrival' || reg.payment_method?.toLowerCase() === 'pay_on_arrival';
                   const isRejected = reg.status?.toLowerCase() === 'rejected' || reg.payment_status?.toLowerCase() === 'rejected';
                   const isCheckInDisabled = isRejected || !isCleared;
                   const checkInTooltip = isRejected 
@@ -608,12 +623,12 @@ export default function RegistrationTable() {
                       </td>
                       <td className="px-4 py-4 text-xs">
                         <span className={`status-badge px-2 py-1 rounded-full text-xs font-semibold capitalize border shrink-0
-                          ${isCleared ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
+                          ${isArrival ? 'bg-blue-50 border-blue-100 text-blue-700' :
+                            isCleared ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
                             isPending ? 'bg-orange-50 border-orange-100 text-orange-700' :
-                            isArrival ? 'bg-blue-50 border-blue-100 text-blue-700' :
                             'bg-red-50 border-red-100 text-red-700'}
                         `}>
-                          {reg.payment_status || reg.status?.replace('_', ' ')}
+                          {isArrival ? 'Pay on Arrival' : (reg.payment_status || reg.status?.replace('_', ' '))}
                         </span>
                       </td>
                       <td className="px-4 py-4 text-slate-400 text-xs">
@@ -725,7 +740,7 @@ export default function RegistrationTable() {
           filteredData.map((reg) => {
             const isCleared = reg.payment_status?.toLowerCase() === 'cleared' || reg.status?.toLowerCase() === 'confirmed';
             const isPending = reg.payment_status?.toLowerCase() === 'pending' || reg.status?.toLowerCase() === 'pending_payment' || reg.status?.toLowerCase() === 'pending_verification';
-            const isArrival = reg.payment_status?.toLowerCase() === 'pay_on_arrival' || reg.status?.toLowerCase() === 'pay_on_arrival';
+            const isArrival = reg.payment_status?.toLowerCase() === 'pay_on_arrival' || reg.status?.toLowerCase() === 'pay_on_arrival' || reg.payment_method?.toLowerCase() === 'pay_on_arrival';
             const isRejected = reg.status?.toLowerCase() === 'rejected' || reg.payment_status?.toLowerCase() === 'rejected';
             const isCheckInDisabled = isRejected || !isCleared;
             const checkInTooltip = isRejected 
@@ -741,12 +756,12 @@ export default function RegistrationTable() {
                     {reg.batch_reference}
                   </span>
                   <span className={`status-badge px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border shrink-0
-                    ${isCleared ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                    ${isArrival ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                      isCleared ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
                       isPending ? 'bg-orange-50 border-orange-200 text-orange-700' :
-                      isArrival ? 'bg-blue-50 border-blue-200 text-blue-700' :
                       'bg-red-50 border-red-200 text-red-700'}
                   `}>
-                    {reg.payment_status || reg.status?.replace('_', ' ')}
+                    {isArrival ? 'Pay on Arrival' : (reg.payment_status || reg.status?.replace('_', ' '))}
                   </span>
                 </div>
 
