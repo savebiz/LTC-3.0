@@ -14,6 +14,7 @@ export default function ExpressRegister() {
   // Form Fields State
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | ''>('');
   const [category, setCategory] = useState<'teenager' | 'teacher'>('teenager');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedProvince, setSelectedProvince] = useState('');
@@ -179,6 +180,7 @@ export default function ExpressRegister() {
             id: item.id,
             full_name: item.full_name,
             phone: item.phone,
+            gender: item.gender,
             category: item.category,
             region: item.region,
             province: item.province,
@@ -302,6 +304,11 @@ export default function ExpressRegister() {
       triggerShake('phone');
     }
 
+    if (!gender) {
+      newErrors.gender = 'Gender is required';
+      triggerShake('gender');
+    }
+
     if (!selectedRegion) {
       newErrors.region = 'Region is required';
       triggerShake('region');
@@ -330,6 +337,7 @@ export default function ExpressRegister() {
       id: registrationId,
       full_name: fullName.trim(),
       phone: phone.trim().replace(/\D/g, ''),
+      gender: gender,
       category: category,
       region: selectedRegion,
       province: selectedProvince || selectedRegion, // Fallback to region as province
@@ -392,6 +400,7 @@ export default function ExpressRegister() {
           new_value: {
             id: registrationId,
             full_name: payload.full_name,
+            gender: gender,
             category: category,
             batch_reference: referenceCode,
             payment_status: 'cleared',
@@ -425,6 +434,7 @@ export default function ExpressRegister() {
   const resetFormFields = () => {
     setFullName('');
     setPhone('');
+    setGender('');
     setCategory('teenager');
     setSelectedRegion('');
     setSelectedProvince('');
@@ -574,6 +584,62 @@ export default function ExpressRegister() {
                 } ${shakeFields.phone ? 'animate-shake' : ''}`}
               />
               {errors.phone && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.phone}</p>}
+            </div>
+
+            {/* Gender Selection */}
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                Gender <span className="text-red-500">*</span>
+              </span>
+              <div 
+                className={`grid grid-cols-3 gap-2 mt-1 rounded-xl border p-1 ${
+                  errors.gender ? 'border-red-500 bg-red-950/10' : 'border-slate-800'
+                } ${shakeFields.gender ? 'animate-shake' : ''}`}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGender('Male');
+                    if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
+                  }}
+                  className={`h-11 rounded-lg text-sm font-semibold transition-all cursor-pointer select-none active:scale-[0.97] flex items-center justify-center border-0 ${
+                    gender === 'Male'
+                      ? 'bg-[#0A1628] text-white font-extrabold shadow-md'
+                      : 'bg-slate-200 text-slate-800 hover:bg-slate-300'
+                  }`}
+                >
+                  Male
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGender('Female');
+                    if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
+                  }}
+                  className={`h-11 rounded-lg text-sm font-semibold transition-all cursor-pointer select-none active:scale-[0.97] flex items-center justify-center border-0 ${
+                    gender === 'Female'
+                      ? 'bg-[#0A1628] text-white font-extrabold shadow-md'
+                      : 'bg-slate-200 text-slate-800 hover:bg-slate-300'
+                  }`}
+                >
+                  Female
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGender('Other');
+                    if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
+                  }}
+                  className={`h-11 rounded-lg text-sm font-semibold transition-all cursor-pointer select-none active:scale-[0.97] flex items-center justify-center border-0 ${
+                    gender === 'Other'
+                      ? 'bg-[#0A1628] text-white font-extrabold shadow-md'
+                      : 'bg-slate-200 text-slate-800 hover:bg-slate-300'
+                  }`}
+                >
+                  Other
+                </button>
+              </div>
+              {errors.gender && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.gender}</p>}
             </div>
 
             {/* Category selection */}
