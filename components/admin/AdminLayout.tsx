@@ -50,7 +50,7 @@ export default function AdminLayout({
     const NAV_ITEMS = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'registrations', label: 'Registrations', icon: Users },
-        { id: 'express-register', label: '⚡ Express Register', icon: Zap, isSpecial: true },
+        { id: 'express-register', label: 'Express Register', icon: Zap, isSpecial: true },
         { id: 'volunteers', label: 'Volunteers', icon: Users },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
         { id: 'auditlog', label: 'Audit Log', icon: ClipboardList },

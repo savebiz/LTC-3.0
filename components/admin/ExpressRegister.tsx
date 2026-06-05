@@ -219,6 +219,7 @@ export default function ExpressRegister() {
             new_value: {
               id: item.id,
               full_name: item.full_name,
+              gender: item.gender,
               category: item.category,
               batch_reference: refCode,
               payment_status: item.payment_status,
@@ -320,7 +321,6 @@ export default function ExpressRegister() {
       if (newErrors.fullName && fullNameRef.current) {
         fullNameRef.current.focus();
       } else if (newErrors.phone) {
-        // focus phone input
         const phoneEl = document.getElementById('phone-input');
         if (phoneEl) phoneEl.focus();
       }
@@ -490,13 +490,13 @@ export default function ExpressRegister() {
 
       {/* TOP COUNTERS & STATUS BAR */}
       <div className="flex flex-col gap-2 shrink-0">
-        <div className="flex justify-between items-center bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-sm">
+        <div className="flex justify-between items-center bg-white border border-slate-200 p-3 rounded-2xl shadow-sm">
           <div className="flex items-center gap-3">
             <span className="flex h-2.5 w-2.5 relative">
               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isOnline ? 'bg-green-400' : 'bg-red-400'} opacity-75`}></span>
               <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
             </span>
-            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 uppercase tracking-wider">
+            <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5 uppercase tracking-wider">
               {isOnline ? (
                 <>
                   <Wifi size={14} className="text-green-500" />
@@ -512,11 +512,11 @@ export default function ExpressRegister() {
           </div>
           
           <div className="flex gap-2">
-            <span className="bg-slate-800 text-slate-300 font-bold px-3 py-1 rounded-full text-xs border border-slate-700/50">
-              Session: <strong className="text-white font-black">{sessionCount}</strong>
+            <span className="bg-blue-50 text-blue-800 border border-blue-200 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+              Session: <strong className="text-blue-900 font-black">{sessionCount}</strong>
             </span>
-            <span className="bg-slate-800 text-orange-400 font-bold px-3 py-1 rounded-full text-xs border border-slate-700/50">
-              Today: <strong className="text-white font-black">{todayCount}</strong>
+            <span className="bg-orange-50 text-orange-800 border border-orange-200 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+              Today: <strong className="text-orange-900 font-black">{todayCount}</strong>
             </span>
           </div>
         </div>
@@ -533,17 +533,16 @@ export default function ExpressRegister() {
         )}
       </div>
 
-      {/* CORE DESIGN FORM */}
-      <form onSubmit={handleRegisterSubmit} className="flex-1 flex flex-col justify-between mt-3 gap-3">
-        {/* Responsive Grid Structure to eliminate scrolling */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 overflow-y-auto pr-1">
-          
-          {/* Column 1: Info */}
-          <div className="space-y-3">
-            {/* Full Name */}
+      {/* CORE DESIGN FORM CARD */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-sm mt-3 flex-1 flex flex-col justify-between overflow-hidden">
+        <form onSubmit={handleRegisterSubmit} className="flex-1 flex flex-col justify-between gap-3 overflow-hidden">
+          {/* Responsive Grid Structure for Row-by-Row Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 overflow-y-auto pr-1">
+            
+            {/* Row 1 Col 1: Full Name */}
             <div className="space-y-1">
-              <label htmlFor="full-name-input" className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <User size={13} /> Full Name <span className="text-red-500">*</span>
+              <label htmlFor="full-name-input" className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <User size={13} className="text-slate-400" /> Full Name <span className="text-red-500">*</span>
               </label>
               <input
                 id="full-name-input"
@@ -555,134 +554,18 @@ export default function ExpressRegister() {
                   if (errors.fullName) setErrors(prev => ({ ...prev, fullName: '' }));
                 }}
                 placeholder="Enter delegate full name"
-                className={`w-full h-11 px-3 bg-slate-900 border rounded-xl text-slate-100 placeholder:text-slate-500 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium ${
-                  errors.fullName ? 'border-red-500 bg-red-950/10' : 'border-slate-800'
+                className={`w-full h-11 px-3 bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium ${
+                  errors.fullName ? 'border-red-500 bg-red-50/50' : 'border-slate-200'
                 } ${shakeFields.fullName ? 'animate-shake' : ''}`}
                 autoComplete="off"
               />
               {errors.fullName && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.fullName}</p>}
             </div>
 
-            {/* Phone Number */}
-            <div className="space-y-1">
-              <label htmlFor="phone-input" className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Phone size={13} /> Phone Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="phone-input"
-                type="tel"
-                inputMode="numeric"
-                value={phone}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 11);
-                  setPhone(val);
-                  if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
-                }}
-                placeholder="080XXXXXXXX"
-                className={`w-full h-11 px-3 bg-slate-900 border rounded-xl text-slate-100 placeholder:text-slate-500 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-all font-mono font-medium ${
-                  errors.phone ? 'border-red-500 bg-red-950/10' : 'border-slate-800'
-                } ${shakeFields.phone ? 'animate-shake' : ''}`}
-              />
-              {errors.phone && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.phone}</p>}
-            </div>
-
-            {/* Gender Selection */}
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                Gender <span className="text-red-500">*</span>
-              </span>
-              <div 
-                className={`grid grid-cols-3 gap-2 mt-1 rounded-xl border p-1 ${
-                  errors.gender ? 'border-red-500 bg-red-950/10' : 'border-slate-800'
-                } ${shakeFields.gender ? 'animate-shake' : ''}`}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGender('Male');
-                    if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
-                  }}
-                  className={`h-11 rounded-lg text-sm font-semibold transition-all cursor-pointer select-none active:scale-[0.97] flex items-center justify-center border-0 ${
-                    gender === 'Male'
-                      ? 'bg-[#0A1628] text-white font-extrabold shadow-md'
-                      : 'bg-slate-200 text-slate-800 hover:bg-slate-300'
-                  }`}
-                >
-                  Male
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGender('Female');
-                    if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
-                  }}
-                  className={`h-11 rounded-lg text-sm font-semibold transition-all cursor-pointer select-none active:scale-[0.97] flex items-center justify-center border-0 ${
-                    gender === 'Female'
-                      ? 'bg-[#0A1628] text-white font-extrabold shadow-md'
-                      : 'bg-slate-200 text-slate-800 hover:bg-slate-300'
-                  }`}
-                >
-                  Female
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGender('Other');
-                    if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
-                  }}
-                  className={`h-11 rounded-lg text-sm font-semibold transition-all cursor-pointer select-none active:scale-[0.97] flex items-center justify-center border-0 ${
-                    gender === 'Other'
-                      ? 'bg-[#0A1628] text-white font-extrabold shadow-md'
-                      : 'bg-slate-200 text-slate-800 hover:bg-slate-300'
-                  }`}
-                >
-                  Other
-                </button>
-              </div>
-              {errors.gender && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.gender}</p>}
-            </div>
-
-            {/* Category selection */}
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                Category <span className="text-red-500">*</span>
-              </span>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                <button
-                  type="button"
-                  onClick={() => setCategory('teenager')}
-                  className={`h-14 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer select-none active:scale-[0.97] ${
-                    category === 'teenager'
-                      ? 'bg-emerald-600 border-emerald-500 text-white font-extrabold shadow-lg shadow-emerald-500/20'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-300'
-                  }`}
-                >
-                  <span className="text-sm">Teenager</span>
-                  <span className={`text-xs ${category === 'teenager' ? 'text-emerald-100 opacity-90' : 'text-slate-500'} font-bold`}>₦1,000</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCategory('teacher')}
-                  className={`h-14 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer select-none active:scale-[0.97] ${
-                    category === 'teacher'
-                      ? 'bg-orange-500 border-orange-400 text-white font-extrabold shadow-lg shadow-orange-500/20'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-300'
-                  }`}
-                >
-                  <span className="text-sm">Teacher / Adult</span>
-                  <span className={`text-xs ${category === 'teacher' ? 'text-orange-100 opacity-90' : 'text-slate-500'} font-bold`}>₦1,500</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Column 2: Region, Province & Cost Display */}
-          <div className="space-y-3 flex flex-col justify-between">
-            {/* Region searchable input */}
+            {/* Row 1 Col 2: Region */}
             <div className="space-y-1 relative" ref={regionDropdownRef}>
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <MapPin size={13} /> Region <span className="text-red-500">*</span>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <MapPin size={13} className="text-slate-400" /> Region <span className="text-red-500">*</span>
               </label>
               
               <div className="relative">
@@ -694,29 +577,27 @@ export default function ExpressRegister() {
                   value={isRegionDropdownOpen ? regionSearch : selectedRegion}
                   onClick={() => setIsRegionDropdownOpen(true)}
                   onChange={(e) => setRegionSearch(e.target.value)}
-                  className={`w-full h-11 pl-3 pr-10 bg-slate-900 border rounded-xl text-slate-100 placeholder:text-slate-400 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 cursor-pointer transition-all font-medium ${
-                    errors.region ? 'border-red-500 bg-red-950/10' : 'border-slate-800'
+                  className={`w-full h-11 pl-3 pr-10 bg-white border rounded-xl text-slate-900 placeholder:text-slate-500 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 cursor-pointer transition-all font-medium ${
+                    errors.region ? 'border-red-500 bg-red-50/50' : 'border-slate-200'
                   } ${shakeFields.region ? 'animate-shake' : ''}`}
                 />
-                <div 
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                >
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                   <ChevronDown size={18} />
                 </div>
               </div>
 
               {/* Float Dropdown Menu */}
               {isRegionDropdownOpen && (
-                <div className="absolute z-50 left-0 right-0 mt-1 bg-slate-950 border border-slate-800 rounded-xl max-h-48 overflow-y-auto shadow-2xl animate-in fade-in duration-100">
-                  <div className="sticky top-0 bg-slate-950 p-2 border-b border-slate-900">
+                <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl max-h-48 overflow-y-auto shadow-2xl animate-in fade-in duration-100">
+                  <div className="sticky top-0 bg-white p-2 border-b border-slate-100 z-10">
                     <div className="relative flex items-center w-full">
-                      <Search size={14} className="absolute left-2.5 text-slate-500" />
+                      <Search size={14} className="absolute left-2.5 text-slate-400" />
                       <input
                         type="text"
                         placeholder="Search regions..."
                         value={regionSearch}
                         onChange={(e) => setRegionSearch(e.target.value)}
-                        className="w-full h-8 pl-8 pr-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 placeholder:text-slate-500 text-xs focus:outline-none focus:border-orange-500"
+                        className="w-full h-8 pl-8 pr-2 bg-slate-50 border border-slate-100 rounded-lg text-slate-800 placeholder:text-slate-400 text-xs focus:outline-none focus:border-orange-500"
                         autoFocus
                       />
                     </div>
@@ -726,7 +607,7 @@ export default function ExpressRegister() {
                   <div className="p-1">
                     {/* Lagos Header */}
                     {filteredLagos.length > 0 && (
-                      <div className="px-2.5 py-1 text-[10px] font-black uppercase text-orange-500 tracking-wider">Lagos</div>
+                      <div className="px-2.5 py-1 text-[10px] font-black uppercase text-orange-600 tracking-wider">Lagos</div>
                     )}
                     {filteredLagos.map(r => (
                       <button
@@ -739,8 +620,8 @@ export default function ExpressRegister() {
                           setIsRegionDropdownOpen(false);
                           if (errors.region) setErrors(prev => ({ ...prev, region: '' }));
                         }}
-                        className={`w-full text-left px-3 py-2 text-xs rounded-lg flex items-center justify-between hover:bg-slate-900 text-slate-200 ${
-                          selectedRegion === r ? 'bg-orange-500/10 text-orange-400 font-bold border-l-2 border-orange-500' : ''
+                        className={`w-full text-left px-3 py-2 text-xs rounded-lg flex items-center justify-between hover:bg-slate-50 text-slate-700 ${
+                          selectedRegion === r ? 'bg-orange-50 text-orange-600 font-bold border-l-2 border-orange-500' : ''
                         }`}
                       >
                         <span>{r}</span>
@@ -750,7 +631,7 @@ export default function ExpressRegister() {
 
                     {/* Ogun Header */}
                     {filteredOgun.length > 0 && (
-                      <div className="px-2.5 py-1 text-[10px] font-black uppercase text-orange-500 tracking-wider mt-2">Ogun</div>
+                      <div className="px-2.5 py-1 text-[10px] font-black uppercase text-orange-600 tracking-wider mt-2">Ogun</div>
                     )}
                     {filteredOgun.map(r => (
                       <button
@@ -763,8 +644,8 @@ export default function ExpressRegister() {
                           setIsRegionDropdownOpen(false);
                           if (errors.region) setErrors(prev => ({ ...prev, region: '' }));
                         }}
-                        className={`w-full text-left px-3 py-2 text-xs rounded-lg flex items-center justify-between hover:bg-slate-900 text-slate-200 ${
-                          selectedRegion === r ? 'bg-orange-500/10 text-orange-400 font-bold border-l-2 border-orange-500' : ''
+                        className={`w-full text-left px-3 py-2 text-xs rounded-lg flex items-center justify-between hover:bg-slate-50 text-slate-700 ${
+                          selectedRegion === r ? 'bg-orange-50 text-orange-600 font-bold border-l-2 border-orange-500' : ''
                         }`}
                       >
                         <span>{r}</span>
@@ -773,7 +654,7 @@ export default function ExpressRegister() {
                     ))}
 
                     {filteredLagos.length === 0 && filteredOgun.length === 0 && (
-                      <div className="text-center py-4 text-xs text-slate-500">No regions found</div>
+                      <div className="text-center py-4 text-xs text-slate-400">No regions found</div>
                     )}
                   </div>
                 </div>
@@ -781,17 +662,40 @@ export default function ExpressRegister() {
               {errors.region && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.region}</p>}
             </div>
 
-            {/* Province Selection */}
+            {/* Row 2 Col 1: Phone Number */}
             <div className="space-y-1">
-              <label htmlFor="province-select" className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                Province <span className="text-slate-500">(Optional - Fallbacks to Region)</span>
+              <label htmlFor="phone-input" className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <Phone size={13} className="text-slate-400" /> Phone Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="phone-input"
+                type="tel"
+                inputMode="numeric"
+                value={phone}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                  setPhone(val);
+                  if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                }}
+                placeholder="080XXXXXXXX"
+                className={`w-full h-11 px-3 bg-white border rounded-xl text-slate-900 placeholder:text-slate-400 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-all font-mono font-medium ${
+                  errors.phone ? 'border-red-500 bg-red-50/50' : 'border-slate-200'
+                } ${shakeFields.phone ? 'animate-shake' : ''}`}
+              />
+              {errors.phone && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.phone}</p>}
+            </div>
+
+            {/* Row 2 Col 2: Province */}
+            <div className="space-y-1">
+              <label htmlFor="province-select" className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                Province <span className="text-slate-400 font-normal">(Optional - Fallbacks to Region)</span>
               </label>
               <select
                 id="province-select"
                 value={selectedProvince}
                 onChange={(e) => setSelectedProvince(e.target.value)}
                 disabled={!selectedRegion}
-                className={`w-full h-11 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-100 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <option value="">Select Province (Fallback to Region)</option>
                 {provinces.map(p => (
@@ -800,43 +704,119 @@ export default function ExpressRegister() {
               </select>
             </div>
 
-            {/* Amount Collected display box */}
-            <div className="bg-slate-950/80 border border-slate-900 p-3 rounded-2xl flex justify-between items-center shadow-inner mt-2">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Amount Collected</span>
-                <span className="text-[10px] text-emerald-500 font-bold mt-0.5 flex items-center gap-1">
-                  <Sparkles size={10} /> cleared by cash/transfer
-                </span>
+            {/* Row 3 Col 1: Gender Toggle */}
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                Gender <span className="text-red-500">*</span>
+              </span>
+              <div 
+                className={`grid grid-cols-2 gap-2 mt-1 rounded-xl border p-1 ${
+                  errors.gender ? 'border-red-500 bg-red-50/50' : 'border-slate-200 bg-white'
+                } ${shakeFields.gender ? 'animate-shake' : ''}`}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGender('Male');
+                    if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
+                  }}
+                  className={`h-11 rounded-lg text-sm font-semibold transition-all cursor-pointer select-none active:scale-[0.97] flex items-center justify-center border-0 ${
+                    gender === 'Male'
+                      ? 'bg-[#0A1628] text-white font-extrabold shadow-sm'
+                      : 'bg-gray-50 border border-gray-200/60 text-slate-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Male
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGender('Female');
+                    if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
+                  }}
+                  className={`h-11 rounded-lg text-sm font-semibold transition-all cursor-pointer select-none active:scale-[0.97] flex items-center justify-center border-0 ${
+                    gender === 'Female'
+                      ? 'bg-[#0A1628] text-white font-extrabold shadow-sm'
+                      : 'bg-gray-50 border border-gray-200/60 text-slate-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Female
+                </button>
               </div>
-              <div className="text-3xl font-black font-heading text-orange-500 tracking-tight">
-                {category === 'teenager' ? '₦1,000' : '₦1,500'}
+              {errors.gender && <p className="text-[11px] text-red-500 font-bold tracking-wide">{errors.gender}</p>}
+            </div>
+
+            {/* Row 3 Col 2: Category Toggle */}
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                Category <span className="text-red-500">*</span>
+              </span>
+              <div className="grid grid-cols-2 gap-2 mt-1 rounded-xl border border-slate-200 p-1 bg-white">
+                <button
+                  type="button"
+                  onClick={() => setCategory('teenager')}
+                  className={`h-11 rounded-lg border-0 flex flex-col items-center justify-center transition-all cursor-pointer select-none active:scale-[0.97] ${
+                    category === 'teenager'
+                      ? 'bg-[#16a34a] text-white font-extrabold shadow-sm'
+                      : 'bg-gray-50 border border-gray-200/60 text-slate-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <span className="text-sm font-semibold">Teenager</span>
+                  <span className={`text-[10px] ${category === 'teenager' ? 'text-emerald-100 opacity-90' : 'text-slate-500'} font-bold`}>₦1,000</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCategory('teacher')}
+                  className={`h-11 rounded-lg border-0 flex flex-col items-center justify-center transition-all cursor-pointer select-none active:scale-[0.97] ${
+                    category === 'teacher'
+                      ? 'bg-[#f97316] text-white font-extrabold shadow-sm'
+                      : 'bg-gray-50 border border-gray-200/60 text-slate-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <span className="text-sm font-semibold">Teacher / Adult</span>
+                  <span className={`text-[10px] ${category === 'teacher' ? 'text-orange-100 opacity-90' : 'text-slate-500'} font-bold`}>₦1,500</span>
+                </button>
               </div>
             </div>
 
           </div>
-        </div>
 
-        {/* SUBMIT REGISTRATION BUTTON */}
-        <div className="pt-2 shrink-0">
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-14 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:from-slate-700 disabled:to-slate-800 disabled:text-slate-500 text-white font-black text-base uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-orange-500/20 active:scale-[0.99] border-0 cursor-pointer flex items-center justify-center gap-2 select-none"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={20} className="animate-spin" />
-                Registering & Checking In...
-              </>
-            ) : (
-              <>
-                <Zap size={18} className="fill-white" />
-                Register & Check In
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+          {/* Row 4: Amount Collected Display */}
+          <div className="bg-white border border-slate-200 p-3 rounded-2xl flex justify-between items-center shadow-sm mt-1 shrink-0">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Amount Collected</span>
+              <span className="text-[10px] text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
+                <Sparkles size={10} className="text-emerald-500" /> cleared by cash/transfer
+              </span>
+            </div>
+            <div className="text-3xl font-black font-heading text-orange-500 tracking-tight">
+              {category === 'teenager' ? '₦1,000' : '₦1,500'}
+            </div>
+          </div>
+
+          {/* SUBMIT REGISTRATION BUTTON */}
+          <div className="pt-1 shrink-0">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-14 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:from-slate-300 disabled:to-slate-400 disabled:text-slate-500 text-white font-black text-base uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-orange-500/20 active:scale-[0.99] border-0 cursor-pointer flex items-center justify-center gap-2 select-none"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Registering & Checking In...
+                </>
+              ) : (
+                <>
+                  <Zap size={18} className="fill-white" />
+                  REGISTER & CHECK IN
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
