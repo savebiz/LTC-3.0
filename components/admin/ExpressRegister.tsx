@@ -17,7 +17,7 @@ export default function ExpressRegister() {
   // Form Fields State
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [gender, setGender] = useState<'Male' | 'Female' | ''>('');
+  const [gender, setGender] = useState<'Male' | 'Female' | ''>('Male');
   const [category, setCategory] = useState<'teenager' | 'teacher'>('teenager');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedProvince, setSelectedProvince] = useState('');
@@ -568,7 +568,7 @@ export default function ExpressRegister() {
   const resetFormFields = () => {
     setFullName('');
     setPhone('');
-    setGender('');
+    setGender('Male');
     setCategory('teenager');
     setSelectedRegion('');
     setSelectedProvince('');
@@ -643,10 +643,9 @@ export default function ExpressRegister() {
             <button
               type="button"
               onClick={() => {
-                // Same Region / Group click: clears Name, Phone, and Gender. Keeps Region, Province, Category
+                // Same Region / Group click: clears Name only. Keeps Phone, Region, Province, Category. Resets Gender to Male
                 setFullName('');
-                setPhone('');
-                setGender('');
+                setGender('Male');
                 setErrors({});
                 setIsSuccessFlashOpen(false);
                 setTimeout(() => {

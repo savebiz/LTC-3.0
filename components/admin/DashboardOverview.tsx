@@ -226,7 +226,8 @@ export default function DashboardOverview() {
             change: `${clearedPaymentsCount} Cleared Payments`, 
             icon: CreditCard, 
             color: "text-emerald-500",
-            numColor: "text-emerald-600"
+            numColor: "text-emerald-600",
+            style: { fontSize: 'clamp(0.85rem, 2vw, 1.5rem)', whiteSpace: 'nowrap' }
         },
         { 
             label: "Check-in Rate", 
@@ -277,7 +278,12 @@ export default function DashboardOverview() {
                         </div>
                         <div className="mt-2 w-full">
                             <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
-                            <h3 className={`text-lg md:text-2xl font-black mt-1 ${stat.numColor}`}>{stat.value}</h3>
+                            <h3 
+                                className={`text-lg md:text-2xl font-black mt-1 ${stat.numColor} whitespace-nowrap block`}
+                                style={(stat as any).style}
+                            >
+                                {stat.value}
+                            </h3>
                             <p className="text-[10px] text-slate-500 mt-1 font-medium leading-relaxed">{stat.change}</p>
                         </div>
                     </Card>

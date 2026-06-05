@@ -476,7 +476,9 @@ export default function RegistrationTable() {
           </div>
           <div className="mt-2 w-full">
             <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">Collected</p>
-            <h3 className="text-lg md:text-2xl font-black text-violet-600 font-mono mt-1">₦{totalAmountCollected.toLocaleString()}</h3>
+            <h3 className="font-black text-violet-600 font-mono mt-1 whitespace-nowrap block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1.5rem)', whiteSpace: 'nowrap' }}>
+              ₦{totalAmountCollected.toLocaleString()}
+            </h3>
           </div>
         </Card>
       </div>

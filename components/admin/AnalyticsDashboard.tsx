@@ -688,7 +688,7 @@ export default function AnalyticsDashboard() {
                     </div>
                     <div className="mt-1 flex flex-col text-slate-800">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap block">Revenue</span>
-                        <h3 className="font-black text-emerald-600 leading-none mt-1 whitespace-nowrap block" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.8rem)' }}>
+                        <h3 className="font-black text-emerald-600 leading-none mt-1 whitespace-nowrap block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1.5rem)', whiteSpace: 'nowrap' }}>
                             ₦{metrics.revenue.toLocaleString()}
                         </h3>
                         <p className="text-[9px] text-slate-400 mt-1 font-semibold whitespace-nowrap block">Cleared collections</p>
