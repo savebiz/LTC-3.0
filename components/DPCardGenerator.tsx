@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Camera, Download, Share2, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -564,10 +564,28 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                 Your photo is never uploaded to our servers. It is processed entirely on your device.
             </p>
 
-            {/* Mobile custom choice selection modal (Rendered via React Portal directly into document.body to bypass parent CSS transform container bounds) */}
-            {showPhotoOptions && isMounted && createPortal(
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-                    <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm space-y-5 shadow-2xl text-center">
+            {/* Select Photo Source Modal (using Radix UI Dialog primitives so it integrates with Radix's event system and blocks click-throughs correctly) */}
+            <DialogPrimitive.Root open={showPhotoOptions && isMounted} onOpenChange={setShowPhotoOptions}>
+                <DialogPrimitive.Portal>
+                    <DialogPrimitive.Overlay 
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+                        style={{
+                            zIndex: 999999,
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            width: '100vw',
+                            height: '100vh',
+                            pointerEvents: 'auto',
+                        }}
+                    />
+                    <DialogPrimitive.Content
+                        className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] bg-zinc-950 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm space-y-5 shadow-2xl text-center focus:outline-none"
+                        style={{
+                            zIndex: 999999,
+                            pointerEvents: 'auto',
+                        }}
+                    >
                         <div className="space-y-1">
                             <h4 className="text-lg font-bold text-white tracking-tight">Select Photo Source</h4>
                             <p className="text-xs text-zinc-500">Take a selfie or upload from files</p>
@@ -604,10 +622,9 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                                 Cancel
                             </Button>
                         </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+                    </DialogPrimitive.Content>
+                </DialogPrimitive.Portal>
+            </DialogPrimitive.Root>
         </div>
     );
 }
