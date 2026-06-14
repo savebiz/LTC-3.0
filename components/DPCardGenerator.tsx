@@ -89,31 +89,40 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        console.log("DPCardGenerator: handleFileChange selected file:", file ? { name: file.name, type: file.type, size: file.size } : null);
         if (!file) return;
 
-        // Validation
-        const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!validTypes.includes(file.type)) {
-            alert('Invalid file format. Please upload a JPG, PNG, or WEBP image.');
+        // Validation - support HEIC, HEIF and common extensions on mobile as fallback
+        const isImage = file.type.startsWith('image/') || 
+                        /\.(jpg|jpeg|png|webp|heic|heif|gif)$/i.test(file.name);
+        if (!isImage) {
+            console.warn("DPCardGenerator: Invalid file selected:", file.type, file.name);
+            alert('Invalid file format. Please upload an image file (JPG, PNG, WEBP, HEIC).');
             return;
         }
 
-        const maxSize = 10 * 1024 * 1024; // 10MB
+        const maxSize = 15 * 1024 * 1024; // Increase to 15MB to handle high-res mobile photos
         if (file.size > maxSize) {
-            alert('File size exceeds the 10MB limit. Please upload a smaller image.');
+            alert('File size exceeds the 15MB limit. Please upload a smaller image.');
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                setSelectedImage(img);
-                setShowPhotoOptions(false);
-            };
-            img.src = event.target?.result as string;
+        // Memory-efficient Object URL logic (much faster and more stable on mobile devices)
+        const objectUrl = URL.createObjectURL(file);
+        console.log("DPCardGenerator: Created object URL for mobile:", objectUrl);
+        const img = new Image();
+        img.onload = () => {
+            console.log("DPCardGenerator: Image loaded successfully via object URL. Dimensions:", img.width, "x", img.height);
+            setSelectedImage(img);
+            setShowPhotoOptions(false);
+            URL.revokeObjectURL(objectUrl);
         };
-        reader.readAsDataURL(file);
+        img.onerror = (err) => {
+            console.error("DPCardGenerator: Image load failed", err);
+            alert("Failed to load the selected image. Please try another one.");
+            URL.revokeObjectURL(objectUrl);
+        };
+        img.src = objectUrl;
     };
 
     const drawCanvas = async () => {
@@ -253,49 +262,12 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
             ctx.fillStyle = '#FFFFFF';
             ctx.fillText(firstName, 540, 800);
 
-            // Tagline Capsule Badge
-            const statusText = isTeacher ? "IS ATTENDING T.I.M.E '26" : "IS GOING TO T.I.M.E '26";
-            ctx.font = 'bold 24px "Outfit", "Inter", "Helvetica Neue", sans-serif';
-            const textWidth = ctx.measureText(statusText).width;
-            const badgeWidth = Math.max(textWidth + 60, 320); // Dynamic width
-            const badgeHeight = 52;
-            const badgeX = 540 - badgeWidth / 2;
-            const badgeY = 835;
-
-            // Draw shadow for capsule
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-            ctx.shadowBlur = 10;
-            ctx.shadowOffsetY = 4;
-
-            // Capsule background fill
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.75)'; // Dark semi-transparent slate
-            ctx.beginPath();
-            if (ctx.roundRect) {
-                ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 26);
-            } else {
-                ctx.arc(badgeX + 26, badgeY + 26, 26, Math.PI / 2, (3 * Math.PI) / 2);
-                ctx.lineTo(badgeX + badgeWidth - 26, badgeY);
-                ctx.arc(badgeX + badgeWidth - 26, badgeY + 26, 26, (3 * Math.PI) / 2, Math.PI / 2);
-                ctx.closePath();
-            }
-            ctx.fill();
-
-            // Reset shadow
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetY = 0;
-
-            // Capsule border stroke
-            ctx.strokeStyle = accentColor;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Tagline text inside capsule
-            ctx.fillStyle = '#FFFFFF';
+            // Tagline Text (Reverted to plain bold orange text #F97316, keeping "IS ATTENDING T.I.M.E '26" copy)
+            const statusText = "IS ATTENDING T.I.M.E '26";
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(statusText, 540, badgeY + badgeHeight / 2 + 1);
-            ctx.textBaseline = 'alphabetic'; // Reset
+            ctx.fillStyle = '#F97316';
+            ctx.font = 'bold 24px "Outfit", "Inter", "Helvetica Neue", sans-serif';
+            ctx.fillText(statusText, 540, 855);
 
             // Conference Line
             ctx.fillStyle = '#FFFFFF';
@@ -580,13 +552,12 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                             <p className="text-xs text-zinc-500">Take a selfie or upload from files</p>
                         </div>
                         <div className="flex flex-col gap-2">
-                            {/* Programmatically trigger file inputs on native button click, deferring modal close to guarantee click execution */}
+                            {/* Programmatically trigger file inputs on native button click. We do NOT close the modal immediately here to prevent mobile browsers from canceling the picker due to unmounting/focus loss. */}
                             <button
                                 type="button"
                                 onClick={() => {
                                     console.log("DPCardGenerator: Triggering camera selfie input");
                                     cameraInputRef.current?.click();
-                                    setTimeout(() => setShowPhotoOptions(false), 100);
                                 }}
                                 className="h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-xl shadow-md flex items-center justify-center cursor-pointer transition-all active:scale-95 text-sm md:text-base"
                             >
@@ -597,7 +568,6 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                                 onClick={() => {
                                     console.log("DPCardGenerator: Triggering gallery upload input");
                                     galleryInputRef.current?.click();
-                                    setTimeout(() => setShowPhotoOptions(false), 100);
                                 }}
                                 className="h-12 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all active:scale-95 text-sm md:text-base"
                             >
