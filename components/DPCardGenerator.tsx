@@ -27,6 +27,7 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
     const cameraInputRef = useRef<HTMLInputElement | null>(null);
     const galleryInputRef = useRef<HTMLInputElement | null>(null);
     const logoRef = useRef<HTMLImageElement | null>(null);
+    const activeObjectUrlRef = useRef<string | null>(null);
 
     // Detect if device is mobile & Web Share API support
     useEffect(() => {
@@ -49,6 +50,14 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
             }
         };
         checkDevice();
+
+        // Cleanup Object URL on unmount
+        return () => {
+            if (activeObjectUrlRef.current) {
+                console.log("DPCardGenerator: Unmounting, revoking active Object URL:", activeObjectUrlRef.current);
+                URL.revokeObjectURL(activeObjectUrlRef.current);
+            }
+        };
     }, []);
 
     // Load logo image on mount
@@ -92,35 +101,54 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         console.log("DPCardGenerator: handleFileChange selected file:", file ? { name: file.name, type: file.type, size: file.size } : null);
         if (!file) return;
 
-        // Validation - support HEIC, HEIF and common extensions on mobile as fallback
-        const isImage = file.type.startsWith('image/') || 
-                        /\.(jpg|jpeg|png|webp|heic|heif|gif)$/i.test(file.name);
-        if (!isImage) {
-            console.warn("DPCardGenerator: Invalid file selected:", file.type, file.name);
-            alert('Invalid file format. Please upload an image file (JPG, PNG, WEBP, HEIC).');
+        // Check for unsupported HEIC/HEIF files
+        const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || 
+                       /\.(heic|heif)$/i.test(file.name);
+        if (isHeic) {
+            console.warn("DPCardGenerator: HEIC/HEIF format is not natively supported by browser <img> decoding:", file.name);
+            alert("This photo format (.heic/.heif) isn't supported. Please select a JPEG or PNG image, or use 'Take a Selfie' instead.");
             return;
         }
 
-        const maxSize = 15 * 1024 * 1024; // Increase to 15MB to handle high-res mobile photos
+        // Validation - support common extensions on mobile as fallback
+        const isImage = file.type.startsWith('image/') || 
+                        /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name);
+        if (!isImage) {
+            console.warn("DPCardGenerator: Invalid file selected:", file.type, file.name);
+            alert('Invalid file format. Please upload a JPEG, PNG, or WEBP image.');
+            return;
+        }
+
+        const maxSize = 15 * 1024 * 1024; // 15MB limit
         if (file.size > maxSize) {
             alert('File size exceeds the 15MB limit. Please upload a smaller image.');
             return;
         }
 
-        // Memory-efficient Object URL logic (much faster and more stable on mobile devices)
+        // Memory-efficient Object URL logic (revoked on unmount/re-load to prevent premature garbage collection rendering failures on iOS)
+        if (activeObjectUrlRef.current) {
+            console.log("DPCardGenerator: Revoking old object URL:", activeObjectUrlRef.current);
+            URL.revokeObjectURL(activeObjectUrlRef.current);
+        }
+
         const objectUrl = URL.createObjectURL(file);
-        console.log("DPCardGenerator: Created object URL for mobile:", objectUrl);
+        activeObjectUrlRef.current = objectUrl;
+        console.log("DPCardGenerator: Created object URL:", objectUrl);
+
         const img = new Image();
         img.onload = () => {
-            console.log("DPCardGenerator: Image loaded successfully via object URL. Dimensions:", img.width, "x", img.height);
+            console.log("DPCardGenerator: Image element loaded successfully via object URL. Size:", img.width, "x", img.height);
             setSelectedImage(img);
             setShowPhotoOptions(false);
-            URL.revokeObjectURL(objectUrl);
+            // DO NOT revoke objectUrl here. Mobile browsers garbage-collect the blob pixels if revoked before drawImage executes.
         };
         img.onerror = (err) => {
-            console.error("DPCardGenerator: Image load failed", err);
-            alert("Failed to load the selected image. Please try another one.");
-            URL.revokeObjectURL(objectUrl);
+            console.error("DPCardGenerator: Image element load failed for object URL:", objectUrl, err);
+            alert("This photo format isn't supported. Please select a JPEG or PNG image, or use 'Take a Selfie' instead.");
+            if (activeObjectUrlRef.current === objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+                activeObjectUrlRef.current = null;
+            }
         };
         img.src = objectUrl;
     };
@@ -189,7 +217,13 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         const x = 540 - w / 2;
         const y = 420 - h / 2;
 
-        ctx.drawImage(selectedImage, x, y, w, h);
+        try {
+            console.log("DPCardGenerator: drawCanvas calling drawImage. Size:", selectedImage.width, "x", selectedImage.height);
+            ctx.drawImage(selectedImage, x, y, w, h);
+            console.log("DPCardGenerator: drawCanvas drawImage call succeeded");
+        } catch (drawErr) {
+            console.error("DPCardGenerator: drawCanvas drawImage failed:", drawErr);
+        }
         ctx.restore();
 
         // 6px white circular border
