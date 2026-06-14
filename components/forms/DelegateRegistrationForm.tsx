@@ -20,6 +20,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { supabase } from "@/lib/supabase";
 import { TEEN_ROLES, EXEC_LEVELS, LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVINCES } from "@/constants"
 import imageCompression from 'browser-image-compression';
+import DPCardGenerator from "@/components/DPCardGenerator";
 
 const delegateSchema = z.object({
     fullName: z.string().min(2, { message: "Required" }),
@@ -793,6 +794,8 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         </svg>
                         Share on WhatsApp
                     </a>
+
+                    <DPCardGenerator registrants={delegates.map(d => ({ full_name: d.fullName, category: d.category }))} darkMode={false} />
                     
                     <div className="text-center pt-1.5">
                         <button

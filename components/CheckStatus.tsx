@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { Loader2, Search, ArrowLeft } from 'lucide-react';
+import DPCardGenerator from './DPCardGenerator';
 
 export default function CheckStatus() {
     const [referenceCode, setReferenceCode] = useState('');
@@ -225,6 +226,11 @@ export default function CheckStatus() {
                                         Show this to the check-in team at the venue
                                     </p>
                                 </div>
+                            )}
+
+                            {/* DP Card Generator section (only if cleared) */}
+                            {result && result.length > 0 && ['cleared', 'confirmed'].includes(paymentStatus?.toLowerCase()) && (
+                                <DPCardGenerator registrants={result} darkMode={true} />
                             )}
 
                             {/* Payment Method & Summary */}
