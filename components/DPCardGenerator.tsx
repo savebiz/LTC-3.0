@@ -135,36 +135,29 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         canvas.height = 1080;
 
         // Layer 1 - Option A: Modern Brand Mesh Gradient background
-        // 1.1 Base radial gradient (navy to very dark navy)
+        // 1.1 Base radial gradient (navy #16233f at center to deep navy/near-black #070f1e at edges)
         const baseGrad = ctx.createRadialGradient(540, 540, 100, 540, 540, 800);
-        baseGrad.addColorStop(0, '#111E36');
+        baseGrad.addColorStop(0, '#16233f');
         baseGrad.addColorStop(1, '#070F1E');
         ctx.fillStyle = baseGrad;
         ctx.fillRect(0, 0, 1080, 1080);
 
-        // 1.2 Top-Left Glow (Vibrant Blue #3B82F6 at 15% opacity)
-        const topLeftGrad = ctx.createRadialGradient(0, 0, 50, 0, 0, 500);
-        topLeftGrad.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
+        // 1.2 Top-Left Glow (Vibrant Blue #3B82F6 at 18% opacity)
+        const topLeftGrad = ctx.createRadialGradient(0, 0, 50, 0, 0, 700);
+        topLeftGrad.addColorStop(0, 'rgba(59, 130, 246, 0.18)');
         topLeftGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
         ctx.fillStyle = topLeftGrad;
         ctx.fillRect(0, 0, 1080, 1080);
 
-        // 1.3 Bottom-Right Glow (Vibrant Orange #F97316 at 12% opacity)
-        const bottomRightGrad = ctx.createRadialGradient(1080, 1080, 50, 1080, 1080, 600);
-        bottomRightGrad.addColorStop(0, 'rgba(249, 115, 22, 0.12)');
+        // 1.3 Bottom-Right Glow (Vibrant Orange #F97316 at 18% opacity)
+        const bottomRightGrad = ctx.createRadialGradient(1080, 1080, 50, 1080, 1080, 700);
+        bottomRightGrad.addColorStop(0, 'rgba(249, 115, 22, 0.18)');
         bottomRightGrad.addColorStop(1, 'rgba(249, 115, 22, 0)');
         ctx.fillStyle = bottomRightGrad;
         ctx.fillRect(0, 0, 1080, 1080);
 
-        // 1.4 Center/Behind Ring Glow (Vibrant Red #EF4444 at 10% opacity)
-        const centerGlow = ctx.createRadialGradient(540, 420, 100, 540, 420, 400);
-        centerGlow.addColorStop(0, 'rgba(239, 68, 68, 0.10)');
-        centerGlow.addColorStop(1, 'rgba(239, 68, 68, 0)');
-        ctx.fillStyle = centerGlow;
-        ctx.fillRect(0, 0, 1080, 1080);
-
-        // 1.5 Faint Dot-Grid Pattern overlay for texture/structure
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        // 1.4 Very subtle fine dot-grid pattern overlay across the canvas for depth
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
         for (let gx = 24; gx < 1080; gx += 48) {
             for (let gy = 24; gy < 1080; gy += 48) {
                 ctx.beginPath();
@@ -233,11 +226,7 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
             ctx.drawImage(logoRef.current, 540 - 64, 45, 128, 48);
         }
 
-        // Bold "T.I.M.E '26" wordmark
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = '900 32px "Outfit", "Inter", "Helvetica Neue", sans-serif';
-        ctx.fillText("T.I.M.E '26", 540, 120);
+
 
         // Layer 5 & 6 - Text Composition
         const currentReg = registrants[selectedRegIndex];
