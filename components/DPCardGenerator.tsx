@@ -131,14 +131,49 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         canvas.width = 1080;
         canvas.height = 1080;
 
-        // Layer 1 - Solid dark navy background
-        ctx.fillStyle = '#0A1628';
+        // Layer 1 - Option A: Modern Brand Mesh Gradient background
+        // 1.1 Base radial gradient (navy to very dark navy)
+        const baseGrad = ctx.createRadialGradient(540, 540, 100, 540, 540, 800);
+        baseGrad.addColorStop(0, '#111E36');
+        baseGrad.addColorStop(1, '#070F1E');
+        ctx.fillStyle = baseGrad;
         ctx.fillRect(0, 0, 1080, 1080);
 
-        // Layer 2 - Center Crop & Mask photo circle
+        // 1.2 Top-Left Glow (Vibrant Blue #3B82F6 at 15% opacity)
+        const topLeftGrad = ctx.createRadialGradient(0, 0, 50, 0, 0, 500);
+        topLeftGrad.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
+        topLeftGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+        ctx.fillStyle = topLeftGrad;
+        ctx.fillRect(0, 0, 1080, 1080);
+
+        // 1.3 Bottom-Right Glow (Vibrant Orange #F97316 at 12% opacity)
+        const bottomRightGrad = ctx.createRadialGradient(1080, 1080, 50, 1080, 1080, 600);
+        bottomRightGrad.addColorStop(0, 'rgba(249, 115, 22, 0.12)');
+        bottomRightGrad.addColorStop(1, 'rgba(249, 115, 22, 0)');
+        ctx.fillStyle = bottomRightGrad;
+        ctx.fillRect(0, 0, 1080, 1080);
+
+        // 1.4 Center/Behind Ring Glow (Vibrant Red #EF4444 at 10% opacity)
+        const centerGlow = ctx.createRadialGradient(540, 420, 100, 540, 420, 400);
+        centerGlow.addColorStop(0, 'rgba(239, 68, 68, 0.10)');
+        centerGlow.addColorStop(1, 'rgba(239, 68, 68, 0)');
+        ctx.fillStyle = centerGlow;
+        ctx.fillRect(0, 0, 1080, 1080);
+
+        // 1.5 Faint Dot-Grid Pattern overlay for texture/structure
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        for (let gx = 24; gx < 1080; gx += 48) {
+            for (let gy = 24; gy < 1080; gy += 48) {
+                ctx.beginPath();
+                ctx.arc(gx, gy, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Layer 2 - Center Crop & Mask photo circle (Shifted Up: center Y = 420)
         ctx.save();
         ctx.beginPath();
-        ctx.arc(540, 460, 290, 0, Math.PI * 2);
+        ctx.arc(540, 420, 290, 0, Math.PI * 2);
         ctx.clip();
 
         const imgWidth = selectedImage.width;
@@ -147,53 +182,59 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         const w = imgWidth * scale;
         const h = imgHeight * scale;
         const x = 540 - w / 2;
-        const y = 460 - h / 2;
+        const y = 420 - h / 2;
 
         ctx.drawImage(selectedImage, x, y, w, h);
         ctx.restore();
 
         // 6px white circular border
         ctx.beginPath();
-        ctx.arc(540, 460, 290, 0, Math.PI * 2);
+        ctx.arc(540, 420, 290, 0, Math.PI * 2);
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 6;
         ctx.stroke();
 
-        // Layer 3 - Decorative Quadrant Halo Rings
+        // Layer 3 - Decorative Quadrant Halo Rings (Shifted Up: Y = 420)
         const gap = 0.08; // small gaps in radians
 
         // Top-Right Quadrant Arc: Blue (#3B82F6)
         ctx.beginPath();
-        ctx.arc(540, 460, 310, -Math.PI / 2 + gap, 0 - gap);
+        ctx.arc(540, 420, 310, -Math.PI / 2 + gap, 0 - gap);
         ctx.strokeStyle = '#3B82F6';
         ctx.lineWidth = 14;
         ctx.stroke();
 
         // Bottom-Right Quadrant Arc: Red (#EF4444)
         ctx.beginPath();
-        ctx.arc(540, 460, 310, 0 + gap, Math.PI / 2 - gap);
+        ctx.arc(540, 420, 310, 0 + gap, Math.PI / 2 - gap);
         ctx.strokeStyle = '#EF4444';
         ctx.lineWidth = 14;
         ctx.stroke();
 
         // Bottom-Left Quadrant Arc: Lime Green (#84CC16)
         ctx.beginPath();
-        ctx.arc(540, 460, 310, Math.PI / 2 + gap, Math.PI - gap);
+        ctx.arc(540, 420, 310, Math.PI / 2 + gap, Math.PI - gap);
         ctx.strokeStyle = '#84CC16';
         ctx.lineWidth = 14;
         ctx.stroke();
 
         // Top-Left Quadrant Arc: Orange (#F97316)
         ctx.beginPath();
-        ctx.arc(540, 460, 310, Math.PI + gap, (3 * Math.PI) / 2 - gap);
+        ctx.arc(540, 420, 310, Math.PI + gap, (3 * Math.PI) / 2 - gap);
         ctx.strokeStyle = '#F97316';
         ctx.lineWidth = 14;
         ctx.stroke();
 
-        // Layer 4 - Logo
+        // Layer 4 - Logo & Top Brand Flourish (Shifted down slightly / scaled)
         if (logoRef.current) {
-            ctx.drawImage(logoRef.current, 540 - 80, 40, 160, 60);
+            ctx.drawImage(logoRef.current, 540 - 64, 45, 128, 48);
         }
+
+        // Bold "T.I.M.E '26" wordmark
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '900 32px "Outfit", "Inter", "Helvetica Neue", sans-serif';
+        ctx.fillText("T.I.M.E '26", 540, 120);
 
         // Layer 5 & 6 - Text Composition
         const currentReg = registrants[selectedRegIndex];
@@ -208,28 +249,71 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
 
             const accentColor = isTeacher ? '#D97706' : '#F97316';
 
+            // First Name with 3D offset shadow
             ctx.textAlign = 'center';
-
-            // First Name
+            ctx.font = '900 68px "Outfit", "Inter", "Helvetica Neue", sans-serif';
+            
+            // Draw offset shadow
+            ctx.fillStyle = accentColor;
+            ctx.fillText(firstName, 540 + 4, 800 + 4);
+            
+            // Draw main text
             ctx.fillStyle = '#FFFFFF';
-            ctx.font = 'bold 64px "Outfit", "Inter", "Helvetica Neue", sans-serif';
             ctx.fillText(firstName, 540, 800);
 
-            // Status Subtext
+            // Tagline Capsule Badge
             const statusText = isTeacher ? "IS ATTENDING T.I.M.E '26" : "IS GOING TO T.I.M.E '26";
-            ctx.fillStyle = accentColor;
-            ctx.font = 'bold 28px "Outfit", "Inter", "Helvetica Neue", sans-serif';
-            ctx.fillText(statusText, 540, 850);
+            ctx.font = 'bold 24px "Outfit", "Inter", "Helvetica Neue", sans-serif';
+            const textWidth = ctx.measureText(statusText).width;
+            const badgeWidth = Math.max(textWidth + 60, 320); // Dynamic width
+            const badgeHeight = 52;
+            const badgeX = 540 - badgeWidth / 2;
+            const badgeY = 835;
+
+            // Draw shadow for capsule
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetY = 4;
+
+            // Capsule background fill
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.75)'; // Dark semi-transparent slate
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 26);
+            } else {
+                ctx.arc(badgeX + 26, badgeY + 26, 26, Math.PI / 2, (3 * Math.PI) / 2);
+                ctx.lineTo(badgeX + badgeWidth - 26, badgeY);
+                ctx.arc(badgeX + badgeWidth - 26, badgeY + 26, 26, (3 * Math.PI) / 2, Math.PI / 2);
+                ctx.closePath();
+            }
+            ctx.fill();
+
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // Capsule border stroke
+            ctx.strokeStyle = accentColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Tagline text inside capsule
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(statusText, 540, badgeY + badgeHeight / 2 + 1);
+            ctx.textBaseline = 'alphabetic'; // Reset
 
             // Conference Line
             ctx.fillStyle = '#FFFFFF';
             ctx.font = 'bold 20px "Outfit", "Inter", "Helvetica Neue", sans-serif';
-            ctx.fillText('Continent 3 Teens Conference', 540, 895);
+            ctx.fillText('Continent 3 Teens Conference', 540, 930);
 
             // Venue & Location
             ctx.fillStyle = '#9CA3AF';
             ctx.font = '500 17px "Outfit", "Inter", "Helvetica Neue", sans-serif';
-            ctx.fillText('19 September 2026 · Glory Arena, Ogun State', 540, 935);
+            ctx.fillText('19 September 2026 · Glory Arena, Ogun State', 540, 970);
 
             // Website Footer within canvas
             ctx.fillStyle = accentColor;
