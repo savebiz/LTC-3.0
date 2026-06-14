@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Camera, Download, Share2, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -20,6 +21,7 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
     const [showPhotoOptions, setShowPhotoOptions] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [canShare, setCanShare] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -28,6 +30,7 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
 
     // Detect if device is mobile & Web Share API support
     useEffect(() => {
+        setIsMounted(true);
         const checkDevice = () => {
             const ua = navigator.userAgent || '';
             const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
@@ -429,21 +432,45 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                 </div>
             )}
 
-            {/* File upload hidden inputs */}
+            {/* File upload hidden inputs (accessible, visually hidden to allow programmatic/native focus on all mobile browsers) */}
             <input
                 type="file"
+                id="dp-gallery-input"
                 ref={galleryInputRef}
                 accept="image/*"
                 onChange={handleFileChange}
-                className="hidden"
+                style={{
+                    position: 'absolute',
+                    width: '1px',
+                    height: '1px',
+                    padding: '0',
+                    margin: '-1px',
+                    overflow: 'hidden',
+                    clip: 'rect(0, 0, 0, 0)',
+                    whiteSpace: 'nowrap',
+                    border: '0',
+                    opacity: 0,
+                }}
             />
             <input
                 type="file"
+                id="dp-camera-input"
                 ref={cameraInputRef}
                 accept="image/*"
                 capture="user"
                 onChange={handleFileChange}
-                className="hidden"
+                style={{
+                    position: 'absolute',
+                    width: '1px',
+                    height: '1px',
+                    padding: '0',
+                    margin: '-1px',
+                    overflow: 'hidden',
+                    clip: 'rect(0, 0, 0, 0)',
+                    whiteSpace: 'nowrap',
+                    border: '0',
+                    opacity: 0,
+                }}
             />
 
             {/* Tap to upload area */}
@@ -537,31 +564,30 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                 Your photo is never uploaded to our servers. It is processed entirely on your device.
             </p>
 
-            {/* Mobile custom choice selection modal */}
-            {showPhotoOptions && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            {/* Mobile custom choice selection modal (Rendered via React Portal directly into document.body to bypass parent CSS transform container bounds) */}
+            {showPhotoOptions && isMounted && createPortal(
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                     <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm space-y-5 shadow-2xl text-center">
                         <div className="space-y-1">
                             <h4 className="text-lg font-bold text-white tracking-tight">Select Photo Source</h4>
                             <p className="text-xs text-zinc-500">Take a selfie or upload from files</p>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <Button
-                                onClick={() => {
-                                    cameraInputRef.current?.click();
-                                }}
-                                className="h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-xl shadow-md"
+                            {/* Natively trigger file inputs via label click (immune to programmatic tap blocking) */}
+                            <label
+                                htmlFor="dp-camera-input"
+                                onClick={() => setShowPhotoOptions(false)}
+                                className="h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-xl shadow-md flex items-center justify-center cursor-pointer transition-all active:scale-95 text-sm md:text-base"
                             >
                                 📸 Take a Selfie
-                            </Button>
-                            <Button
-                                onClick={() => {
-                                    galleryInputRef.current?.click();
-                                }}
-                                className="h-12 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-bold rounded-xl"
+                            </label>
+                            <label
+                                htmlFor="dp-gallery-input"
+                                onClick={() => setShowPhotoOptions(false)}
+                                className="h-12 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all active:scale-95 text-sm md:text-base"
                             >
                                 🖼️ Choose from Gallery
-                            </Button>
+                            </label>
                             <Button
                                 variant="ghost"
                                 onClick={() => setShowPhotoOptions(false)}
@@ -571,7 +597,8 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                             </Button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
