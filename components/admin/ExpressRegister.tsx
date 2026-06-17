@@ -882,8 +882,8 @@ export default function ExpressRegister() {
 
             {/* Row 2 Right: Province Dropdown */}
             <div className="space-y-1 relative">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <MapPin size={13} className="text-slate-400" /> Province <span className="text-slate-400 font-normal lowercase">(optional - fallbacks to region)</span>
+              <label className="text-[10.5px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap select-none">
+                <MapPin size={13} className="text-slate-400 shrink-0" /> Province <span className="text-slate-400 font-normal lowercase text-[9.5px] sm:text-[10.5px]">(optional - fallbacks to region)</span>
               </label>
               
               <div className="relative">
@@ -1048,7 +1048,10 @@ export default function ExpressRegister() {
                 <Sparkles size={10} className="text-emerald-500" /> cleared by cash/transfer
               </span>
             </div>
-            <div className="text-3xl font-black font-heading text-orange-500 tracking-tight">
+            <div 
+              style={{ fontSize: 'clamp(1.25rem, 5vw, 1.875rem)' }}
+              className="font-black font-heading text-orange-500 tracking-tight whitespace-nowrap shrink-0 ml-2"
+            >
               {category === 'teenager' ? '₦1,000' : '₦1,500'}
             </div>
           </div>

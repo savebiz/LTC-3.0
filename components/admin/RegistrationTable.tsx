@@ -836,71 +836,160 @@ export default function RegistrationTable() {
                   </div>
                 </div>
 
-                <div className={`grid gap-1.5 pt-2 border-t border-slate-100 w-full ${
-                  isPending ? 'grid-cols-4' : isArrival ? 'grid-cols-3' : 'grid-cols-2'
-                }`}>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs border-slate-200 text-slate-500 hover:bg-slate-50 font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer w-full"
-                    onClick={() => handleShowHistory(reg)}
-                  >
-                    <History size={12} />
-                    <span className="truncate">History</span>
-                  </Button>
-
-                  {isPending && (
-                    <>
+                {(() => {
+                  const buttonItems: { id: string; render: (isIconOnly: boolean) => React.ReactNode }[] = [];
+                  
+                  // 1. History
+                  buttonItems.push({
+                    id: 'history',
+                    render: (isIconOnly: boolean) => (
                       <Button
-                        size="sm"
-                        className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl cursor-pointer w-full flex items-center justify-center"
-                        onClick={() => handleMarkAsCleared(reg.id)}
-                        disabled={isSubmitting}
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="h-8 text-xs bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl cursor-pointer w-full flex items-center justify-center"
-                        onClick={() => handleRejectClick(reg.id)}
-                        disabled={isSubmitting}
-                      >
-                        Reject
-                      </Button>
-                    </>
-                  )}
-
-                  {isArrival && (
-                    <Button
-                      size="sm"
-                      className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer w-full flex items-center justify-center"
-                      onClick={() => handleMarkAsPaid(reg.id)}
-                      disabled={isSubmitting}
-                    >
-                      Paid
-                    </Button>
-                  )}
-
-                  {!reg.checked_in ? (
-                    <div title={checkInTooltip} className="w-full">
-                      <Button
+                        key="history"
                         size="sm"
                         variant="outline"
-                        className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer w-full flex items-center justify-center"
-                        onClick={() => handleCheckIn(reg.id, reg.full_name)}
-                        disabled={isCheckInDisabled || isSubmitting}
+                        className="h-8 text-xs border-slate-200 text-slate-500 hover:bg-slate-50 font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer w-full"
+                        onClick={() => handleShowHistory(reg)}
                       >
-                        Check In
+                        <History size={12} className="shrink-0" />
+                        {!isIconOnly && <span className="whitespace-nowrap font-bold">History</span>}
                       </Button>
-                    </div>
-                  ) : (
-                    <div className="w-full">
-                      <div className="status-badge flex items-center justify-center gap-1.5 bg-[#22c55e] border border-[#22c55e] text-white rounded-xl text-xs font-bold w-full h-8 shrink-0 select-none whitespace-nowrap">
-                        <span>Checked In ✓</span>
+                    )
+                  });
+
+                  // 2. Clear (if pending)
+                  if (isPending) {
+                    buttonItems.push({
+                      id: 'clear',
+                      render: () => (
+                        <Button
+                          key="clear"
+                          size="sm"
+                          className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl cursor-pointer w-full flex items-center justify-center whitespace-nowrap"
+                          onClick={() => handleMarkAsCleared(reg.id)}
+                          disabled={isSubmitting}
+                        >
+                          Clear
+                        </Button>
+                      )
+                    });
+                  }
+
+                  // 3. Reject (if pending)
+                  if (isPending) {
+                    buttonItems.push({
+                      id: 'reject',
+                      render: () => (
+                        <Button
+                          key="reject"
+                          size="sm"
+                          className="h-8 text-xs bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl cursor-pointer w-full flex items-center justify-center whitespace-nowrap"
+                          onClick={() => handleRejectClick(reg.id)}
+                          disabled={isSubmitting}
+                        >
+                          Reject
+                        </Button>
+                      )
+                    });
+                  }
+
+                  // 4. Paid (if arrival)
+                  if (isArrival) {
+                    buttonItems.push({
+                      id: 'paid',
+                      render: () => (
+                        <Button
+                          key="paid"
+                          size="sm"
+                          className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer w-full flex items-center justify-center whitespace-nowrap"
+                          onClick={() => handleMarkAsPaid(reg.id)}
+                          disabled={isSubmitting}
+                        >
+                          Paid
+                        </Button>
+                      )
+                    });
+                  }
+
+                  // 5. Check In / Checked In
+                  if (!reg.checked_in) {
+                    buttonItems.push({
+                      id: 'checkin',
+                      render: () => (
+                        <div key="checkin" title={checkInTooltip} className="w-full">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer w-full flex items-center justify-center whitespace-nowrap"
+                            onClick={() => handleCheckIn(reg.id, reg.full_name)}
+                            disabled={isCheckInDisabled || isSubmitting}
+                          >
+                            Check In
+                          </Button>
+                        </div>
+                      )
+                    });
+                  } else {
+                    buttonItems.push({
+                      id: 'checkedin',
+                      render: () => (
+                        <div key="checkedin" className="w-full">
+                          <div className="status-badge flex items-center justify-center gap-1.5 bg-[#22c55e] border border-[#22c55e] text-white rounded-xl text-xs font-bold w-full h-8 shrink-0 select-none whitespace-nowrap">
+                            <span>Checked In ✓</span>
+                          </div>
+                        </div>
+                      )
+                    });
+                  }
+
+                  const count = buttonItems.length;
+                  if (count === 2) {
+                    return (
+                      <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-100 w-full">
+                        {buttonItems[0].render(false)}
+                        {buttonItems[1].render(false)}
                       </div>
-                    </div>
-                  )}
-                </div>
+                    );
+                  }
+                  if (count === 3) {
+                    return (
+                      <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100 w-full">
+                        {buttonItems[0].render(true)}
+                        {buttonItems[1].render(false)}
+                        {buttonItems[2].render(false)}
+                      </div>
+                    );
+                  }
+                  if (count === 4) {
+                    return (
+                      <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 w-full">
+                        <div className="grid grid-cols-2 gap-1.5 w-full">
+                          {buttonItems[0].render(false)}
+                          {buttonItems[3].render(false)}
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5 w-full">
+                          {buttonItems[1].render(false)}
+                          {buttonItems[2].render(false)}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (count >= 5) {
+                    return (
+                      <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 w-full">
+                        <div className="grid grid-cols-3 gap-1.5 w-full">
+                          {buttonItems[0].render(true)}
+                          {buttonItems[1].render(false)}
+                          {buttonItems[2].render(false)}
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5 w-full">
+                          {buttonItems[3].render(false)}
+                          {buttonItems[4].render(false)}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             );
           })
