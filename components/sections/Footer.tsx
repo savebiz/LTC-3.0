@@ -49,6 +49,9 @@ const Footer: React.FC<FooterProps> = ({ onRegisterClick, onVolunteerClick }) =>
                         ))}
                     </div>
                     <p className="text-zinc-500 text-sm mt-6">© 2026 Continent 3 Teens Conference. All rights reserved.</p>
+                    <p className="text-zinc-500/80 text-xs mt-2 max-w-md">
+                        C3TC T.I.M.E '26 is proudly organised under the auspices of DTCE Junior Church Global, RCCG.
+                    </p>
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-8 md:gap-12 text-sm text-gray-500">
