@@ -915,28 +915,30 @@ export default function RegistrationTable() {
                     buttonItems.push({
                       id: 'checkin',
                       render: () => (
-                        <div key="checkin" title={checkInTooltip} className="w-full">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer w-full flex items-center justify-center whitespace-nowrap"
-                            onClick={() => handleCheckIn(reg.id, reg.full_name)}
-                            disabled={isCheckInDisabled || isSubmitting}
-                          >
-                            Check In
-                          </Button>
-                        </div>
+                        <Button
+                          key="checkin"
+                          size="sm"
+                          variant="outline"
+                          title={checkInTooltip}
+                          className="h-8 text-xs font-bold border-zinc-300 hover:bg-zinc-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer w-full flex items-center justify-center whitespace-nowrap"
+                          onClick={() => handleCheckIn(reg.id, reg.full_name)}
+                          disabled={isCheckInDisabled || isSubmitting}
+                        >
+                          Check In
+                        </Button>
                       )
                     });
                   } else {
                     buttonItems.push({
                       id: 'checkedin',
                       render: () => (
-                        <div key="checkedin" className="w-full">
-                          <div className="status-badge flex items-center justify-center gap-1.5 bg-[#22c55e] border border-[#22c55e] text-white rounded-xl text-xs font-bold w-full h-8 shrink-0 select-none whitespace-nowrap">
-                            <span>Checked In ✓</span>
-                          </div>
-                        </div>
+                        <Button
+                          key="checkedin"
+                          size="sm"
+                          className="h-8 text-xs bg-[#22c55e] hover:bg-[#22c55e] border border-[#22c55e] text-white font-bold rounded-xl w-full flex items-center justify-center gap-1.5 shrink-0 select-none whitespace-nowrap pointer-events-none cursor-default"
+                        >
+                          Checked In ✓
+                        </Button>
                       )
                     });
                   }

@@ -293,17 +293,17 @@ export default function DashboardOverview() {
             {/* CHARTS ROW */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-2 shadow-sm border-slate-200 bg-white">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 space-y-0">
                       <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
                           <TrendingUp size={18} className="text-orange-500" />
                           Registration Trend
                       </CardTitle>
                       {/* Period Toggle */}
-                      <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+                      <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200 shrink-0">
                           <button
                               type="button"
                               onClick={() => setTrendPeriod('daily')}
-                              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all border-0 cursor-pointer ${
+                              className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all border-0 cursor-pointer whitespace-nowrap ${
                                   trendPeriod === 'daily'
                                       ? 'bg-white text-slate-800 shadow-sm'
                                       : 'text-slate-500 hover:text-slate-800 bg-transparent'
@@ -314,7 +314,7 @@ export default function DashboardOverview() {
                           <button
                               type="button"
                               onClick={() => setTrendPeriod('weekly')}
-                              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all border-0 cursor-pointer ${
+                              className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all border-0 cursor-pointer whitespace-nowrap ${
                                   trendPeriod === 'weekly'
                                       ? 'bg-white text-slate-800 shadow-sm'
                                       : 'text-slate-500 hover:text-slate-800 bg-transparent'
@@ -325,7 +325,7 @@ export default function DashboardOverview() {
                           <button
                               type="button"
                               onClick={() => setTrendPeriod('monthly')}
-                              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all border-0 cursor-pointer ${
+                              className={`px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all border-0 cursor-pointer whitespace-nowrap ${
                                   trendPeriod === 'monthly'
                                       ? 'bg-white text-slate-800 shadow-sm'
                                       : 'text-slate-500 hover:text-slate-800 bg-transparent'
