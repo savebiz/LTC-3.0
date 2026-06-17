@@ -97,7 +97,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
                     className="h-6 w-auto object-contain"
                   />
                 </div>
-                <div className="w-[1px] h-[16px] bg-white/20 self-center mx-2.5" />
+                <div className="w-[1px] h-[16px] bg-white/20 self-center ml-2.5 mr-[5px]" />
                 <img
                   src="/logos/LTC_Logo_white.png"
                   alt="C3TC Logo"
