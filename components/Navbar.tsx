@@ -63,15 +63,13 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
           {/* Centered co-branded desktop dual logos layout */}
           {/* Desktop Logo Container */}
           <a href="#" className="hidden md:flex items-center">
-            <div className="bg-white p-1 rounded-md shadow-sm transition-all duration-300 flex items-center justify-center">
-              <img
-                src="/logos/DTCE_Logo.png"
-                alt="DTCE Logo"
-                className={`w-auto object-contain transition-all duration-300 ${
-                  isScrolled ? 'h-6 md:h-7' : 'h-10 md:h-12'
-                }`}
-              />
-            </div>
+            <img
+              src="/logos/DTCE_Junior_Church_Revised-bg.png"
+              alt="DTCE Logo"
+              className={`w-auto object-contain transition-all duration-300 ${
+                isScrolled ? 'h-8 md:h-9' : 'h-12 md:h-14'
+              }`}
+            />
             <div className={`w-[1px] transition-all duration-300 ${
               isScrolled 
                 ? 'h-[20px] bg-zinc-700/30 ml-3 mr-[6px]' 
@@ -90,13 +88,11 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
           <div className="flex md:hidden items-center">
             {isScrolled ? (
               <a href="#" className="flex items-center">
-                <div className="bg-white p-0.5 rounded shadow-sm flex items-center justify-center">
-                  <img
-                    src="/logos/DTCE_Logo.png"
-                    alt="DTCE Logo"
-                    className="h-6 w-auto object-contain"
-                  />
-                </div>
+                <img
+                  src="/logos/DTCE_Junior_Church_Revised-bg.png"
+                  alt="DTCE Logo"
+                  className="h-6 w-auto object-contain"
+                />
                 <div className="w-[1px] h-[16px] bg-white/20 self-center ml-2.5 mr-[5px]" />
                 <img
                   src="/logos/LTC_Logo_white.png"
@@ -105,11 +101,11 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
                 />
               </a>
             ) : (
-              <a href="#" className="bg-white p-1 rounded-md shadow-sm flex items-center justify-center">
+              <a href="#">
                 <img
-                  src="/logos/DTCE_Logo.png"
+                  src="/logos/DTCE_Junior_Church_Revised-bg.png"
                   alt="DTCE Logo"
-                  className="h-10 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                 />
               </a>
             )}
