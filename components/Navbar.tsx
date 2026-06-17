@@ -139,7 +139,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
                 <Button 
                   onClick={onRegisterClick} 
                   size="sm" 
-                  className="rounded-full font-bold tracking-wider text-[10px] px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-md active:scale-95 transition-all h-7"
+                  className="rounded-full font-bold tracking-wider text-[10px] px-3 py-0.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-md active:scale-95 transition-all h-6"
                 >
                   REGISTER
                 </Button>
