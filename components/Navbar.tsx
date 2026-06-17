@@ -75,7 +75,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
             <div className={`w-[1px] transition-all duration-300 ${
               isScrolled 
                 ? 'h-[20px] bg-zinc-700/30 mx-3' 
-                : 'h-[30px] bg-white/30 ml-4 mr-3'
+                : 'h-[30px] bg-white/30 ml-4 mr-2'
             }`} />
             <img
               src={isScrolled ? "/logos/LTC_Logo.png" : "/logos/LTC_Logo_white.png"}
