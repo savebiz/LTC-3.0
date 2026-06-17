@@ -60,6 +60,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
         <div className={`absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500 ${isScrolled ? 'opacity-100' : 'opacity-0'} transition-opacity`}></div>
 
         <div className="container mx-auto px-6 flex justify-between items-center relative">
+          {/* Centered co-branded desktop dual logos layout */}
           {/* Desktop Logo Container */}
           <a href="#" className="hidden md:flex items-center">
             <div className="bg-white p-1 rounded-md shadow-sm transition-all duration-300 flex items-center justify-center">
