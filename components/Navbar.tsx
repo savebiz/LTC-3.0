@@ -61,7 +61,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
 
         <div className="container mx-auto px-6 flex justify-between items-center relative">
           {/* Desktop Logo Container */}
-          <a href="#" className="hidden md:flex items-center gap-3">
+          <a href="#" className="hidden md:flex items-center">
             <div className="bg-white p-1 rounded-md shadow-sm transition-all duration-300 flex items-center justify-center">
               <img
                 src="/logos/DTCE_Logo.png"
@@ -73,8 +73,8 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
             </div>
             <div className={`w-[1px] transition-all duration-300 ${
               isScrolled 
-                ? 'h-[20px] bg-zinc-700/30' 
-                : 'h-[30px] bg-white/30'
+                ? 'h-[20px] bg-zinc-700/30 mx-3' 
+                : 'h-[30px] bg-white/30 mx-4'
             }`} />
             <img
               src={isScrolled ? "/logos/LTC_Logo.png" : "/logos/LTC_Logo_white.png"}
@@ -88,7 +88,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
           {/* Mobile Left Side Logo Container */}
           <div className="flex md:hidden items-center">
             {isScrolled ? (
-              <a href="#" className="flex items-center gap-2">
+              <a href="#" className="flex items-center">
                 <div className="bg-white p-0.5 rounded shadow-sm flex items-center justify-center">
                   <img
                     src="/logos/DTCE_Logo.png"
@@ -96,7 +96,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
                     className="h-6 w-auto object-contain"
                   />
                 </div>
-                <div className="w-[1px] h-[16px] bg-white/20 self-center mx-1" />
+                <div className="w-[1px] h-[16px] bg-white/20 self-center mx-2.5" />
                 <img
                   src="/logos/LTC_Logo_white.png"
                   alt="C3TC Logo"
@@ -148,7 +148,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
                 <img
                   src="/logos/LTC_Logo_white.png"
                   alt="C3TC Logo"
-                  className="h-10 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                 />
               </a>
             )}
