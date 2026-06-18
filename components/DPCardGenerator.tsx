@@ -190,49 +190,76 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         const centerX = 540;
         const centerY = 580;
 
-        // Layer 1 - Vibrant C3TC Radial Burst Background
-        const rayColors = [
-            { light: '#FB923C', dark: '#EA580C' }, // Orange (base #F97316)
-            { light: '#60A5FA', dark: '#2563EB' }, // Blue (base #3B82F6)
-            { light: '#4ADE80', dark: '#16A34A' }, // Green (base #22C55E)
-            { light: '#F87171', dark: '#DC2626' }  // Red (base #EF4444)
-        ];
+        // Layer 1.1 - Fill base background with deep warm red-orange
+        ctx.fillStyle = '#C0390A';
+        ctx.fillRect(0, 0, 1080, 1350);
 
-        const numRays = 80;
-        const rayAngle = (2 * Math.PI) / numRays;
-        const maxRadius = 1500; // Extend past corners
+        // Layer 1.2 - Vibrant Atmospheric Warm Radial Burst (Rays)
+        const maxRadius = 1500;
+        const numRays = 100;
+        const rayStep = (2 * Math.PI) / numRays;
 
         for (let i = 0; i < numRays; i++) {
-            const angleStart = i * rayAngle;
-            const angleEnd = (i + 1) * rayAngle;
+            const angle = i * rayStep;
+            const sinWidth = Math.sin(i * 5.7);
+            const sinOpacity = Math.sin(i * 8.3);
+            const sinColor = Math.cos(i * 3.1);
 
+            // Ray width varies (from 0.6 to 2.2 times the average step size)
+            const angleWidth = rayStep * (0.6 + Math.abs(sinWidth) * 1.6);
+            
+            // Opacity varies between 0.05 and 0.27
+            const opacity = 0.05 + Math.abs(sinOpacity) * 0.22;
+            
+            // Alternating warm fiery tones (deep red, burnt orange, golden yellow)
+            let colorStr = '';
+            const val = Math.abs(sinColor);
+            if (val < 0.4) {
+                // Deep red
+                colorStr = `rgba(153, 27, 27, ${opacity})`;
+            } else if (val < 0.8) {
+                // Burnt orange
+                colorStr = `rgba(217, 119, 6, ${opacity})`;
+            } else {
+                // Golden yellow
+                colorStr = `rgba(245, 158, 11, ${opacity})`;
+            }
+            
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
-            ctx.arc(centerX, centerY, maxRadius, angleStart, angleEnd);
+            ctx.arc(centerX, centerY, maxRadius, angle - angleWidth / 2, angle + angleWidth / 2);
             ctx.closePath();
-
-            const colorInfo = rayColors[i % rayColors.length];
-            ctx.fillStyle = (i % 2 === 0) ? colorInfo.light : colorInfo.dark;
+            ctx.fillStyle = colorStr;
             ctx.fill();
         }
 
-        // Radial gradient overlay for center glow & outer vignette depth
-        const bgGrad = ctx.createRadialGradient(centerX, centerY, 50, centerX, centerY, 850);
-        bgGrad.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
-        bgGrad.addColorStop(0.2, 'rgba(255, 255, 255, 0)');
-        bgGrad.addColorStop(1, 'rgba(0, 0, 0, 0.35)');
-        ctx.fillStyle = bgGrad;
+        // Layer 1.3 - Bright Central Glow for "lit from within" feel
+        const centerGlow = ctx.createRadialGradient(centerX, centerY, 50, centerX, centerY, 700);
+        centerGlow.addColorStop(0, 'rgba(255, 215, 0, 0.55)'); // Golden glow
+        centerGlow.addColorStop(0.3, 'rgba(255, 140, 0, 0.25)'); // Warm orange glow
+        centerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = centerGlow;
         ctx.fillRect(0, 0, 1080, 1350);
 
-        // Layer 2 - Center Crop & Mask photo circle
+        // Layer 1.4 - Warm White/Golden Halo Glow behind avatar circle
+        const avatarGlow = ctx.createRadialGradient(centerX, centerY, 150, centerX, centerY, 360);
+        avatarGlow.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+        avatarGlow.addColorStop(0.5, 'rgba(255, 215, 0, 0.25)');
+        avatarGlow.addColorStop(1, 'rgba(255, 215, 0, 0)');
+        ctx.fillStyle = avatarGlow;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 360, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Layer 2 - Center Crop & Mask photo circle (Prominent at 230px radius)
         ctx.save();
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 290, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, 230, 0, Math.PI * 2);
         ctx.clip();
 
         const imgWidth = selectedImage.width;
         const imgHeight = selectedImage.height;
-        const scale = Math.max(580 / imgWidth, 580 / imgHeight);
+        const scale = Math.max(460 / imgWidth, 460 / imgHeight);
         const w = imgWidth * scale;
         const h = imgHeight * scale;
         const x = centerX - w / 2;
@@ -249,66 +276,79 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
 
         // 6px white circular border
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 290, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, 230, 0, Math.PI * 2);
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 6;
         ctx.stroke();
 
-        // Layer 3 - Decorative Segmented Ring (C3TC Segment Colors)
+        // Layer 3 - Decorative Segmented Ring (Radius 250px, C3TC Segment Colors)
         const gap = 0.08; // small gaps in radians
 
         // Top-Right Quadrant Arc: Blue (#3B82F6)
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 310, -Math.PI / 2 + gap, 0 - gap);
+        ctx.arc(centerX, centerY, 250, -Math.PI / 2 + gap, 0 - gap);
         ctx.strokeStyle = '#3B82F6';
         ctx.lineWidth = 14;
         ctx.stroke();
 
         // Bottom-Right Quadrant Arc: Red (#EF4444)
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 310, 0 + gap, Math.PI / 2 - gap);
+        ctx.arc(centerX, centerY, 250, 0 + gap, Math.PI / 2 - gap);
         ctx.strokeStyle = '#EF4444';
         ctx.lineWidth = 14;
         ctx.stroke();
 
         // Bottom-Left Quadrant Arc: Green (#22C55E)
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 310, Math.PI / 2 + gap, Math.PI - gap);
+        ctx.arc(centerX, centerY, 250, Math.PI / 2 + gap, Math.PI - gap);
         ctx.strokeStyle = '#22C55E';
         ctx.lineWidth = 14;
         ctx.stroke();
 
         // Top-Left Quadrant Arc: Orange (#F97316)
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 310, Math.PI + gap, (3 * Math.PI) / 2 - gap);
+        ctx.arc(centerX, centerY, 250, Math.PI + gap, (3 * Math.PI) / 2 - gap);
         ctx.strokeStyle = '#F97316';
         ctx.lineWidth = 14;
         ctx.stroke();
 
-        // Layer 4 - Center Aligned Top Logo Bar
+        // Layer 4 - Center Aligned Top Logo Bar with subtle drop shadow
         if (dtceLogoRef.current && c3tcLogoRef.current) {
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 4;
+
             // Draw central divider at X = 540
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(540, 55);
-            ctx.lineTo(540, 105);
+            ctx.moveTo(540, 70);
+            ctx.lineTo(540, 120);
             ctx.stroke();
 
             // DTCE logo on left (height 50px, width ~55px, right aligned to 540 - 18 = 522)
-            ctx.drawImage(dtceLogoRef.current, 467, 55, 55, 50);
+            ctx.drawImage(dtceLogoRef.current, 467, 70, 55, 50);
 
             // C3TC logo on right (height 50px, width ~133px, left aligned to 540 + 18 = 558)
-            ctx.drawImage(c3tcLogoRef.current, 558, 55, 133, 50);
+            ctx.drawImage(c3tcLogoRef.current, 558, 70, 133, 50);
+            ctx.restore();
         }
 
         // Layer 5 - Curved Text "I WILL BE ATTENDING" along top arc of circle
         const archText = "I WILL BE ATTENDING";
-        ctx.font = '900 52px "Outfit", "Inter", "Helvetica Neue", sans-serif';
+        ctx.save();
+        ctx.font = '900 58px "Outfit", "Arial Black", "Impact", sans-serif';
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
 
-        const textRadius = 355;
+        // Add subtle text shadow
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetY = 4;
+
+        const textRadius = 285; // snug fit right above segmented ring (outer edge 257)
         const charAngles = [];
         for (let i = 0; i < archText.length; i++) {
             charAngles.push(ctx.measureText(archText[i]).width / textRadius);
@@ -331,7 +371,7 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
             ctx.rotate(drawAngle + Math.PI / 2);
 
             // Outlined stroke
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.95)';
             ctx.lineWidth = 10;
             ctx.lineJoin = 'round';
             ctx.strokeText(char, 0, 0);
@@ -344,103 +384,106 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
 
             currentAngle += charAngles[i] + charSpacing;
         }
+        ctx.restore(); // restore shadows
 
         // Layer 6 - Text and Name Banner Composition
         const currentReg = registrants[selectedRegIndex];
         if (currentReg) {
             const fullName = (currentReg.full_name || currentReg.fullName || 'DELEGATE').toUpperCase();
 
-            // Gradient name banner filled shape
-            const bannerGrad = ctx.createLinearGradient(140, 0, 940, 0);
-            bannerGrad.addColorStop(0, '#F97316'); // C3TC Orange
-            bannerGrad.addColorStop(1, '#EF4444'); // C3TC Red
-
             ctx.save();
             // Drop shadow for the name banner
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = 12;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 6;
 
-            ctx.fillStyle = bannerGrad;
+            // Semi-transparent dark banner (deep charcoal at 80% opacity)
+            ctx.fillStyle = 'rgba(22, 18, 17, 0.8)';
             ctx.beginPath();
-            ctx.roundRect(140, 910, 800, 84, 16);
+            ctx.roundRect(100, 880, 880, 86, 12);
             ctx.fill();
             ctx.restore();
 
-            // White border outline
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = 3;
+            // Gold border outline
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 2.5;
             ctx.beginPath();
-            ctx.roundRect(140, 910, 800, 84, 16);
+            ctx.roundRect(100, 880, 880, 86, 12);
             ctx.stroke();
 
             // Render Full Name (auto-scaled to fit banner)
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            let nameFontSize = 44;
+            let nameFontSize = 46;
             ctx.font = `900 ${nameFontSize}px "Outfit", "Inter", sans-serif`;
             let textWidth = ctx.measureText(fullName).width;
 
-            while (textWidth > 720 && nameFontSize > 22) {
+            while (textWidth > 800 && nameFontSize > 22) {
                 nameFontSize -= 2;
                 ctx.font = `900 ${nameFontSize}px "Outfit", "Inter", sans-serif`;
                 textWidth = ctx.measureText(fullName).width;
             }
 
             ctx.fillStyle = '#FFFFFF';
-            ctx.fillText(fullName, centerX, 952);
+            ctx.fillText(fullName, centerX, 923);
 
-            // Layer 7 - Closing Line "SEE YOU AT T.I.M.E '26"
-            ctx.font = '900 52px "Outfit", "Inter", "Helvetica Neue", sans-serif';
+            // Layer 7 - Closing Line "SEE YOU AT T.I.M.E '26" with white stroke outline
+            ctx.save();
+            ctx.font = '900 64px "Outfit", "Arial Black", "Impact", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
-            // Outline
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
-            ctx.lineWidth = 10;
+            // Shadow behind white outline
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetY = 4;
+
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 14;
             ctx.lineJoin = 'round';
             ctx.strokeText("SEE YOU AT T.I.M.E '26", centerX, 1070);
+            ctx.restore();
 
-            // Fill
+            // Orange Fill
             ctx.fillStyle = '#F97316';
             ctx.fillText("SEE YOU AT T.I.M.E '26", centerX, 1070);
 
-            // Layer 8 - Footer Strip (Date, Venue, website URL)
-            // Slate-900 background strip
-            ctx.fillStyle = '#0F172A';
-            ctx.fillRect(0, 1230, 1080, 120);
+            // Layer 8 - Solid Contrasting Footer Strip
+            // Slate-900 background strip (85% opacity)
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            ctx.fillRect(0, 1210, 1080, 140);
 
             // Top orange accent line
             ctx.fillStyle = '#F97316';
-            ctx.fillRect(0, 1230, 1080, 4);
+            ctx.fillRect(0, 1210, 1080, 4);
 
             // DATE details (left aligned)
             ctx.textAlign = 'left';
             ctx.textBaseline = 'alphabetic';
             ctx.fillStyle = '#94A3B8';
             ctx.font = 'bold 16px "Outfit", "Inter", sans-serif';
-            ctx.fillText('DATE', 80, 1270);
+            ctx.fillText('DATE', 80, 1255);
 
             ctx.fillStyle = '#FFFFFF';
-            ctx.font = '900 28px "Outfit", "Inter", sans-serif';
-            ctx.fillText('FRI. 19TH SEP. 2026', 80, 1305);
+            ctx.font = '900 26px "Outfit", "Inter", sans-serif';
+            ctx.fillText('FRI. 19TH SEP. 2026', 80, 1292);
 
             // VENUE details (right aligned)
             ctx.textAlign = 'right';
             ctx.fillStyle = '#94A3B8';
             ctx.font = 'bold 16px "Outfit", "Inter", sans-serif';
-            ctx.fillText('VENUE', 1000, 1270);
+            ctx.fillText('VENUE', 1000, 1255);
 
             ctx.fillStyle = '#FFFFFF';
-            ctx.font = '900 28px "Outfit", "Inter", sans-serif';
-            ctx.fillText('GLORY ARENA, OGUN STATE', 1000, 1305);
+            ctx.font = '900 26px "Outfit", "Inter", sans-serif';
+            ctx.fillText('GLORY ARENA, OGUN STATE', 1000, 1292);
 
-            // Website URL (center aligned)
+            // Website URL (center aligned, golden color)
             ctx.textAlign = 'center';
-            ctx.fillStyle = '#F97316';
-            ctx.font = 'bold 16px "Outfit", sans-serif';
-            ctx.fillText('continent3teens.cc', centerX, 1335);
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 15px "Outfit", sans-serif';
+            ctx.fillText('continent3teens.cc', centerX, 1325);
         }
 
         setIsDrawing(false);
