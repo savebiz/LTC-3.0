@@ -190,11 +190,11 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         const centerX = 540;
         const centerY = 580;
 
-        // Layer 1.1 - Fill base background with deep warm red-orange
-        ctx.fillStyle = '#C0390A';
+        // Layer 1.1 - Fill base background with deep, rich dark navy
+        ctx.fillStyle = '#07101f';
         ctx.fillRect(0, 0, 1080, 1350);
 
-        // Layer 1.2 - Vibrant Atmospheric Warm Radial Burst (Rays)
+        // Layer 1.2 - Vibrant Atmospheric Warm Radial Burst (Rays) - faint/subtle
         const maxRadius = 1500;
         const numRays = 100;
         const rayStep = (2 * Math.PI) / numRays;
@@ -208,21 +208,18 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
             // Ray width varies (from 0.6 to 2.2 times the average step size)
             const angleWidth = rayStep * (0.6 + Math.abs(sinWidth) * 1.6);
             
-            // Opacity varies between 0.05 and 0.27
-            const opacity = 0.05 + Math.abs(sinOpacity) * 0.22;
+            // Opacity is kept low for subtle, high-energy atmospheric depth (0.02 to 0.12)
+            const opacity = 0.02 + Math.abs(sinOpacity) * 0.10;
             
-            // Alternating warm fiery tones (deep red, burnt orange, golden yellow)
+            // Warm tones (orange, amber, orange-red)
             let colorStr = '';
             const val = Math.abs(sinColor);
             if (val < 0.4) {
-                // Deep red
-                colorStr = `rgba(153, 27, 27, ${opacity})`;
+                colorStr = `rgba(180, 83, 9, ${opacity})`;   // #b45309 Amber
             } else if (val < 0.8) {
-                // Burnt orange
-                colorStr = `rgba(217, 119, 6, ${opacity})`;
+                colorStr = `rgba(249, 115, 22, ${opacity})`;  // #f97316 Orange
             } else {
-                // Golden yellow
-                colorStr = `rgba(245, 158, 11, ${opacity})`;
+                colorStr = `rgba(194, 65, 12, ${opacity})`;   // #c2410c Orange-red
             }
             
             ctx.beginPath();
@@ -233,18 +230,41 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
             ctx.fill();
         }
 
-        // Layer 1.3 - Bright Central Glow for "lit from within" feel
-        const centerGlow = ctx.createRadialGradient(centerX, centerY, 50, centerX, centerY, 700);
-        centerGlow.addColorStop(0, 'rgba(255, 215, 0, 0.55)'); // Golden glow
-        centerGlow.addColorStop(0.3, 'rgba(255, 140, 0, 0.25)'); // Warm orange glow
-        centerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        // Layer 1.3 - Strong Radial Glow/Light Burst emanating from directly behind avatar
+        const centerGlow = ctx.createRadialGradient(centerX, centerY, 80, centerX, centerY, 800);
+        centerGlow.addColorStop(0, 'rgba(249, 115, 22, 0.42)'); // #f97316 (orange)
+        centerGlow.addColorStop(0.4, 'rgba(180, 83, 9, 0.22)'); // #b45309 (amber)
+        centerGlow.addColorStop(1, 'rgba(7, 16, 31, 0)');
         ctx.fillStyle = centerGlow;
         ctx.fillRect(0, 0, 1080, 1350);
 
-        // Layer 1.4 - Warm White/Golden Halo Glow behind avatar circle
+        // Layer 1.4 - Subtle Secondary Cool-Tone Glow (Blue #1d4ed8) in top corners for contrast/depth
+        const topLeftBlueGlow = ctx.createRadialGradient(0, 0, 50, 0, 0, 850);
+        topLeftBlueGlow.addColorStop(0, 'rgba(29, 78, 216, 0.22)'); // #1d4ed8 Blue
+        topLeftBlueGlow.addColorStop(1, 'rgba(7, 16, 31, 0)');
+        ctx.fillStyle = topLeftBlueGlow;
+        ctx.fillRect(0, 0, 1080, 1350);
+
+        const topRightBlueGlow = ctx.createRadialGradient(1080, 0, 50, 1080, 0, 850);
+        topRightBlueGlow.addColorStop(0, 'rgba(29, 78, 216, 0.15)'); // #1d4ed8 Blue
+        topRightBlueGlow.addColorStop(1, 'rgba(7, 16, 31, 0)');
+        ctx.fillStyle = topRightBlueGlow;
+        ctx.fillRect(0, 0, 1080, 1350);
+
+        // Layer 1.5 - Faint dot-grid texture overlay across the background
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+        for (let gx = 24; gx < 1080; gx += 48) {
+            for (let gy = 24; gy < 1350; gy += 48) {
+                ctx.beginPath();
+                ctx.arc(gx, gy, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Layer 1.6 - Warm White/Golden Halo Glow behind avatar circle to act as backlighting
         const avatarGlow = ctx.createRadialGradient(centerX, centerY, 150, centerX, centerY, 360);
-        avatarGlow.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
-        avatarGlow.addColorStop(0.5, 'rgba(255, 215, 0, 0.25)');
+        avatarGlow.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+        avatarGlow.addColorStop(0.5, 'rgba(255, 215, 0, 0.2)');
         avatarGlow.addColorStop(1, 'rgba(255, 215, 0, 0)');
         ctx.fillStyle = avatarGlow;
         ctx.beginPath();
@@ -391,6 +411,11 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         if (currentReg) {
             const fullName = (currentReg.full_name || currentReg.fullName || 'DELEGATE').toUpperCase();
 
+            // Orange gradient background name pill
+            const bannerGrad = ctx.createLinearGradient(100, 0, 980, 0);
+            bannerGrad.addColorStop(0, '#F97316'); // C3TC Orange
+            bannerGrad.addColorStop(1, '#EF4444'); // C3TC Red
+
             ctx.save();
             // Drop shadow for the name banner
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
@@ -398,15 +423,14 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 6;
 
-            // Semi-transparent dark banner (deep charcoal at 80% opacity)
-            ctx.fillStyle = 'rgba(22, 18, 17, 0.8)';
+            ctx.fillStyle = bannerGrad;
             ctx.beginPath();
             ctx.roundRect(100, 880, 880, 86, 12);
             ctx.fill();
             ctx.restore();
 
-            // Gold border outline
-            ctx.strokeStyle = '#FFD700';
+            // White border outline
+            ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
             ctx.roundRect(100, 880, 880, 86, 12);
@@ -450,8 +474,8 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
             ctx.fillText("SEE YOU AT T.I.M.E '26", centerX, 1070);
 
             // Layer 8 - Solid Contrasting Footer Strip
-            // Slate-900 background strip (85% opacity)
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            // Dark navy (#070f1e) background strip
+            ctx.fillStyle = '#070f1e';
             ctx.fillRect(0, 1210, 1080, 140);
 
             // Top orange accent line
