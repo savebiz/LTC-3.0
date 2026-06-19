@@ -146,12 +146,10 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         console.log("DPCardGenerator: handleFileChange selected file:", file ? { name: file.name, type: file.type, size: file.size } : null);
         if (!file) return;
 
-        // Broad extension check & mime type check to bypass strict or empty MIME validations on mobile devices
-        const hasImageExtension = /\.(jpg|jpeg|png|webp|gif|heic|heif|jfif|pjpeg|pjp)$/i.test(file.name);
-        const isMimeImage = file.type.startsWith('image/');
-        
-        // Accept file if it has a valid image extension, is mime image, or MIME is empty
-        if (!isMimeImage && !hasImageExtension && file.type !== '') {
+        // Check file extension as a soft fallback to reject non-image files immediately (like PDF or zip)
+        const ext = file.name.split('.').pop()?.toLowerCase() || '';
+        const supportedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'gif', 'jfif', 'pjpeg', 'pjp'];
+        if (ext && !supportedExtensions.includes(ext)) {
             setUploadError("Please select a valid image file (JPEG, PNG, WEBP).");
             setShowPhotoOptions(false);
             return;

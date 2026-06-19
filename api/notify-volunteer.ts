@@ -118,16 +118,14 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
             <tr>
                 <td style="background-color: #0a0f1e; padding: 40px 20px; text-align: center;">
                     <!-- Dual Logo Table -->
-                    <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto; border-spacing: 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto; border-spacing: 0;">
                         <tr>
-                            <td style="vertical-align: middle; padding: 0;">
-                                <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" style="height: 50px; width: auto; display: block; border: 0;" />
+                            <td style="padding: 0; vertical-align: middle;">
+                                <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" height="55" style="display: block; border: 0; height: 55px; width: auto;" />
                             </td>
-                            <td style="vertical-align: middle; padding: 0 32px;">
-                                &nbsp;
-                            </td>
-                            <td style="vertical-align: middle; padding: 0;">
-                                <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" style="height: 50px; width: auto; display: block; border: 0;" />
+                            <td style="width: 5px;"></td>
+                            <td style="padding: 0; vertical-align: middle;">
+                                <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" height="55" style="display: block; border: 0; height: 55px; width: auto;" />
                             </td>
                         </tr>
                     </table>
@@ -227,16 +225,14 @@ async function sendRejectionEmail(record: any, host: string): Promise<boolean> {
             <tr>
                 <td style="background-color: #0a0f1e; padding: 40px 20px; text-align: center;">
                     <!-- Dual Logo Table -->
-                    <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto; border-spacing: 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto; border-spacing: 0;">
                         <tr>
-                            <td style="vertical-align: middle; padding: 0;">
-                                <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" style="height: 50px; width: auto; display: block; border: 0;" />
+                            <td style="padding: 0; vertical-align: middle;">
+                                <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" height="55" style="display: block; border: 0; height: 55px; width: auto;" />
                             </td>
-                            <td style="vertical-align: middle; padding: 0 32px;">
-                                &nbsp;
-                            </td>
-                            <td style="vertical-align: middle; padding: 0;">
-                                <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" style="height: 50px; width: auto; display: block; border: 0;" />
+                            <td style="width: 5px;"></td>
+                            <td style="padding: 0; vertical-align: middle;">
+                                <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" height="55" style="display: block; border: 0; height: 55px; width: auto;" />
                             </td>
                         </tr>
                     </table>
