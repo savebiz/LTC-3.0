@@ -39,16 +39,8 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
     const [templateVariant, setTemplateVariant] = useState<'blue' | 'orange'>('blue');
     const [templateImage, setTemplateImage] = useState<HTMLImageElement | null>(null);
     
-    // Photo alignment and zoom manipulation states
-    const [scale, setScale] = useState(1.0);
-    const [offset, setOffset] = useState({ x: 0, y: 0 });
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-    
-    // Pinch-to-zoom support for mobile viewports
-    const [isPinching, setIsPinching] = useState(false);
-    const [initialTouchDist, setInitialTouchDist] = useState(0);
-    const [initialScale, setInitialScale] = useState(1.0);
+    // Inline validation error state
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -84,19 +76,27 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         // Preload templates
         const blueImg = new Image();
         blueImg.onload = () => {
+            console.log("DPCardGenerator: Blue template preloaded successfully");
             blueTemplateRef.current = blueImg;
             if (templateVariant === 'blue') {
                 setTemplateImage(blueImg);
             }
         };
+        blueImg.onerror = (err) => {
+            console.error("DPCardGenerator: Failed to preload Blue template", err);
+        };
         blueImg.src = '/DP_Blue.png';
 
         const orangeImg = new Image();
         orangeImg.onload = () => {
+            console.log("DPCardGenerator: Orange template preloaded successfully");
             orangeTemplateRef.current = orangeImg;
             if (templateVariant === 'orange') {
                 setTemplateImage(orangeImg);
             }
+        };
+        orangeImg.onerror = (err) => {
+            console.error("DPCardGenerator: Failed to preload Orange template", err);
         };
         orangeImg.src = '/DP_Orange.png';
 
@@ -118,36 +118,12 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         }
     }, [templateVariant]);
 
-    // Redraw canvas if selected delegate, image, scale, offsets, or template loads
+    // Redraw canvas if selected delegate, image, or template variant loads
     useEffect(() => {
         if (templateImage) {
             drawCanvas();
         }
-    }, [templateImage, selectedImage, selectedRegIndex, scale, offset, templateVariant]);
-
-    // Add passive: false wheel event listener directly to canvas to prevent default page scrolling while zooming
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const preventDefaultWheel = (e: WheelEvent) => {
-            if (selectedImage) {
-                e.preventDefault();
-            }
-        };
-
-        canvas.addEventListener('wheel', preventDefaultWheel, { passive: false });
-        return () => {
-            canvas.removeEventListener('wheel', preventDefaultWheel);
-        };
-    }, [selectedImage]);
-
-    // Helper to scale client coordinate shifts to canvas coordinates (724x1024px grid)
-    const getCanvasScaleRatio = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return 1;
-        return canvas.width / canvas.offsetWidth;
-    };
+    }, [templateImage, selectedImage, selectedRegIndex, templateVariant]);
 
     const handlePhotoAreaClick = () => {
         if (isMobile) {
@@ -158,31 +134,26 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setUploadError(null);
         const file = e.target.files?.[0];
         console.log("DPCardGenerator: handleFileChange selected file:", file ? { name: file.name, type: file.type, size: file.size } : null);
         if (!file) return;
 
-        // Check for unsupported HEIC/HEIF files
-        const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || 
-                       /\.(heic|heif)$/i.test(file.name);
-        if (isHeic) {
-            console.warn("DPCardGenerator: HEIC/HEIF format is not natively supported by browser <img> decoding:", file.name);
-            alert("This photo format (.heic/.heif) isn't supported. Please select a JPEG or PNG image, or use 'Take a Selfie' instead.");
-            return;
-        }
-
-        // Validation - support common extensions on mobile as fallback
-        const isImage = file.type.startsWith('image/') || 
-                        /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name);
-        if (!isImage) {
-            console.warn("DPCardGenerator: Invalid file selected:", file.type, file.name);
-            alert('Invalid file format. Please upload a JPEG, PNG, or WEBP image.');
+        // Broad extension check & mime type check to bypass strict or empty MIME validations on mobile devices
+        const hasImageExtension = /\.(jpg|jpeg|png|webp|gif|heic|heif|jfif|pjpeg|pjp)$/i.test(file.name);
+        const isMimeImage = file.type.startsWith('image/');
+        
+        // Accept file if it has a valid image extension, is mime image, or MIME is empty (rely on browser Image loader for structural validation)
+        if (!isMimeImage && !hasImageExtension && file.type !== '') {
+            setUploadError("Please select a valid image file (JPEG, PNG, WEBP).");
+            setShowPhotoOptions(false);
             return;
         }
 
         const maxSize = 15 * 1024 * 1024; // 15MB limit
         if (file.size > maxSize) {
-            alert('File size exceeds the 15MB limit. Please upload a smaller image.');
+            setUploadError("The selected file exceeds the 15MB limit. Please upload a smaller photo.");
+            setShowPhotoOptions(false);
             return;
         }
 
@@ -197,119 +168,21 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
 
         const img = new Image();
         img.onload = () => {
+            console.log("DPCardGenerator: Image preloaded successfully via blob Object URL");
             setSelectedImage(img);
-            setScale(1.0);
-            setOffset({ x: 0, y: 0 });
+            setUploadError(null);
             setShowPhotoOptions(false);
         };
         img.onerror = (err) => {
             console.error("DPCardGenerator: Image element load failed for object URL:", objectUrl, err);
-            alert("This photo format isn't supported. Please select a JPEG or PNG image, or use 'Take a Selfie' instead.");
+            setUploadError("This photo format isn't supported by your browser. Please select a standard JPEG or PNG image.");
             if (activeObjectUrlRef.current === objectUrl) {
                 URL.revokeObjectURL(objectUrl);
                 activeObjectUrlRef.current = null;
             }
+            setShowPhotoOptions(false);
         };
         img.src = objectUrl;
-    };
-
-    // Mouse Interactions for Crop Dragging
-    const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!selectedImage) return;
-        setIsDragging(true);
-        const rect = canvasRef.current?.getBoundingClientRect();
-        if (!rect) return;
-
-        const clientX = e.clientX - rect.left;
-        const clientY = e.clientY - rect.top;
-        const scaleRatio = getCanvasScaleRatio();
-        
-        setDragStart({
-            x: clientX * scaleRatio - offset.x,
-            y: clientY * scaleRatio - offset.y
-        });
-    };
-
-    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!isDragging || !selectedImage) return;
-        const rect = canvasRef.current?.getBoundingClientRect();
-        if (!rect) return;
-
-        const clientX = e.clientX - rect.left;
-        const clientY = e.clientY - rect.top;
-        const scaleRatio = getCanvasScaleRatio();
-
-        setOffset({
-            x: clientX * scaleRatio - dragStart.x,
-            y: clientY * scaleRatio - dragStart.y
-        });
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    // Touch Interactions for mobile viewports (supports pinch-to-zoom + dragging)
-    const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        if (!selectedImage) return;
-        const rect = canvasRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        const scaleRatio = getCanvasScaleRatio();
-
-        if (e.touches.length === 1) {
-            setIsDragging(true);
-            const touch = e.touches[0];
-            const clientX = touch.clientX - rect.left;
-            const clientY = touch.clientY - rect.top;
-            setDragStart({
-                x: clientX * scaleRatio - offset.x,
-                y: clientY * scaleRatio - offset.y
-            });
-        } else if (e.touches.length === 2) {
-            setIsDragging(false);
-            setIsPinching(true);
-            const t1 = e.touches[0];
-            const t2 = e.touches[1];
-            const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-            setInitialTouchDist(dist);
-            setInitialScale(scale);
-        }
-    };
-
-    const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        if (!selectedImage) return;
-        const rect = canvasRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        const scaleRatio = getCanvasScaleRatio();
-
-        if (isDragging && e.touches.length === 1) {
-            const touch = e.touches[0];
-            const clientX = touch.clientX - rect.left;
-            const clientY = touch.clientY - rect.top;
-            setOffset({
-                x: clientX * scaleRatio - dragStart.x,
-                y: clientY * scaleRatio - dragStart.y
-            });
-        } else if (isPinching && e.touches.length === 2) {
-            const t1 = e.touches[0];
-            const t2 = e.touches[1];
-            const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-            if (initialTouchDist > 0) {
-                const factor = dist / initialTouchDist;
-                setScale(Math.max(0.5, Math.min(5.0, initialScale * factor)));
-            }
-        }
-    };
-
-    const handleTouchEnd = () => {
-        setIsDragging(false);
-        setIsPinching(false);
-    };
-
-    const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-        if (!selectedImage) return;
-        const zoomFactor = e.deltaY < 0 ? 1.05 : 0.95;
-        setScale(prev => Math.max(0.5, Math.min(5.0, prev * zoomFactor)));
     };
 
     const drawCanvas = async () => {
@@ -332,7 +205,7 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
 
         const coords = TEMPLATE_COORDS[templateVariant];
 
-        // Layer 2 - Composite delegate photo inside circular cutout
+        // Layer 2 - Composite delegate photo inside circular cutout (Simple Center Crop)
         if (selectedImage) {
             ctx.save();
             ctx.beginPath();
@@ -341,14 +214,22 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
 
             const imgWidth = selectedImage.width;
             const imgHeight = selectedImage.height;
-            const baseScale = Math.max((coords.circle.r * 2) / imgWidth, (coords.circle.r * 2) / imgHeight);
-            const drawWidth = imgWidth * baseScale * scale;
-            const drawHeight = imgHeight * baseScale * scale;
 
-            const dx = coords.circle.x - drawWidth / 2 + offset.x;
-            const dy = coords.circle.y - drawHeight / 2 + offset.y;
+            // 1. Calculate largest square crop from the center of the image
+            const minSide = Math.min(imgWidth, imgHeight);
+            const cropX = (imgWidth - minSide) / 2;
+            const cropY = (imgHeight - minSide) / 2;
 
-            ctx.drawImage(selectedImage, dx, dy, drawWidth, drawHeight);
+            // 2. Draw and scale the square crop into the circle boundary
+            const circleDiameter = coords.circle.r * 2;
+            const dx = coords.circle.x - coords.circle.r;
+            const dy = coords.circle.y - coords.circle.r;
+
+            ctx.drawImage(
+                selectedImage,
+                cropX, cropY, minSide, minSide, // source crop rect
+                dx, dy, circleDiameter, circleDiameter // destination circle bounds
+            );
             ctx.restore();
         }
 
@@ -490,6 +371,17 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                 </div>
             </div>
 
+            {/* Inline Validation Error Message */}
+            {uploadError && (
+                <div className={`p-4 rounded-xl border text-sm font-bold text-center leading-relaxed max-w-[480px] mx-auto animate-in fade-in duration-200 ${
+                    darkMode
+                        ? 'bg-red-950/20 border-red-900/60 text-red-400'
+                        : 'bg-red-50 border-red-200 text-red-600'
+                }`}>
+                    ⚠️ {uploadError}
+                </div>
+            )}
+
             {/* Select dropdown if multiple delegates in batch */}
             {registrants.length > 1 && (
                 <div className={`p-4 border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 ${cardBgClass}`}>
@@ -560,31 +452,72 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                 }}
             />
 
-            {/* Tap to upload area */}
-            <div className="flex flex-col items-center justify-center space-y-3">
-                <div
-                    onClick={handlePhotoAreaClick}
-                    className={`w-36 h-36 rounded-full border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative ${
-                        selectedImage
-                            ? 'border-emerald-500'
-                            : 'border-zinc-500 hover:border-orange-500 hover:bg-orange-500/5'
-                    } ${darkMode ? 'bg-zinc-900/50' : 'bg-zinc-50'}`}
-                >
-                    {selectedImage ? (
-                        <img
-                            src={selectedImage.src}
-                            alt="Preview"
-                            className="w-full h-full object-cover"
+            {/* Canvas Preview Container (Always Visible) */}
+            <div className="space-y-6 flex flex-col items-center">
+                {/* Live Preview canvas container */}
+                <div className="relative w-full max-w-[480px] flex flex-col items-center">
+                    <div 
+                        onClick={handlePhotoAreaClick}
+                        className="w-full flex justify-center shadow-2xl rounded-2xl overflow-hidden border border-zinc-800 relative cursor-pointer group"
+                    >
+                        <canvas
+                            ref={canvasRef}
+                            style={{
+                                width: '100%',
+                                maxWidth: isMobile ? '380px' : '480px',
+                                aspectRatio: '724/1024',
+                            }}
+                            className="block bg-[#0A1628] rounded-2xl"
                         />
+                        {!selectedImage && (
+                            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center transition-all group-hover:bg-black/50">
+                                <div className="w-24 h-24 rounded-full border-2 border-dashed border-white/60 flex flex-col items-center justify-center bg-zinc-950/60 shadow-lg text-white">
+                                    <Camera className="w-7 h-7 text-white mb-1 animate-pulse" />
+                                    <span className="text-[10px] font-black uppercase tracking-wider">Add Photo</span>
+                                </div>
+                            </div>
+                        )}
+                        {isDrawing && (
+                            <div className="absolute inset-0 bg-[#0A1628]/85 flex flex-col items-center justify-center space-y-2">
+                                <Loader2 className="w-9 h-9 text-orange-500 animate-spin" />
+                                <p className="text-xs text-zinc-400 font-medium tracking-wide">
+                                    Generating your DP Card...
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-[480px]">
+                    {selectedImage ? (
+                        <>
+                            {canShare && (
+                                <Button
+                                    onClick={handleShareWhatsApp}
+                                    className="flex-1 h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 cursor-pointer"
+                                >
+                                    <Share2 size={18} /> Share to WhatsApp
+                                </Button>
+                            )}
+                            <Button
+                                onClick={handleSaveImage}
+                                className={`flex-1 h-12 bg-transparent border-2 font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 cursor-pointer ${
+                                    darkMode
+                                        ? 'border-zinc-300 text-zinc-200 hover:bg-zinc-800'
+                                        : 'border-[#0A1628] text-[#0A1628] hover:bg-[#0A1628] hover:text-white'
+                                }`}
+                            >
+                                <Download size={18} /> Save Image
+                            </Button>
+                        </>
                     ) : (
-                        <div className="flex flex-col items-center justify-center text-center p-4">
-                            <Camera className="w-8 h-8 text-zinc-400 mb-1" />
-                            <span className="text-[11px] font-bold text-zinc-400 leading-tight">
-                                Tap to add
-                                <br />
-                                your photo
-                            </span>
-                        </div>
+                        <Button
+                            onClick={handlePhotoAreaClick}
+                            className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 cursor-pointer"
+                        >
+                            <Camera size={18} /> Select Photo
+                        </Button>
                     )}
                 </div>
 
@@ -597,69 +530,6 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                     </button>
                 )}
             </div>
-
-            {/* Preview & Action Buttons (Visible only if photo selected) */}
-            {selectedImage && (
-                <div className="space-y-6 animate-in fade-in duration-300 flex flex-col items-center">
-                    {/* Live Preview canvas container */}
-                    <div className="relative w-full max-w-[480px] flex flex-col items-center space-y-2">
-                        <div className="w-full flex justify-center shadow-2xl rounded-2xl overflow-hidden border border-zinc-800">
-                            <canvas
-                                ref={canvasRef}
-                                onMouseDown={handleMouseDown}
-                                onMouseMove={handleMouseMove}
-                                onMouseUp={handleMouseUp}
-                                onMouseLeave={handleMouseUp}
-                                onTouchStart={handleTouchStart}
-                                onTouchMove={handleTouchMove}
-                                onTouchEnd={handleTouchEnd}
-                                onWheel={handleWheel}
-                                style={{
-                                    width: '100%',
-                                    maxWidth: isMobile ? '380px' : '480px',
-                                    aspectRatio: '724/1024',
-                                    cursor: isDragging ? 'grabbing' : 'grab',
-                                    touchAction: 'none' // Prevent double-tap zooming on mobile
-                                }}
-                                className="block bg-[#0A1628] rounded-2xl"
-                            />
-                            {isDrawing && (
-                                <div className="absolute inset-0 bg-[#0A1628]/85 flex flex-col items-center justify-center space-y-2">
-                                    <Loader2 className="w-9 h-9 text-orange-500 animate-spin" />
-                                    <p className="text-xs text-zinc-400 font-medium tracking-wide">
-                                        Generating your DP Card...
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                        <span className="text-[10px] font-bold text-zinc-400 tracking-wider uppercase animate-pulse">
-                            💡 Drag photo to reposition · Scroll or pinch to zoom
-                        </span>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-[480px]">
-                        {canShare && (
-                            <Button
-                                onClick={handleShareWhatsApp}
-                                className="flex-1 h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 cursor-pointer"
-                            >
-                                <Share2 size={18} /> Share to WhatsApp
-                            </Button>
-                        )}
-                        <Button
-                            onClick={handleSaveImage}
-                            className={`flex-1 h-12 bg-transparent border-2 font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 cursor-pointer ${
-                                darkMode
-                                    ? 'border-zinc-300 text-zinc-200 hover:bg-zinc-800'
-                                    : 'border-[#0A1628] text-[#0A1628] hover:bg-[#0A1628] hover:text-white'
-                            }`}
-                        >
-                            <Download size={18} /> Save Image
-                        </Button>
-                    </div>
-                </div>
-            )}
 
             {/* Privacy Note */}
             <p className={`text-[10px] text-center tracking-wide leading-relaxed ${darkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
