@@ -11,36 +11,37 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-        // Log the complete request details for debugging
-        console.log('Incoming notification request:', {
-            method: req.method,
-            headers: req.headers,
-            body: req.body
-        });
+        let body = req.body;
+        if (typeof body === 'string') {
+            try {
+                body = JSON.parse(body);
+            } catch (e) {
+                console.error('Failed to parse req.body as JSON string:', body);
+            }
+        }
 
-        const record = req.body.record || req.body.new;
-        const old_record = req.body.old_record || req.body.old;
-        const type = req.body.type || 'UPDATE';
+        const record = body?.record ?? body?.new ?? body;
+        const old_record = body?.old_record ?? body?.old ?? null;
+        const type = body?.type || 'UPDATE';
 
         if (!record) {
-            console.error('Webhook trigger payload missing "record" / "new" object:', req.body);
+            console.error('Webhook trigger payload missing "record" / "new" object:', body);
             return res.status(400).json({ error: 'Missing webhook payload record' });
         }
 
         console.log(`Processing webhook event. Type: ${type}, ID: ${record.id}, Payment Status: ${record.payment_status}`);
 
-        // a) Checks if payment_status changed to 'cleared' or 'rejected'
-        const newStatus = record.payment_status;
-        const oldStatus = old_record?.payment_status;
-
-        if (newStatus !== 'cleared' && newStatus !== 'rejected') {
-            console.log(`No action: payment_status "${newStatus}" is not cleared or rejected.`);
-            return res.status(200).json({ message: 'No action: payment_status is not cleared or rejected' });
-        }
+        const oldStatus = body?.old_record?.payment_status ?? body?.old?.payment_status;
+        const newStatus = record?.payment_status;
 
         if (oldStatus === newStatus) {
-            console.log(`No action: payment_status did not change (old: "${oldStatus}", new: "${newStatus}").`);
-            return res.status(200).json({ message: 'No action: payment_status did not change' });
+            console.log(`No status change, skipping email (old: "${oldStatus}", new: "${newStatus}").`);
+            return res.status(200).json({ message: "No status change, skipping email" });
+        }
+
+        if (newStatus !== "cleared" && newStatus !== "rejected") {
+            console.log(`Status not actionable, skipping email: "${newStatus}"`);
+            return res.status(200).json({ message: "Status not actionable, skipping email" });
         }
 
         // b) Checks that the registrant has an email address (skip silently if not)

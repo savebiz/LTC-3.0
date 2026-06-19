@@ -10,12 +10,14 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-        // Log the complete request details for debugging
-        console.log('Incoming volunteer notification request:', {
-            method: req.method,
-            headers: req.headers,
-            body: req.body
-        });
+        let body = req.body;
+        if (typeof body === 'string') {
+            try {
+                body = JSON.parse(body);
+            } catch (e) {
+                console.error('Failed to parse req.body as JSON string:', body);
+            }
+        }
 
         const adminKeyHeader = req.headers['x-admin-key'] || '';
         const expectedSecret = process.env.ADMIN_SECRET || process.env.ADMIN_KEY || 'C3TC@admin2026';
@@ -25,28 +27,28 @@ export default async function handler(req: any, res: any) {
             return res.status(401).json({ error: 'Unauthorized: Invalid or missing admin secret key' });
         }
 
-        const record = req.body.record || req.body.new;
-        const old_record = req.body.old_record || req.body.old;
-        const type = req.body.type || 'UPDATE';
+        const record = body?.record ?? body?.new ?? body;
+        const old_record = body?.old_record ?? body?.old ?? null;
+        const type = body?.type || 'UPDATE';
 
         if (!record) {
-            console.error('Webhook trigger payload missing "record" / "new" object:', req.body);
+            console.error('Webhook trigger payload missing "record" / "new" object:', body);
             return res.status(400).json({ error: 'Missing webhook payload record' });
         }
 
         console.log(`Processing volunteer webhook event. Type: ${type}, ID: ${record.id}, Status: ${record.status}`);
 
-        const newStatus = record.status;
-        const oldStatus = old_record?.status;
+        const oldStatus = body?.old_record?.status ?? body?.old?.status;
+        const newStatus = record?.status;
 
-        if (newStatus !== 'confirmed' && newStatus !== 'rejected') {
-            console.log(`No action: status "${newStatus}" is not confirmed or rejected.`);
-            return res.status(200).json({ message: 'No action: status is not confirmed or rejected' });
+        if (oldStatus === newStatus) {
+            console.log(`No status change, skipping email (old: "${oldStatus}", new: "${newStatus}").`);
+            return res.status(200).json({ message: "No status change, skipping email" });
         }
 
-        if (oldStatus === newStatus && type === 'UPDATE') {
-            console.log(`No action: status did not change (old: "${oldStatus}", new: "${newStatus}").`);
-            return res.status(200).json({ message: 'No action: status did not change' });
+        if (newStatus !== "confirmed" && newStatus !== "rejected") {
+            console.log(`Status not actionable, skipping email: "${newStatus}"`);
+            return res.status(200).json({ message: "Status not actionable, skipping email" });
         }
 
         const email = record.email;
