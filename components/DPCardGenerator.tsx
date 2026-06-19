@@ -490,16 +490,15 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                 <div className="relative w-full max-w-[480px] flex flex-col items-center">
                     <div 
                         onClick={handlePhotoAreaClick}
-                        className="w-full flex justify-center shadow-2xl rounded-2xl overflow-hidden border border-zinc-800 relative cursor-pointer group"
+                        className="w-full shadow-2xl rounded-2xl overflow-hidden relative cursor-pointer group p-0 m-0"
                     >
                         <canvas
                             ref={setCanvasRef}
                             style={{
                                 width: '100%',
-                                maxWidth: isMobile ? '380px' : '480px',
                                 aspectRatio: '724/1024',
                             }}
-                            className="block bg-[#0A1628] rounded-2xl"
+                            className="block bg-[#0A1628] rounded-2xl p-0 m-0"
                         />
                         {!selectedImage && (
                             <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center transition-all group-hover:bg-black/50">
@@ -521,37 +520,28 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-[480px]">
-                    {selectedImage ? (
-                        <>
-                            {canShare && (
-                                <Button
-                                    onClick={handleShareWhatsApp}
-                                    className="flex-1 h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 cursor-pointer"
-                                >
-                                    <Share2 size={18} /> Share to WhatsApp
-                                </Button>
-                            )}
+                {selectedImage && (
+                    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-[480px]">
+                        {canShare && (
                             <Button
-                                onClick={handleSaveImage}
-                                className={`flex-1 h-12 bg-transparent border-2 font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 cursor-pointer ${
-                                    darkMode
-                                        ? 'border-zinc-300 text-zinc-200 hover:bg-zinc-800'
-                                        : 'border-[#0A1628] text-[#0A1628] hover:bg-[#0A1628] hover:text-white'
-                                }`}
+                                onClick={handleShareWhatsApp}
+                                className="flex-1 h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 cursor-pointer"
                             >
-                                <Download size={18} /> Save Image
+                                <Share2 size={18} /> Share to WhatsApp
                             </Button>
-                        </>
-                    ) : (
+                        )}
                         <Button
-                            onClick={handlePhotoAreaClick}
-                            className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 cursor-pointer"
+                            onClick={handleSaveImage}
+                            className={`flex-1 h-12 bg-transparent border-2 font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 cursor-pointer ${
+                                darkMode
+                                    ? 'border-zinc-300 text-zinc-200 hover:bg-zinc-800'
+                                    : 'border-[#0A1628] text-[#0A1628] hover:bg-[#0A1628] hover:text-white'
+                            }`}
                         >
-                            <Camera size={18} /> Select Photo
+                            <Download size={18} /> Save Image
                         </Button>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {selectedImage && (
                     <button
