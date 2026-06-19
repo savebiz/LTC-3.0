@@ -129,12 +129,8 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
                             <td style="vertical-align: middle; padding: 0;">
                                 <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" style="height: 50px; width: auto; display: block; border: 0;" />
                             </td>
-                            <td style="vertical-align: middle; padding: 0 16px;">
-                                <table cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; width: 1px;">
-                                    <tr>
-                                        <td style="width: 1px; height: 30px; background-color: #555966; font-size: 1px; line-height: 1px; padding: 0;">&nbsp;</td>
-                                    </tr>
-                                </table>
+                            <td style="vertical-align: middle; padding: 0 32px;">
+                                &nbsp;
                             </td>
                             <td style="vertical-align: middle; padding: 0;">
                                 <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" style="height: 50px; width: auto; display: block; border: 0;" />
@@ -253,12 +249,8 @@ async function sendRejectionEmail(record: any, host: string): Promise<boolean> {
                             <td style="vertical-align: middle; padding: 0;">
                                 <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" style="height: 50px; width: auto; display: block; border: 0;" />
                             </td>
-                            <td style="vertical-align: middle; padding: 0 16px;">
-                                <table cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; width: 1px;">
-                                    <tr>
-                                        <td style="width: 1px; height: 30px; background-color: #555966; font-size: 1px; line-height: 1px; padding: 0;">&nbsp;</td>
-                                    </tr>
-                                </table>
+                            <td style="vertical-align: middle; padding: 0 32px;">
+                                &nbsp;
                             </td>
                             <td style="vertical-align: middle; padding: 0;">
                                 <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" style="height: 50px; width: auto; display: block; border: 0;" />
@@ -298,7 +290,7 @@ async function sendRejectionEmail(record: any, host: string): Promise<boolean> {
                     ` : ''}
 
                     <p style="margin: 0 0 24px 0;">If you believe this is an error or have already made payment, please contact our team immediately with your reference code and proof of payment.</p>
-                    <p style="margin: 0 0 24px 0; font-size: 14px; color: #64748b;">Contact Details: <a href="mailto:support@c3tc.org" style="color: #ef4444; text-decoration: none; font-weight: bold;">support@c3tc.org</a> | +234 800 000 0000</p>
+                    <p style="margin: 0 0 24px 0; font-size: 14px; color: #64748b;">Contact Details: <a href="mailto:victor.sabo@hotmail.com" style="color: #ef4444; text-decoration: none; font-weight: bold;">victor.sabo@hotmail.com</a> | +234 809 400 7679 (WhatsApp chat only &mdash; no calls)</p>
 
                     <!-- CTA Button -->
                     <div style="text-align: center; margin: 32px 0 16px 0;">

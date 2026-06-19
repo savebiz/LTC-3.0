@@ -123,12 +123,8 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
                             <td style="vertical-align: middle; padding: 0;">
                                 <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" style="height: 50px; width: auto; display: block; border: 0;" />
                             </td>
-                            <td style="vertical-align: middle; padding: 0 16px;">
-                                <table cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; width: 1px;">
-                                    <tr>
-                                        <td style="width: 1px; height: 30px; background-color: #555966; font-size: 1px; line-height: 1px; padding: 0;">&nbsp;</td>
-                                    </tr>
-                                </table>
+                            <td style="vertical-align: middle; padding: 0 32px;">
+                                &nbsp;
                             </td>
                             <td style="vertical-align: middle; padding: 0;">
                                 <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" style="height: 50px; width: auto; display: block; border: 0;" />
@@ -236,12 +232,8 @@ async function sendRejectionEmail(record: any, host: string): Promise<boolean> {
                             <td style="vertical-align: middle; padding: 0;">
                                 <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" style="height: 50px; width: auto; display: block; border: 0;" />
                             </td>
-                            <td style="vertical-align: middle; padding: 0 16px;">
-                                <table cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; width: 1px;">
-                                    <tr>
-                                        <td style="width: 1px; height: 30px; background-color: #555966; font-size: 1px; line-height: 1px; padding: 0;">&nbsp;</td>
-                                    </tr>
-                                </table>
+                            <td style="vertical-align: middle; padding: 0 32px;">
+                                &nbsp;
                             </td>
                             <td style="vertical-align: middle; padding: 0;">
                                 <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" style="height: 50px; width: auto; display: block; border: 0;" />

@@ -200,39 +200,7 @@ export default async function handler(req: any, res: any) {
                 });
             }
 
-            // Trigger notifications if payment_status changed to 'cleared' or 'rejected'
-            const newStatus = updatedRecord.payment_status;
-            const oldStatus = oldRecord?.payment_status;
-            const wasNotificationSent = oldRecord?.notification_sent;
 
-            if (
-                updatedRecord.email &&
-                (newStatus === 'cleared' || newStatus === 'rejected') &&
-                newStatus !== oldStatus &&
-                !wasNotificationSent
-            ) {
-                const protocol = req.headers.host?.includes('localhost') || req.headers.host?.includes('127.0.0.1') ? 'http' : 'https';
-                const notifyUrl = `${protocol}://${req.headers.host}/api/notify-registrant`;
-                console.log(`Direct triggering notification endpoint ${notifyUrl} for record ${updatedRecord.id}`);
-
-                try {
-                    const notifyRes = await fetch(notifyUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            record: updatedRecord,
-                            old_record: oldRecord || { payment_status: 'pending' },
-                            type: 'UPDATE'
-                        })
-                    });
-                    const notifyData = await notifyRes.json().catch(() => ({}));
-                    console.log(`Direct notification endpoint response: status ${notifyRes.status}`, notifyData);
-                } catch (err) {
-                    console.error('Error calling notify-registrant API directly:', err);
-                }
-            }
         }
 
         return res.status(200).json({ success: true, data });

@@ -71,45 +71,7 @@ export default async function handler(req: any, res: any) {
             return res.status(500).json({ error: error.message });
         }
 
-        // Trigger volunteer notification synchronously
-        let emailSent = false;
-        if (data && data.length > 0) {
-            const updatedVol = data[0];
-            if (updatedVol.email && !updatedVol.notification_sent) {
-                const protocol = req.headers.host?.includes('localhost') || req.headers.host?.includes('127.0.0.1') ? 'http' : 'https';
-                const notifyUrl = `${protocol}://${req.headers.host}/api/notify-volunteer`;
-                const adminSecret = process.env.ADMIN_SECRET || process.env.ADMIN_KEY || 'C3TC@admin2026';
-                
-                try {
-                    const notifyRes = await fetch(notifyUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-admin-key': adminSecret
-                        },
-                        body: JSON.stringify({
-                            record: updatedVol,
-                            old_record: { status: 'pending' },
-                            type: 'UPDATE'
-                        })
-                    });
-                    
-                    if (notifyRes.ok) {
-                        const notifyJson = await notifyRes.json();
-                        if (notifyJson.success) {
-                            emailSent = true;
-                        }
-                    } else {
-                        const notifyErr = await notifyRes.json().catch(() => ({}));
-                        console.error('Notification API error status:', notifyRes.status, notifyErr);
-                    }
-                } catch (err) {
-                    console.error('Error triggering /api/notify-volunteer directly:', err);
-                }
-            }
-        }
-
-        return res.status(200).json({ success: true, data, emailSent });
+        return res.status(200).json({ success: true, data });
     } catch (err: any) {
         console.error('API /api/admin/update-volunteer Error:', err);
         return res.status(500).json({ error: err.message || 'Internal server error' });
