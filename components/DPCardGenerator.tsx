@@ -3,6 +3,9 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Camera, Download, Share2, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Import Base64-encoded static template data URLs to bypass CDN/domain CORS and tainted canvas issues
+import { DP_BLUE_BASE64, DP_ORANGE_BASE64 } from './DPCardAssets';
+
 interface Registrant {
     full_name?: string;
     fullName?: string;
@@ -26,6 +29,17 @@ const TEMPLATE_COORDS = {
     }
 };
 
+// Helper function to load an image asynchronously with CORS set to anonymous before src
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = (err) => reject(err);
+        img.src = src;
+    });
+};
+
 export default function DPCardGenerator({ registrants, darkMode = false }: DPCardGeneratorProps) {
     const [selectedRegIndex, setSelectedRegIndex] = useState(0);
     const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
@@ -37,7 +51,8 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
 
     // Template states
     const [templateVariant, setTemplateVariant] = useState<'blue' | 'orange'>('blue');
-    const [templateImage, setTemplateImage] = useState<HTMLImageElement | null>(null);
+    const [blueTemplate, setBlueTemplate] = useState<HTMLImageElement | null>(null);
+    const [orangeTemplate, setOrangeTemplate] = useState<HTMLImageElement | null>(null);
     
     // Inline validation error state
     const [uploadError, setUploadError] = useState<string | null>(null);
@@ -46,10 +61,6 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
     const cameraInputRef = useRef<HTMLInputElement | null>(null);
     const galleryInputRef = useRef<HTMLInputElement | null>(null);
     const activeObjectUrlRef = useRef<string | null>(null);
-
-    // Cache template images on mount to avoid redundant loads
-    const blueTemplateRef = useRef<HTMLImageElement | null>(null);
-    const orangeTemplateRef = useRef<HTMLImageElement | null>(null);
 
     // Detect device type & Web Share API support
     useEffect(() => {
@@ -73,35 +84,34 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         };
         checkDevice();
 
-        // Preload templates
-        const blueImg = new Image();
-        blueImg.onload = () => {
-            console.log("DPCardGenerator: Blue template preloaded successfully");
-            blueTemplateRef.current = blueImg;
-            if (templateVariant === 'blue') {
-                setTemplateImage(blueImg);
-            }
-        };
-        blueImg.onerror = (err) => {
-            console.error("DPCardGenerator: Failed to preload Blue template", err);
-        };
-        blueImg.src = '/DP_Blue.png';
+        let active = true;
 
-        const orangeImg = new Image();
-        orangeImg.onload = () => {
-            console.log("DPCardGenerator: Orange template preloaded successfully");
-            orangeTemplateRef.current = orangeImg;
-            if (templateVariant === 'orange') {
-                setTemplateImage(orangeImg);
-            }
-        };
-        orangeImg.onerror = (err) => {
-            console.error("DPCardGenerator: Failed to preload Orange template", err);
-        };
-        orangeImg.src = '/DP_Orange.png';
+        // Preload templates with CORS anonymous setting (crucial for Canvas drawImage export)
+        loadImage(DP_BLUE_BASE64)
+            .then((img) => {
+                if (active) {
+                    console.log("DPCardGenerator: Blue template preloaded successfully");
+                    setBlueTemplate(img);
+                }
+            })
+            .catch((err) => {
+                console.error("DPCardGenerator: Failed to preload Blue template", err);
+            });
+
+        loadImage(DP_ORANGE_BASE64)
+            .then((img) => {
+                if (active) {
+                    console.log("DPCardGenerator: Orange template preloaded successfully");
+                    setOrangeTemplate(img);
+                }
+            })
+            .catch((err) => {
+                console.error("DPCardGenerator: Failed to preload Orange template", err);
+            });
 
         // Cleanup Object URL on unmount
         return () => {
+            active = false;
             if (activeObjectUrlRef.current) {
                 console.log("DPCardGenerator: Unmounting, revoking active Object URL:", activeObjectUrlRef.current);
                 URL.revokeObjectURL(activeObjectUrlRef.current);
@@ -109,21 +119,18 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         };
     }, []);
 
-    // Load templates when variant is toggled
+    // Redraw canvas if template images, selected delegate, image, or template variant changes
     useEffect(() => {
-        if (templateVariant === 'blue' && blueTemplateRef.current) {
-            setTemplateImage(blueTemplateRef.current);
-        } else if (templateVariant === 'orange' && orangeTemplateRef.current) {
-            setTemplateImage(orangeTemplateRef.current);
-        }
-    }, [templateVariant]);
+        drawCanvas();
+    }, [blueTemplate, orangeTemplate, selectedImage, selectedRegIndex, templateVariant]);
 
-    // Redraw canvas if selected delegate, image, or template variant loads
-    useEffect(() => {
-        if (templateImage) {
+    // Callback ref to ensure we trigger drawCanvas the exact moment the canvas mounts in the DOM
+    const setCanvasRef = (node: HTMLCanvasElement | null) => {
+        canvasRef.current = node;
+        if (node) {
             drawCanvas();
         }
-    }, [templateImage, selectedImage, selectedRegIndex, templateVariant]);
+    };
 
     const handlePhotoAreaClick = () => {
         if (isMobile) {
@@ -143,7 +150,7 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         const hasImageExtension = /\.(jpg|jpeg|png|webp|gif|heic|heif|jfif|pjpeg|pjp)$/i.test(file.name);
         const isMimeImage = file.type.startsWith('image/');
         
-        // Accept file if it has a valid image extension, is mime image, or MIME is empty (rely on browser Image loader for structural validation)
+        // Accept file if it has a valid image extension, is mime image, or MIME is empty
         if (!isMimeImage && !hasImageExtension && file.type !== '') {
             setUploadError("Please select a valid image file (JPEG, PNG, WEBP).");
             setShowPhotoOptions(false);
@@ -167,6 +174,7 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         console.log("DPCardGenerator: Created object URL:", objectUrl);
 
         const img = new Image();
+        img.crossOrigin = "anonymous"; // Prevent tainted canvas issues from local Object URLs in strict browser environments
         img.onload = () => {
             console.log("DPCardGenerator: Image preloaded successfully via blob Object URL");
             setSelectedImage(img);
@@ -186,82 +194,106 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
     };
 
     const drawCanvas = async () => {
-        if (!templateImage || !canvasRef.current) return;
+        const templateImg = templateVariant === 'blue' ? blueTemplate : orangeTemplate;
+        if (!templateImg || !canvasRef.current) return;
         setIsDrawing(true);
 
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-            setIsDrawing(false);
-            return;
-        }
-
-        // Output matches the precise template resolution
-        canvas.width = 724;
-        canvas.height = 1024;
-
-        // Layer 1 - Draw pre-designed PNG base layer
-        ctx.drawImage(templateImage, 0, 0, 724, 1024);
-
-        const coords = TEMPLATE_COORDS[templateVariant];
-
-        // Layer 2 - Composite delegate photo inside circular cutout (Simple Center Crop)
-        if (selectedImage) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(coords.circle.x, coords.circle.y, coords.circle.r, 0, Math.PI * 2);
-            ctx.clip();
-
-            const imgWidth = selectedImage.width;
-            const imgHeight = selectedImage.height;
-
-            // 1. Calculate largest square crop from the center of the image
-            const minSide = Math.min(imgWidth, imgHeight);
-            const cropX = (imgWidth - minSide) / 2;
-            const cropY = (imgHeight - minSide) / 2;
-
-            // 2. Draw and scale the square crop into the circle boundary
-            const circleDiameter = coords.circle.r * 2;
-            const dx = coords.circle.x - coords.circle.r;
-            const dy = coords.circle.y - coords.circle.r;
-
-            ctx.drawImage(
-                selectedImage,
-                cropX, cropY, minSide, minSide, // source crop rect
-                dx, dy, circleDiameter, circleDiameter // destination circle bounds
-            );
-            ctx.restore();
-        }
-
-        // Layer 3 - Draw delegate name inside rectangular banner cutout
-        const currentReg = registrants[selectedRegIndex];
-        if (currentReg) {
-            const fullName = (currentReg.full_name || currentReg.fullName || 'DELEGATE').toUpperCase();
-            
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#0f172a'; // Bold dark navy text
-
-            let fontSize = 28;
-            ctx.font = `bold ${fontSize}px "Outfit", "Inter", sans-serif`;
-            let textWidth = ctx.measureText(fullName).width;
-            const maxTextWidth = coords.rect.w - 20;
-
-            while (textWidth > maxTextWidth && fontSize > 12) {
-                fontSize -= 1;
-                ctx.font = `bold ${fontSize}px "Outfit", "Inter", sans-serif`;
-                textWidth = ctx.measureText(fullName).width;
+        try {
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                setIsDrawing(false);
+                return;
             }
 
-            const textX = coords.rect.x + coords.rect.w / 2;
-            const textY = coords.rect.y + coords.rect.h / 2;
+            const doDraw = () => {
+                // Output matches the precise template resolution
+                canvas.width = 724;
+                canvas.height = 1024;
 
-            ctx.fillText(fullName, textX, textY);
-            ctx.restore();
+                // 1. Draw template PNG first (full canvas size)
+                ctx.drawImage(templateImg, 0, 0, 724, 1024);
+
+                const coords = TEMPLATE_COORDS[templateVariant];
+
+                // 2. Clip and draw user photo into the circular cutout area
+                if (selectedImage) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(coords.circle.x, coords.circle.y, coords.circle.r, 0, Math.PI * 2);
+                    ctx.clip();
+
+                    const imgWidth = selectedImage.width;
+                    const imgHeight = selectedImage.height;
+
+                    // Calculate largest square crop from the center of the image
+                    const minSide = Math.min(imgWidth, imgHeight);
+                    const cropX = (imgWidth - minSide) / 2;
+                    const cropY = (imgHeight - minSide) / 2;
+
+                    // Draw and scale the square crop into the circle boundary
+                    const circleDiameter = coords.circle.r * 2;
+                    const dx = coords.circle.x - coords.circle.r;
+                    const dy = coords.circle.y - coords.circle.r;
+
+                    ctx.drawImage(
+                        selectedImage,
+                        cropX, cropY, minSide, minSide, // source crop rect
+                        dx, dy, circleDiameter, circleDiameter // destination circle bounds
+                    );
+                    ctx.restore();
+                }
+
+                // 3. Draw delegate name inside rectangular banner cutout
+                const currentReg = registrants[selectedRegIndex];
+                if (currentReg) {
+                    const fullName = (currentReg.full_name || currentReg.fullName || 'DELEGATE').toUpperCase();
+                    
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#0f172a'; // Bold dark navy text
+
+                    let fontSize = 28;
+                    ctx.font = `bold ${fontSize}px "Outfit", "Inter", sans-serif`;
+                    let textWidth = ctx.measureText(fullName).width;
+                    const maxTextWidth = coords.rect.w - 20;
+
+                    while (textWidth > maxTextWidth && fontSize > 12) {
+                        fontSize -= 1;
+                        ctx.font = `bold ${fontSize}px "Outfit", "Inter", sans-serif`;
+                        textWidth = ctx.measureText(fullName).width;
+                    }
+
+                    const textX = coords.rect.x + coords.rect.w / 2;
+                    const textY = coords.rect.y + coords.rect.h / 2;
+
+                    ctx.fillText(fullName, textX, textY);
+                    ctx.restore();
+                }
+            };
+
+            // Wait for template image onload to fire if not already complete/loaded
+            if (templateImg.complete && templateImg.naturalWidth !== 0) {
+                doDraw();
+            } else {
+                templateImg.onload = () => {
+                    templateImg.onload = null;
+                    templateImg.onerror = null;
+                    doDraw();
+                };
+                templateImg.onerror = (err) => {
+                    templateImg.onload = null;
+                    templateImg.onerror = null;
+                    console.error("DPCardGenerator: Template image load failed in drawCanvas", err);
+                };
+            }
+
+        } catch (error) {
+            console.error("DPCardGenerator: Error drawing canvas:", error);
+        } finally {
+            setIsDrawing(false);
         }
-
-        setIsDrawing(false);
     };
 
     const handleSaveImage = () => {
@@ -461,7 +493,7 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
                         className="w-full flex justify-center shadow-2xl rounded-2xl overflow-hidden border border-zinc-800 relative cursor-pointer group"
                     >
                         <canvas
-                            ref={canvasRef}
+                            ref={setCanvasRef}
                             style={{
                                 width: '100%',
                                 maxWidth: isMobile ? '380px' : '480px',

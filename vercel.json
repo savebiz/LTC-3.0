@@ -1,8 +1,28 @@
 {
-    "rewrites": [
+  "headers": [
+    {
+      "source": "/DP_Blue.png",
+      "headers": [
         {
-            "source": "/((?!api/).*)",
-            "destination": "/index.html"
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
-    ]
+      ]
+    },
+    {
+      "source": "/DP_Orange.png",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
 }
