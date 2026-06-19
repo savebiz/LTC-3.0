@@ -92,7 +92,8 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
     const amountPaid = amount_due ? amount_due.toLocaleString() : '---';
 
     const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-    const logoUrl = `${protocol}://${host}/logos/LTC_Logo_white.png`;
+    const dtceLogoUrl = `${protocol}://${host}/logos/DTCE_Junior_Church_Revised-bg.png`;
+    const ltcLogoUrl = `${protocol}://${host}/logos/LTC_Logo_white.png`;
     const statusUrl = `https://continent3teens.cc/check-status?ref=${batch_reference || ''}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr_code_hash || '')}`;
 
@@ -109,8 +110,25 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
             <!-- Header Banner -->
             <tr>
                 <td style="background-color: #0a0f1e; padding: 40px 20px; text-align: center;">
-                    <img src="${logoUrl}" alt="C3TC Logo" style="height: 80px; width: auto; display: block; margin: 0 auto 16px auto;" />
-                    <h3 style="color: #f97316; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">T.I.M.E '26</h3>
+                    <!-- Dual Logo Table -->
+                    <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto; border-spacing: 0;">
+                        <tr>
+                            <td style="vertical-align: middle; padding: 0;">
+                                <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" style="height: 50px; width: auto; display: block; border: 0;" />
+                            </td>
+                            <td style="vertical-align: middle; padding: 0 16px;">
+                                <table cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; width: 1px;">
+                                    <tr>
+                                        <td style="width: 1px; height: 30px; background-color: #555966; font-size: 1px; line-height: 1px; padding: 0;">&nbsp;</td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td style="vertical-align: middle; padding: 0;">
+                                <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" style="height: 50px; width: auto; display: block; border: 0;" />
+                            </td>
+                        </tr>
+                    </table>
+                    <h3 style="color: #f97316; font-size: 20px; font-weight: 800; margin: 16px 0 0 0; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">T.I.M.E '26</h3>
                 </td>
             </tr>
 
@@ -199,7 +217,9 @@ async function sendRejectionEmail(record: any, host: string): Promise<boolean> {
     const amountText = amount_due ? amount_due.toLocaleString() : '---';
 
     const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-    const statusUrl = `${protocol}://${host}/check-status?ref=${batch_reference || ''}`;
+    const dtceLogoUrl = `${protocol}://${host}/logos/DTCE_Junior_Church_Revised-bg.png`;
+    const ltcLogoUrl = `${protocol}://${host}/logos/LTC_Logo_white.png`;
+    const statusUrl = `https://continent3teens.cc/check-status?ref=${batch_reference || ''}`;
 
     const htmlContent = `
     <!DOCTYPE html>
@@ -207,71 +227,94 @@ async function sendRejectionEmail(record: any, host: string): Promise<boolean> {
     <head>
         <meta charset="utf-8">
         <title>Action Required: C3TC Registration Payment Issue</title>
-        <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; color: #27272a; margin: 0; padding: 0; }
-            .container { max-width: 600px; margin: 40px auto; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
-            .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; padding: 40px 32px; text-align: center; }
-            .header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-            .content { padding: 32px; line-height: 1.6; font-size: 15px; }
-            .greeting { font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 16px; color: #09090b; }
-            .details-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 24px 0; }
-            .details-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-top: 0; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; letter-spacing: 0.5px; }
-            .detail-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
-            .detail-row:last-child { margin-bottom: 0; }
-            .detail-label { color: #64748b; font-weight: 500; }
-            .detail-value { font-weight: 700; color: #0f172a; text-align: right; }
-            .detail-value.mono { font-family: monospace; font-size: 15px; color: #dc2626; }
-            .reason-box { background-color: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; margin: 20px 0; color: #991b1b; font-size: 14px; }
-            .reason-title { font-weight: 700; margin-bottom: 6px; }
-            .button-container { text-align: center; margin: 32px 0; }
-            .btn { display: inline-block; background-color: #ef4444; color: #ffffff !important; font-weight: 700; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 10px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); transition: all 0.2s; }
-            .footer { background-color: #f4f4f5; color: #71717a; text-align: center; padding: 24px; font-size: 12px; border-top: 1px solid #e4e4e7; }
-        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>C3TC 3.0</h1>
-            </div>
-            <div class="content">
-                <p class="greeting">Hi ${full_name},</p>
-                <p>Unfortunately, we were unable to verify your payment for the Continent 3 Teens Conference.</p>
-                
-                <div class="details-card">
-                    <h3 class="details-title">Registration Summary</h3>
-                    <div class="detail-row">
-                        <span class="detail-label">Reference Code:</span>
-                        <span class="detail-value mono">${batch_reference || '---'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Amount Due:</span>
-                        <span class="detail-value">₦${amountText}</span>
-                    </div>
-                </div>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; color: #27272a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 600px; margin: 40px auto; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; overflow: hidden; border-spacing: 0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
+            <!-- Header Banner -->
+            <tr>
+                <td style="background-color: #0a0f1e; padding: 40px 20px; text-align: center;">
+                    <!-- Dual Logo Table -->
+                    <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto; border-spacing: 0;">
+                        <tr>
+                            <td style="vertical-align: middle; padding: 0;">
+                                <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" style="height: 50px; width: auto; display: block; border: 0;" />
+                            </td>
+                            <td style="vertical-align: middle; padding: 0 16px;">
+                                <table cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; width: 1px;">
+                                    <tr>
+                                        <td style="width: 1px; height: 30px; background-color: #555966; font-size: 1px; line-height: 1px; padding: 0;">&nbsp;</td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td style="vertical-align: middle; padding: 0;">
+                                <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" style="height: 50px; width: auto; display: block; border: 0;" />
+                            </td>
+                        </tr>
+                    </table>
+                    <h3 style="color: #ef4444; font-size: 20px; font-weight: 800; margin: 16px 0 0 0; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">Action Required</h3>
+                </td>
+            </tr>
 
-                ${rejection_reason ? `
-                <div class="reason-box">
-                    <div class="reason-title">Reason for Rejection:</div>
-                    <div>${rejection_reason}</div>
-                </div>
-                ` : ''}
-                
-                <p>If you believe this is an error or have already made payment, please contact our team immediately with your reference code and proof of payment.</p>
-                
-                <p>Contact Details: support@c3tc.org | +234 800 000 0000</p>
-                
-                <div class="button-container">
-                    <a href="${statusUrl}" target="_blank" class="btn">View Your Registration →</a>
-                </div>
-                
-                <p>Best regards,<br><strong>The C3TC Planning Committee</strong></p>
-            </div>
-            <div class="footer">
-                This is an automated notification email. Please do not reply directly to this email.
-            </div>
-        </div>
+            <!-- Greeting & Message -->
+            <tr>
+                <td style="background-color: #ffffff; padding: 32px; font-size: 15px; color: #27272a; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                    <p style="font-size: 16px; font-weight: bold; color: #09090b; margin-top: 0; margin-bottom: 12px;">Hi ${full_name},</p>
+                    <p style="margin: 0 0 24px 0;">Unfortunately, we were unable to verify your payment for the Continent 3 Teens Conference.</p>
+
+                    <!-- Details block -->
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                        <h4 style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-top: 0; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">Registration Summary</h4>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b; font-weight: 500;">Reference Code:</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #dc2626; font-family: monospace; font-size: 15px;">${batch_reference || '---'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b; font-weight: 500;">Amount Due:</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">₦${amountText}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    ${rejection_reason ? `
+                    <div style="background-color: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; margin: 20px 0; color: #991b1b; font-size: 14px;">
+                        <div style="font-weight: 700; margin-bottom: 6px;">Reason for Rejection:</div>
+                        <div>${rejection_reason}</div>
+                    </div>
+                    ` : ''}
+
+                    <p style="margin: 0 0 24px 0;">If you believe this is an error or have already made payment, please contact our team immediately with your reference code and proof of payment.</p>
+                    <p style="margin: 0 0 24px 0; font-size: 14px; color: #64748b;">Contact Details: <a href="mailto:support@c3tc.org" style="color: #ef4444; text-decoration: none; font-weight: bold;">support@c3tc.org</a> | +234 800 000 0000</p>
+
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 32px 0 16px 0;">
+                        <a href="${statusUrl}" target="_blank" style="display: block; background-color: #ef4444; color: #ffffff !important; font-weight: bold; font-size: 15px; text-decoration: none; padding: 14px 24px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2); text-align: center;">View Your Registration →</a>
+                    </div>
+
+                    <p style="margin: 24px 0 0 0;">Best regards,<br><strong>The C3TC Planning Committee</strong></p>
+                </td>
+            </tr>
+
+            <!-- Hidden space to break Gmail pattern detection -->
+            <tr>
+                <td style="padding: 0; margin: 0; line-height: 0;">
+                    <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+                        &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+                    </div>
+                </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+                <td style="background-color: #0a0f1e; color: #ffffff; padding: 32px 24px; text-align: center; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; max-width: 600px;">
+                    <p style="color: #71717a; font-size: 12px; margin: 0; line-height: 1.5;">This is an automated notification email. Please do not reply directly to this email.</p>
+                </td>
+            </tr>
+        </table>
     </body>
     </html>
+    `;</html>
     `;
 
     return sendResendEmail(email, 'Action Required: C3TC Registration Payment Issue', htmlContent);

@@ -89,7 +89,8 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
     const { full_name, email, role, department, region } = record;
 
     const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-    const logoUrl = `${protocol}://${host}/logos/LTC_Logo_white.png`;
+    const dtceLogoUrl = `${protocol}://${host}/logos/DTCE_Junior_Church_Revised-bg.png`;
+    const ltcLogoUrl = `${protocol}://${host}/logos/LTC_Logo_white.png`;
 
     const htmlContent = `
     <!DOCTYPE html>
@@ -104,8 +105,25 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
             <!-- Header Banner -->
             <tr>
                 <td style="background-color: #0a0f1e; padding: 40px 20px; text-align: center;">
-                    <img src="${logoUrl}" alt="C3TC Logo" style="height: 80px; width: auto; display: block; margin: 0 auto 16px auto;" />
-                    <h3 style="color: #f97316; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">T.I.M.E '26</h3>
+                    <!-- Dual Logo Table -->
+                    <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto; border-spacing: 0;">
+                        <tr>
+                            <td style="vertical-align: middle; padding: 0;">
+                                <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" style="height: 50px; width: auto; display: block; border: 0;" />
+                            </td>
+                            <td style="vertical-align: middle; padding: 0 16px;">
+                                <table cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; width: 1px;">
+                                    <tr>
+                                        <td style="width: 1px; height: 30px; background-color: #555966; font-size: 1px; line-height: 1px; padding: 0;">&nbsp;</td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td style="vertical-align: middle; padding: 0;">
+                                <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" style="height: 50px; width: auto; display: block; border: 0;" />
+                            </td>
+                        </tr>
+                    </table>
+                    <h3 style="color: #f97316; font-size: 20px; font-weight: 800; margin: 16px 0 0 0; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">T.I.M.E '26</h3>
                 </td>
             </tr>
 
@@ -183,7 +201,8 @@ async function sendRejectionEmail(record: any, host: string): Promise<boolean> {
     const { full_name, email, rejection_reason } = record;
 
     const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-    const logoUrl = `${protocol}://${host}/logos/LTC_Logo_white.png`;
+    const dtceLogoUrl = `${protocol}://${host}/logos/DTCE_Junior_Church_Revised-bg.png`;
+    const ltcLogoUrl = `${protocol}://${host}/logos/LTC_Logo_white.png`;
     const ctaUrl = 'https://continent3teens.cc';
 
     const htmlContent = `
@@ -199,8 +218,25 @@ async function sendRejectionEmail(record: any, host: string): Promise<boolean> {
             <!-- Header Banner -->
             <tr>
                 <td style="background-color: #0a0f1e; padding: 40px 20px; text-align: center;">
-                    <img src="${logoUrl}" alt="C3TC Logo" style="height: 80px; width: auto; display: block; margin: 0 auto 16px auto;" />
-                    <h3 style="color: #f97316; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">T.I.M.E '26</h3>
+                    <!-- Dual Logo Table -->
+                    <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto; border-spacing: 0;">
+                        <tr>
+                            <td style="vertical-align: middle; padding: 0;">
+                                <img src="${dtceLogoUrl}" alt="DTCE Junior Church Global" style="height: 50px; width: auto; display: block; border: 0;" />
+                            </td>
+                            <td style="vertical-align: middle; padding: 0 16px;">
+                                <table cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; width: 1px;">
+                                    <tr>
+                                        <td style="width: 1px; height: 30px; background-color: #555966; font-size: 1px; line-height: 1px; padding: 0;">&nbsp;</td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td style="vertical-align: middle; padding: 0;">
+                                <img src="${ltcLogoUrl}" alt="Continent 3 Teens Conference" style="height: 50px; width: auto; display: block; border: 0;" />
+                            </td>
+                        </tr>
+                    </table>
+                    <h3 style="color: #ef4444; font-size: 20px; font-weight: 800; margin: 16px 0 0 0; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">Update on Application</h3>
                 </td>
             </tr>
 
