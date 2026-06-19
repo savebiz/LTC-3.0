@@ -11,10 +11,19 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-        const { record, old_record, type } = req.body;
+        // Log the complete request details for debugging
+        console.log('Incoming notification request:', {
+            method: req.method,
+            headers: req.headers,
+            body: req.body
+        });
+
+        const record = req.body.record || req.body.new;
+        const old_record = req.body.old_record || req.body.old;
+        const type = req.body.type || 'UPDATE';
 
         if (!record) {
-            console.error('Webhook trigger payload missing "record" object:', req.body);
+            console.error('Webhook trigger payload missing "record" / "new" object:', req.body);
             return res.status(400).json({ error: 'Missing webhook payload record' });
         }
 
@@ -25,10 +34,12 @@ export default async function handler(req: any, res: any) {
         const oldStatus = old_record?.payment_status;
 
         if (newStatus !== 'cleared' && newStatus !== 'rejected') {
+            console.log(`No action: payment_status "${newStatus}" is not cleared or rejected.`);
             return res.status(200).json({ message: 'No action: payment_status is not cleared or rejected' });
         }
 
         if (oldStatus === newStatus) {
+            console.log(`No action: payment_status did not change (old: "${oldStatus}", new: "${newStatus}").`);
             return res.status(200).json({ message: 'No action: payment_status did not change' });
         }
 
@@ -57,6 +68,7 @@ export default async function handler(req: any, res: any) {
         }
 
         if (!emailSent) {
+            console.error(`Email dispatch returned false for registrant ${record.id}`);
             return res.status(500).json({ error: 'Failed to send email' });
         }
 
@@ -314,7 +326,6 @@ async function sendRejectionEmail(record: any, host: string): Promise<boolean> {
         </table>
     </body>
     </html>
-    `;</html>
     `;
 
     return sendResendEmail(email, 'Action Required: C3TC Registration Payment Issue', htmlContent);
@@ -330,6 +341,7 @@ async function sendResendEmail(to: string, subject: string, htmlContent: string)
     }
 
     try {
+        console.log(`Sending email via Resend: to=${to}, subject="${subject}", from=${FROM_EMAIL}`);
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -344,12 +356,25 @@ async function sendResendEmail(to: string, subject: string, htmlContent: string)
             })
         });
 
-        const resData = await response.json();
+        const responseText = await response.text();
+        console.log(`Resend API HTTP status: ${response.status}`);
+        
+        let resData: any = {};
+        try {
+            resData = JSON.parse(responseText);
+        } catch (e) {
+            console.warn('Failed to parse Resend API response as JSON:', responseText);
+        }
+
         if (response.ok) {
-            console.log(`Email successfully dispatched via Resend. ID: ${resData.id}`);
+            console.log(`Email successfully dispatched via Resend. ID: ${resData.id || 'unknown'}`);
             return true;
         } else {
-            console.error('Resend API returned error response:', resData);
+            console.error('Resend API returned error response:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: resData || responseText
+            });
             return false;
         }
     } catch (error) {

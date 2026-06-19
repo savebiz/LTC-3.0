@@ -1,6 +1,6 @@
 import { getSupabaseAdmin } from './admin/db_helper.js';
 
-const FROM_EMAIL = `C3TC Team <${process.env.RESEND_FROM_EMAIL || 'team@continent3teens.cc'}>`;
+const FROM_EMAIL = `C3TC Team <${process.env.RESEND_FROM_EMAIL || 'noreply@continent3teens.cc'}>`;
 const resendApiKey = process.env.RESEND_API_KEY || '';
 
 export default async function handler(req: any, res: any) {
@@ -10,10 +10,18 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
+        // Log the complete request details for debugging
+        console.log('Incoming volunteer notification request:', {
+            method: req.method,
+            headers: req.headers,
+            body: req.body
+        });
+
         const adminKeyHeader = req.headers['x-admin-key'] || '';
         const expectedSecret = process.env.ADMIN_SECRET || process.env.ADMIN_KEY || 'C3TC@admin2026';
 
         if (adminKeyHeader !== expectedSecret) {
+            console.warn('Unauthorized volunteer notification attempt - key mismatch');
             return res.status(401).json({ error: 'Unauthorized: Invalid or missing admin secret key' });
         }
 
@@ -32,10 +40,12 @@ export default async function handler(req: any, res: any) {
         const oldStatus = old_record?.status;
 
         if (newStatus !== 'confirmed' && newStatus !== 'rejected') {
+            console.log(`No action: status "${newStatus}" is not confirmed or rejected.`);
             return res.status(200).json({ message: 'No action: status is not confirmed or rejected' });
         }
 
         if (oldStatus === newStatus && type === 'UPDATE') {
+            console.log(`No action: status did not change (old: "${oldStatus}", new: "${newStatus}").`);
             return res.status(200).json({ message: 'No action: status did not change' });
         }
 
@@ -296,6 +306,7 @@ async function sendResendEmail(to: string, subject: string, htmlContent: string)
     }
 
     try {
+        console.log(`Sending volunteer email via Resend: to=${to}, subject="${subject}", from=${FROM_EMAIL}`);
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -310,12 +321,25 @@ async function sendResendEmail(to: string, subject: string, htmlContent: string)
             })
         });
 
-        const resData = await response.json();
+        const responseText = await response.text();
+        console.log(`Resend API HTTP status: ${response.status}`);
+        
+        let resData: any = {};
+        try {
+            resData = JSON.parse(responseText);
+        } catch (e) {
+            console.warn('Failed to parse Resend API response as JSON:', responseText);
+        }
+
         if (response.ok) {
-            console.log(`Email successfully dispatched via Resend. ID: ${resData.id}`);
+            console.log(`Email successfully dispatched via Resend. ID: ${resData.id || 'unknown'}`);
             return true;
         } else {
-            console.error('Resend API returned error response:', resData);
+            console.error('Resend API returned error response:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: resData || responseText
+            });
             return false;
         }
     } catch (error) {

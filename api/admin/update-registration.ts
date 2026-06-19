@@ -215,22 +215,23 @@ export default async function handler(req: any, res: any) {
                 const notifyUrl = `${protocol}://${req.headers.host}/api/notify-registrant`;
                 console.log(`Direct triggering notification endpoint ${notifyUrl} for record ${updatedRecord.id}`);
 
-                fetch(notifyUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        record: updatedRecord,
-                        old_record: oldRecord || { payment_status: 'pending' },
-                        type: 'UPDATE'
-                    })
-                }).then(async (notifyRes) => {
+                try {
+                    const notifyRes = await fetch(notifyUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            record: updatedRecord,
+                            old_record: oldRecord || { payment_status: 'pending' },
+                            type: 'UPDATE'
+                        })
+                    });
                     const notifyData = await notifyRes.json().catch(() => ({}));
                     console.log(`Direct notification endpoint response: status ${notifyRes.status}`, notifyData);
-                }).catch(err => {
+                } catch (err) {
                     console.error('Error calling notify-registrant API directly:', err);
-                });
+                }
             }
         }
 
