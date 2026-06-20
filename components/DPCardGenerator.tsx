@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Camera, Download, Share2, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import imageCompression from 'browser-image-compression';
 
 // Import Base64-encoded static template data URLs to bypass CDN/domain CORS and tainted canvas issues
 import { DP_BLUE_BASE64, DP_ORANGE_BASE64 } from './DPCardAssets';
@@ -39,6 +40,33 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
         img.src = src;
     });
 };
+
+// Compress and convert any selected image (HEIC, PNG, etc.) to a standard JPEG before rendering
+async function loadPhotoFile(file: File): Promise<{ img: HTMLImageElement; objectUrl: string }> {
+    const options = {
+        maxSizeMB: 2,
+        maxWidthOrHeight: 1080,
+        useWebWorker: true,
+        fileType: 'image/jpeg', // always convert output to JPEG
+    };
+
+    try {
+        const compressed = await imageCompression(file, options);
+        const url = URL.createObjectURL(compressed);
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve({ img, objectUrl: url });
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                reject(new Error('Failed to load converted image'));
+            };
+            img.src = url;
+        });
+    } catch (err) {
+        throw new Error('Unable to process this photo. Please try a different image.');
+    }
+}
 
 export default function DPCardGenerator({ registrants, darkMode = false }: DPCardGeneratorProps) {
     const [selectedRegIndex, setSelectedRegIndex] = useState(0);
@@ -140,55 +168,32 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         setUploadError(null);
         const file = e.target.files?.[0];
         console.log("DPCardGenerator: handleFileChange selected file:", file ? { name: file.name, type: file.type, size: file.size } : null);
         if (!file) return;
 
-        // Check file extension as a soft fallback to reject non-image files immediately (like PDF or zip)
-        const ext = file.name.split('.').pop()?.toLowerCase() || '';
-        const supportedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'gif', 'jfif', 'pjpeg', 'pjp'];
-        if (ext && !supportedExtensions.includes(ext)) {
-            setUploadError("Please select a valid image file (JPEG, PNG, WEBP).");
-            setShowPhotoOptions(false);
-            return;
-        }
-
-        const maxSize = 15 * 1024 * 1024; // 15MB limit
-        if (file.size > maxSize) {
-            setUploadError("The selected file exceeds the 15MB limit. Please upload a smaller photo.");
-            setShowPhotoOptions(false);
-            return;
-        }
-
+        // Clean up previous Object URL to prevent memory leaks
         if (activeObjectUrlRef.current) {
             console.log("DPCardGenerator: Revoking old object URL:", activeObjectUrlRef.current);
             URL.revokeObjectURL(activeObjectUrlRef.current);
+            activeObjectUrlRef.current = null;
         }
 
-        const objectUrl = URL.createObjectURL(file);
-        activeObjectUrlRef.current = objectUrl;
-        console.log("DPCardGenerator: Created object URL:", objectUrl);
-
-        const img = new Image();
-        img.crossOrigin = "anonymous"; // Prevent tainted canvas issues from local Object URLs in strict browser environments
-        img.onload = () => {
-            console.log("DPCardGenerator: Image preloaded successfully via blob Object URL");
+        try {
+            // Compress and convert the file to JPEG before canvas drawing
+            const { img, objectUrl } = await loadPhotoFile(file);
+            activeObjectUrlRef.current = objectUrl;
+            console.log("DPCardGenerator: Image preloaded successfully via compressed blob Object URL:", objectUrl);
             setSelectedImage(img);
             setUploadError(null);
             setShowPhotoOptions(false);
-        };
-        img.onerror = (err) => {
-            console.error("DPCardGenerator: Image element load failed for object URL:", objectUrl, err);
-            setUploadError("This photo format isn't supported by your browser. Please select a standard JPEG or PNG image.");
-            if (activeObjectUrlRef.current === objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-                activeObjectUrlRef.current = null;
-            }
+        } catch (err) {
+            console.error("DPCardGenerator: Error processing file:", err);
+            setUploadError("Unable to process this photo. Please try a different image or use Take a Selfie.");
             setShowPhotoOptions(false);
-        };
-        img.src = objectUrl;
+        }
     };
 
     const drawCanvas = async () => {
