@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -7,10 +7,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { 
   Download, Search, Loader2, Users, CheckCircle2, 
   AlertCircle, MapPin, CreditCard, UserCheck, Trash2,
-  History, X, Clock, FileText, Paperclip, Eye, Zap
+  History, X, Clock, FileText, Paperclip, Eye, Zap,
+  ChevronDown
 } from 'lucide-react';
 import { LAGOS_REGIONS, OGUN_REGIONS } from "@/constants";
 import { useDialog } from '../ui/DialogProvider';
+
+const allRegions = [...LAGOS_REGIONS, ...OGUN_REGIONS, "Other (Outside Lagos/Ogun)"];
 
 interface Registration {
   id: string;
@@ -40,7 +43,10 @@ export default function RegistrationTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [regionFilter, setRegionFilter] = useState('all');
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [regionSearch, setRegionSearch] = useState('');
+  const [isRegionDropdownOpen, setIsRegionDropdownOpen] = useState(false);
+  const regionDropdownRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Receipt view state
@@ -58,6 +64,16 @@ export default function RegistrationTable() {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const { confirm, toast } = useDialog();
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (regionDropdownRef.current && !regionDropdownRef.current.contains(event.target as Node)) {
+        setIsRegionDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchRegistrations();
@@ -348,10 +364,9 @@ export default function RegistrationTable() {
     }
 
     // 4. Region filter match
-    const regionGroup = getRegionGroup(r.region);
     let matchesRegion = true;
-    if (regionFilter !== 'all') {
-      matchesRegion = regionGroup === regionFilter;
+    if (selectedRegions.length > 0) {
+      matchesRegion = selectedRegions.includes(r.region);
     }
 
     return matchesSearch && matchesStatus && matchesCategory && matchesRegion;
@@ -385,6 +400,240 @@ export default function RegistrationTable() {
     a.href = url;
     a.download = `ltc_registrations_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+  }
+
+  function exportPDF() {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const regionsText = selectedRegions.length > 0 ? selectedRegions.join(', ') : 'All Regions';
+    const exportDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    const totalAmount = filteredData.reduce((sum, r) => sum + (Number(r.amount_due) || 0), 0);
+
+    const rows = filteredData.map(r => {
+      const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
+      const isPending = r.payment_status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'pending_payment' || r.status?.toLowerCase() === 'pending_verification';
+      const isArrival = r.payment_status?.toLowerCase() === 'pay_on_arrival' || r.status?.toLowerCase() === 'pay_on_arrival' || r.payment_method?.toLowerCase() === 'pay_on_arrival';
+      const isRejected = r.status?.toLowerCase() === 'rejected' || r.payment_status?.toLowerCase() === 'rejected';
+      
+      let statusClass = 'status-pending';
+      let statusLabel = r.payment_status || r.status || 'Pending';
+      if (isCleared) {
+        statusClass = 'status-cleared';
+        statusLabel = 'Cleared';
+      } else if (isArrival) {
+        statusClass = 'status-arrival';
+        statusLabel = 'Pay on Arrival';
+      } else if (isRejected) {
+        statusClass = 'status-rejected';
+        statusLabel = 'Rejected';
+      } else if (isPending) {
+        statusClass = 'status-pending';
+        statusLabel = 'Pending';
+      }
+
+      return `
+        <tr>
+          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;"><span class="ref-code">${r.batch_reference || ''}</span></td>
+          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px; font-weight: bold; color: #0f172a;">${r.full_name || ''}</td>
+          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;"><span class="category-badge">${r.category || ''}</span></td>
+          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">${r.region || ''}</td>
+          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">${r.province || '-'}</td>
+          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">
+            <span class="status-badge ${statusClass}">${statusLabel}</span>
+          </td>
+          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px; color: #64748b;">${new Date(r.created_at).toLocaleDateString()}</td>
+        </tr>
+      `;
+    }).join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>C3TC Registration List</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+            
+            body {
+              font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+              color: #1e293b;
+              padding: 40px;
+              background-color: #ffffff;
+              margin: 0;
+            }
+            
+            .header-container {
+              border-bottom: 2px solid #f1f5f9;
+              padding-bottom: 16px;
+              margin-bottom: 24px;
+            }
+            
+            h1 {
+              font-size: 22px;
+              font-weight: 800;
+              color: #0f172a;
+              margin: 0 0 6px 0;
+              letter-spacing: -0.5px;
+            }
+            
+            .meta-grid {
+              display: grid;
+              grid-template-columns: 3fr 1fr;
+              gap: 15px;
+              font-size: 12px;
+              color: #64748b;
+            }
+            
+            .meta-label {
+              font-weight: 700;
+              color: #94a3b8;
+              text-transform: uppercase;
+              font-size: 9px;
+              letter-spacing: 0.5px;
+            }
+            
+            .meta-value {
+              font-weight: 600;
+              color: #334155;
+              margin-top: 2px;
+            }
+            
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+              font-size: 11px;
+              text-align: left;
+            }
+            
+            th {
+              background-color: #f8fafc;
+              color: #475569;
+              font-weight: 700;
+              border-bottom: 2px solid #e2e8f0;
+              padding: 10px 8px;
+              text-transform: uppercase;
+              font-size: 9px;
+              letter-spacing: 0.5px;
+            }
+            
+            .ref-code {
+              font-family: monospace;
+              font-weight: 700;
+              color: #ea580c;
+              font-size: 12px;
+            }
+            
+            .category-badge {
+              font-weight: 600;
+              text-transform: capitalize;
+            }
+            
+            .status-badge {
+              display: inline-block;
+              padding: 3px 8px;
+              border-radius: 6px;
+              font-size: 9px;
+              font-weight: 700;
+              text-transform: uppercase;
+              border: 1px solid transparent;
+            }
+            
+            .status-cleared { background-color: #ecfdf5; border-color: #d1fae5; color: #065f46; }
+            .status-pending { background-color: #fff7ed; border-color: #ffedd5; color: #9a3412; }
+            .status-arrival { background-color: #eff6ff; border-color: #dbeafe; color: #1e40af; }
+            .status-rejected { background-color: #fef2f2; border-color: #fee2e2; color: #991b1b; }
+            
+            .footer-container {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-top: 2px solid #f1f5f9;
+              padding-top: 20px;
+              margin-top: 20px;
+            }
+            
+            .footer-card {
+              background-color: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              padding: 12px 24px;
+              min-width: 150px;
+            }
+            
+            .footer-label {
+              font-size: 10px;
+              color: #64748b;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            .footer-value {
+              font-size: 22px;
+              font-weight: 800;
+              color: #0f172a;
+              margin-top: 4px;
+            }
+            
+            @media print {
+              body { padding: 0; }
+              @page { size: A4 landscape; margin: 1.2cm; }
+              tr { page-break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-container">
+            <h1>C3TC T.I.M.E '26 — Registration List</h1>
+            <div class="meta-grid">
+              <div>
+                <div class="meta-label">Selected Region(s)</div>
+                <div class="meta-value">${regionsText}</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="meta-label">Export Date</div>
+                <div class="meta-value">${exportDate}</div>
+              </div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Ref Code</th>
+                <th>Full Name</th>
+                <th>Category</th>
+                <th>Region</th>
+                <th>Province</th>
+                <th>Payment Status</th>
+                <th>Registration Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+          <div class="footer-container">
+            <div class="footer-card">
+              <div class="footer-label">Total Delegates</div>
+              <div class="footer-value">${filteredData.length}</div>
+            </div>
+            <div class="footer-card" style="text-align: right;">
+              <div class="footer-label">Total Amount Due</div>
+              <div class="footer-value" style="font-family: monospace;">₦${totalAmount.toLocaleString()}</div>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   }
 
   const handleClearFromModal = async () => {
@@ -528,19 +777,77 @@ export default function RegistrationTable() {
               </select>
             </div>
 
-            {/* Region & Export CSV wrapper */}
-            <div className="col-span-1 lg:flex-1 lg:min-w-[140px] flex items-center gap-2 w-full">
-              <select
-                value={regionFilter}
-                onChange={e => setRegionFilter(e.target.value)}
-                className="flex-1 h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none min-w-0"
+            {/* Multi-select Region Dropdown */}
+            <div className="col-span-1 lg:flex-1 lg:min-w-[180px] relative" ref={regionDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsRegionDropdownOpen(!isRegionDropdownOpen)}
+                className="w-full h-11 border rounded-xl bg-slate-50/50 text-slate-700 text-sm font-semibold px-3 outline-none flex items-center justify-between cursor-pointer"
               >
-                <option value="all">All Regions</option>
-                <option value="Lagos">Lagos State</option>
-                <option value="Ogun">Ogun State</option>
-                <option value="Other">Other Regions</option>
-              </select>
+                <span className="truncate">
+                  {selectedRegions.length === 0 
+                    ? "All Regions" 
+                    : selectedRegions.length === 1 
+                      ? selectedRegions[0] 
+                      : `Regions (${selectedRegions.length})`}
+                </span>
+                <ChevronDown size={16} className="text-slate-500 shrink-0 ml-1" />
+              </button>
 
+              {isRegionDropdownOpen && (
+                <div className="absolute left-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3 space-y-2 animate-in fade-in duration-100">
+                  <div className="flex gap-2 justify-between items-center text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRegions([])}
+                      className="text-blue-600 hover:underline font-bold border-0 bg-transparent cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRegions([...allRegions])}
+                      className="text-blue-600 hover:underline font-bold border-0 bg-transparent cursor-pointer"
+                    >
+                      Select All
+                    </button>
+                  </div>
+                  <Input
+                    placeholder="Search region..."
+                    value={regionSearch}
+                    onChange={e => setRegionSearch(e.target.value)}
+                    className="h-8 text-xs px-2 border-slate-200 rounded-lg"
+                  />
+                  <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                    {allRegions
+                      .filter(r => r.toLowerCase().includes(regionSearch.toLowerCase()))
+                      .map(r => {
+                        const isChecked = selectedRegions.includes(r);
+                        return (
+                          <label key={r} className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setSelectedRegions(prev => prev.filter(item => item !== r));
+                                } else {
+                                  setSelectedRegions(prev => [...prev, r]);
+                                }
+                              }}
+                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                            />
+                            <span className="truncate">{r}</span>
+                          </label>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Export buttons wrapper */}
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 variant="outline"
                 onClick={exportCSV}
@@ -548,6 +855,14 @@ export default function RegistrationTable() {
                 title="Export CSV"
               >
                 <Download size={18} />
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportPDF}
+                className="h-11 w-11 shrink-0 p-0 border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl flex items-center justify-center cursor-pointer"
+                title="Export PDF"
+              >
+                <FileText size={18} />
               </Button>
             </div>
 

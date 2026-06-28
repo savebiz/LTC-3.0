@@ -1,0 +1,47 @@
+{
+  "Region 2": {
+    "accountName": "RCCG Region 2 Junior Church",
+    "accountNumber": "0037240482",
+    "bankName": "Access Bank"
+  },
+  "Region 11": {
+    "accountName": "RCCG Region 11 Junior Church Account 2",
+    "accountNumber": "4110078327",
+    "bankName": "Fidelity Bank"
+  },
+  "Region 20": {
+    "accountName": "Ogunshote Feyisekemi",
+    "accountNumber": "5784320750",
+    "bankName": "Moniepoint"
+  },
+  "Region 37": {
+    "accountName": "Yetunde Jacobs",
+    "accountNumber": "3117282006",
+    "bankName": "First Bank"
+  },
+  "Region 51": {
+    "accountName": "RCCG Region 51 Children Church",
+    "accountNumber": "0130413001",
+    "bankName": "Haggai Bank"
+  },
+  "Region 53": {
+    "accountName": "RCCG Region 53 Junior Church",
+    "accountNumber": "0001269550",
+    "bankName": "Jubilee Bank"
+  },
+  "Region 59": {
+    "accountName": "Junior Church Project Account",
+    "accountNumber": "1229441441",
+    "bankName": "Zenith Bank"
+  },
+  "Region 63": {
+    "accountName": "Ojo Ruth",
+    "accountNumber": "5139405127",
+    "bankName": "Moniepoint"
+  },
+  "Other (Outside Lagos/Ogun)": {
+    "accountName": "RCCG Region 2 Junior Church (Lagos Family)",
+    "accountNumber": "1494000251",
+    "bankName": "Access Bank"
+  }
+}

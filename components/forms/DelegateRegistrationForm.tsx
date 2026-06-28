@@ -21,6 +21,9 @@ import { supabase } from "@/lib/supabase";
 import { TEEN_ROLES, EXEC_LEVELS, LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVINCES } from "@/constants"
 import imageCompression from 'browser-image-compression';
 import DPCardGenerator from "@/components/DPCardGenerator";
+import regionalBanksData from "@/regional_banks.json";
+
+const regionalBanks = regionalBanksData as Record<string, { accountName: string; accountNumber: string; bankName: string }>;
 
 const delegateSchema = z.object({
     fullName: z.string().min(2, { message: "Required" }),
@@ -231,6 +234,10 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
     const totalAmount = delegates.reduce((sum, d) => sum + (d.category === "Teenager" ? 1000 : 1500), 0);
 
+    const currentRegion = delegates.length > 0 ? delegates[0].region : watchRegion;
+    const bankDetails = regionalBanks[currentRegion];
+    const isNoPaymentFlow = currentRegion ? (!bankDetails && currentRegion !== "Other (Outside Lagos/Ogun)") : false;
+
     async function proceedToPayment() {
         const currentName = form.getValues("fullName");
         const currentEmail = form.getValues("email");
@@ -298,7 +305,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             return;
         }
 
-        if (paymentMethod === 'bank_transfer') {
+        if (!isNoPaymentFlow && paymentMethod === 'bank_transfer') {
             if (!paymentRef.trim()) {
                 setPaymentRefError("Reference / teller number is required.");
                 return;
@@ -315,7 +322,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
         try {
             let receiptUrl = null;
 
-            if (paymentMethod === 'bank_transfer' && selectedFile) {
+            if (!isNoPaymentFlow && paymentMethod === 'bank_transfer' && selectedFile) {
                 const fileExt = selectedFile.name.split('.').pop() || 'jpg';
                 const fileName = `${batchId}-receipt.${fileExt}`;
 
@@ -358,8 +365,8 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 category: d.category === "Teenager" ? "teenager" : "teacher",
                 // Redesigned columns:
                 batch_id: batchId,
-                payment_method: 'bank_transfer',
-                payment_reference: paymentRef.trim(),
+                payment_method: isNoPaymentFlow ? 'pay_via_region' : 'bank_transfer',
+                payment_reference: isNoPaymentFlow ? 'REGIONAL-PAYMENT' : paymentRef.trim(),
                 payment_status: 'pending',
                 receipt_url: receiptUrl
             }));
@@ -511,123 +518,146 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             <div className="space-y-6 py-4 animate-in fade-in slide-in-from-bottom-4">
                 <div className="text-center space-y-2">
                     <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="text-2xl">🏦</span>
+                        <span className="text-2xl">{isNoPaymentFlow ? "📝" : "🏦"}</span>
                     </div>
-                    <h3 className="font-heading font-bold text-xl">Payment Details</h3>
-                    <p className="text-sm text-muted-foreground">Please make a transfer of <span className="font-bold text-black">₦{totalAmount.toLocaleString()}</span> to the account below.</p>
+                    <h3 className="font-heading font-bold text-xl">{isNoPaymentFlow ? "Complete Registration" : "Payment Details"}</h3>
+                    {!isNoPaymentFlow && (
+                        <p className="text-sm text-muted-foreground">Please make a transfer of <span className="font-bold text-black">₦{totalAmount.toLocaleString()}</span> to the account below.</p>
+                    )}
                 </div>
 
                 <div className="space-y-4">
-                    <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 space-y-4 text-sm">
-                        <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
-                            <span className="text-zinc-500">Bank Name</span>
-                            <span className="font-semibold text-slate-800">ACCESS BANK PLC</span>
+                    {isNoPaymentFlow ? (
+                        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-3 text-slate-800 text-sm">
+                            <div className="flex items-start gap-2.5">
+                                <span className="text-xl shrink-0 mt-0.5">ℹ️</span>
+                                <div className="space-y-2">
+                                    <p className="font-bold text-slate-900 leading-snug">Your region has opted for consolidated payment.</p>
+                                    <p className="text-xs text-slate-600 leading-normal">
+                                        Complete your registration now. Your details will be included in your region's registration list, and payment will be arranged collectively by your Regional Coordinator. Your registration will be confirmed once regional payment is received.
+                                    </p>
+                                    <p className="text-xs text-slate-600 leading-normal font-medium">
+                                        You will receive an email notification when your registration is cleared.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
-                            <span className="text-zinc-500">Account Number</span>
-                            <span className="font-mono font-bold text-base text-slate-800">1494000251</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-1">
-                            <span className="text-zinc-500">Account Name</span>
-                            <span className="font-semibold text-slate-800 text-right">RCCG Region 2 Junior Church (Lagos Family)</span>
-                        </div>
-                    </div>
+                    ) : (
+                        <>
+                            {bankDetails && (
+                                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 space-y-4 text-sm">
+                                    <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
+                                        <span className="text-zinc-500">Bank Name</span>
+                                        <span className="font-semibold text-slate-800 uppercase">{bankDetails.bankName}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
+                                        <span className="text-zinc-500">Account Number</span>
+                                        <span className="font-mono font-bold text-base text-slate-800">{bankDetails.accountNumber}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center pb-1">
+                                        <span className="text-zinc-500">Account Name</span>
+                                        <span className="font-semibold text-slate-800 text-right">{bankDetails.accountName}</span>
+                                    </div>
+                                </div>
+                            )}
 
-                    {/* Teller input */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700">Enter your transfer reference / teller number</label>
-                        <Input
-                            type="text"
-                            placeholder="e.g. TXN102948573"
-                            className={`h-11 ${paymentRefError ? 'border-red-500' : ''}`}
-                            value={paymentRef}
-                            onChange={(e) => {
-                                setPaymentRef(e.target.value);
-                                if (e.target.value.trim()) setPaymentRefError('');
-                            }}
-                        />
-                        {paymentRefError && <p className="text-xs text-red-500">{paymentRefError}</p>}
-                    </div>
-
-                    {/* Receipt Upload Field */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700 block">Upload Payment Receipt</label>
-                        <span className="text-xs text-zinc-500 block leading-normal">Upload a screenshot or photo of your transfer confirmation (JPG, PNG, or PDF — max 5MB)</span>
-                        
-                        {!selectedFile ? (
-                            <div 
-                                onClick={() => document.getElementById('receipt-upload')?.click()}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                                        handleFileSelection(e.dataTransfer.files[0]);
-                                    }
-                                }}
-                                className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors duration-200 flex flex-col items-center justify-center gap-2 ${
-                                    fileError ? 'border-red-500 bg-red-50/10' : 'border-zinc-300 hover:border-blue-500 hover:bg-zinc-50/50'
-                                }`}
-                            >
-                                <Upload className={`w-8 h-8 ${fileError ? 'text-red-500' : 'text-zinc-400'}`} />
-                                <p className="text-sm font-semibold text-zinc-700">Tap to upload or drag and drop</p>
-                                <input 
-                                    type="file" 
-                                    id="receipt-upload" 
-                                    className="hidden" 
-                                    accept="image/jpeg,image/png,application/pdf"
-                                    capture={isMobile ? "environment" : undefined}
+                            {/* Teller input */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-slate-700">Enter your transfer reference / teller number</label>
+                                <Input
+                                    type="text"
+                                    placeholder="e.g. TXN102948573"
+                                    className={`h-11 ${paymentRefError ? 'border-red-500' : ''}`}
+                                    value={paymentRef}
                                     onChange={(e) => {
-                                        if (e.target.files && e.target.files[0]) {
-                                            handleFileSelection(e.target.files[0]);
-                                        }
+                                        setPaymentRef(e.target.value);
+                                        if (e.target.value.trim()) setPaymentRefError('');
                                     }}
                                 />
+                                {paymentRefError && <p className="text-xs text-red-500">{paymentRefError}</p>}
                             </div>
-                        ) : (
-                            <div className="relative">
-                                <div className="border border-zinc-200 rounded-xl p-4 bg-zinc-50 flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        {filePreview ? (
-                                            <img 
-                                                src={filePreview} 
-                                                alt="Receipt preview" 
-                                                className="w-12 h-12 object-cover rounded-lg border border-zinc-200 shrink-0"
-                                            />
-                                        ) : (
-                                            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
-                                                <FileText className="w-6 h-6" />
+
+                            {/* Receipt Upload Field */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-slate-700 block">Upload Payment Receipt</label>
+                                <span className="text-xs text-zinc-500 block leading-normal">Upload a screenshot or photo of your transfer confirmation (JPG, PNG, or PDF — max 5MB)</span>
+                                
+                                {!selectedFile ? (
+                                    <div 
+                                        onClick={() => document.getElementById('receipt-upload')?.click()}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                                handleFileSelection(e.dataTransfer.files[0]);
+                                            }
+                                        }}
+                                        className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors duration-200 flex flex-col items-center justify-center gap-2 ${
+                                            fileError ? 'border-red-500 bg-red-50/10' : 'border-zinc-300 hover:border-blue-500 hover:bg-zinc-50/50'
+                                        }`}
+                                    >
+                                        <Upload className={`w-8 h-8 ${fileError ? 'text-red-500' : 'text-zinc-400'}`} />
+                                        <p className="text-sm font-semibold text-zinc-700">Tap to upload or drag and drop</p>
+                                        <input 
+                                            type="file" 
+                                            id="receipt-upload" 
+                                            className="hidden" 
+                                            accept="image/jpeg,image/png,application/pdf"
+                                            capture={isMobile ? "environment" : undefined}
+                                            onChange={(e) => {
+                                                if (e.target.files && e.target.files[0]) {
+                                                    handleFileSelection(e.target.files[0]);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="relative">
+                                        <div className="border border-zinc-200 rounded-xl p-4 bg-zinc-50 flex items-center justify-between gap-4">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                {filePreview ? (
+                                                    <img 
+                                                        src={filePreview} 
+                                                        alt="Receipt preview" 
+                                                        className="w-12 h-12 object-cover rounded-lg border border-zinc-200 shrink-0"
+                                                    />
+                                                ) : (
+                                                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                                                        <FileText className="w-6 h-6" />
+                                                    </div>
+                                                )}
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold text-slate-800 truncate" title={selectedFile.name}>
+                                                        {selectedFile.name}
+                                                    </p>
+                                                    <p className="text-xs text-zinc-400">
+                                                        {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                type="button" 
+                                                onClick={handleRemoveFile}
+                                                className="text-zinc-450 hover:text-red-500 p-1.5 rounded-full hover:bg-zinc-200/50 transition-colors shrink-0 cursor-pointer border-0 bg-transparent"
+                                                title="Remove file"
+                                                disabled={isSubmitting}
+                                            >
+                                                <X className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                        {isSubmitting && (
+                                            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] rounded-xl flex items-center justify-center gap-2">
+                                                <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                                                <span className="text-xs font-semibold text-blue-600">Uploading receipt...</span>
                                             </div>
                                         )}
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-bold text-slate-800 truncate" title={selectedFile.name}>
-                                                {selectedFile.name}
-                                            </p>
-                                            <p className="text-xs text-zinc-400">
-                                                {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button 
-                                        type="button" 
-                                        onClick={handleRemoveFile}
-                                        className="text-zinc-450 hover:text-red-500 p-1.5 rounded-full hover:bg-zinc-200/50 transition-colors shrink-0 cursor-pointer border-0 bg-transparent"
-                                        title="Remove file"
-                                        disabled={isSubmitting}
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
-                                {isSubmitting && (
-                                    <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] rounded-xl flex items-center justify-center gap-2">
-                                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                                        <span className="text-xs font-semibold text-blue-600">Uploading receipt...</span>
                                     </div>
                                 )}
+                                
+                                {fileError && <p className="text-xs text-red-500 font-medium">{fileError}</p>}
                             </div>
-                        )}
-                        
-                        {fileError && <p className="text-xs text-red-500 font-medium">{fileError}</p>}
-                    </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Registrants Summary Card */}
@@ -671,9 +701,9 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         {isSubmitting ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                                {paymentMethod === 'bank_transfer' ? "Uploading & Submitting..." : "Submitting..."}
+                                {isNoPaymentFlow ? "Submitting..." : (paymentMethod === 'bank_transfer' ? "Uploading & Submitting..." : "Submitting...")}
                             </>
-                        ) : "Confirm & Submit"}
+                        ) : (isNoPaymentFlow ? "Complete Registration" : "Confirm & Submit")}
                     </Button>
                 </div>
             </div>
@@ -693,8 +723,14 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                     <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <span className="text-2xl">🎉</span>
                     </div>
-                    <h3 className="font-heading font-bold text-xl text-green-600">Registration Submitted!</h3>
-                    <p className="text-sm text-muted-foreground">Your registration has been received and is pending verification.</p>
+                    <h3 className="font-heading font-bold text-xl text-green-600">
+                        {isNoPaymentFlow ? "Registration Received" : "Registration Submitted!"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                        {isNoPaymentFlow 
+                          ? "Your registration is pending confirmation. Your Regional Coordinator will arrange payment on your behalf. You will receive an email once your registration has been cleared."
+                          : "Your registration has been received and is pending verification."}
+                    </p>
                 </div>
 
                 {/* Ticket/Pass Accent Container */}
@@ -742,10 +778,14 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         <div className="grid grid-cols-2 gap-4 pt-1">
                             <div>
                                 <p className="text-[10px] text-gray-500 uppercase font-bold">Payment Method</p>
-                                <p className="font-semibold text-white">Bank Transfer</p>
+                                <p className="font-semibold text-white">
+                                    {isNoPaymentFlow ? "Regional Payment" : "Bank Transfer"}
+                                </p>
                             </div>
                             <div>
-                                <p className="text-[10px] text-gray-500 uppercase font-bold">Total Paid</p>
+                                <p className="text-[10px] text-gray-500 uppercase font-bold">
+                                    {isNoPaymentFlow ? "Total Amount" : "Total Paid"}
+                                </p>
                                 <p className="font-semibold text-white font-mono">₦{totalAmount.toLocaleString()}</p>
                             </div>
                         </div>
@@ -770,7 +810,9 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 {/* Reminder and Status Link */}
                 <div className="text-center space-y-3">
                     <p className="text-xs text-zinc-500 leading-relaxed px-2">
-                        You will receive an email notification once your payment is verified by the registration team.
+                        {isNoPaymentFlow 
+                          ? "Your Regional Coordinator will arrange payment on your behalf. You will receive an email once your registration has been cleared."
+                          : "You will receive an email notification once your payment is verified by the registration team."}
                     </p>
                     <div>
                         <a
@@ -1083,7 +1125,9 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                     onClick={proceedToPayment} 
                     className="w-full h-12 text-base bg-blue-600 hover:bg-blue-700 text-white font-bold"
                 >
-                    {delegates.length > 0 ? `Proceed to Payment (Total: ₦${totalAmount.toLocaleString()})` : "Proceed to Payment"}
+                    {delegates.length > 0 
+                      ? `${isNoPaymentFlow ? 'Complete Registration' : 'Proceed to Payment'} (Total: ₦${totalAmount.toLocaleString()})` 
+                      : (isNoPaymentFlow ? 'Complete Registration' : 'Proceed to Payment')}
                 </Button>
             </form>
         </Form>

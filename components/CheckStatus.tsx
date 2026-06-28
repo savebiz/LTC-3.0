@@ -55,6 +55,7 @@ export default function CheckStatus() {
 
     const renderStatusBadge = (status: string) => {
         const s = status?.toLowerCase() || '';
+        const isRegional = paymentMethod === 'pay_via_region';
         if (s === 'confirmed' || s === 'cleared') {
             return (
                 <div className="flex items-start gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl animate-in fade-in">
@@ -67,7 +68,11 @@ export default function CheckStatus() {
             return (
                 <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl animate-in fade-in">
                     <span className="text-lg leading-none mt-0.5">⏳</span>
-                    <span className="font-medium text-sm leading-relaxed">Payment Pending — Your transfer is awaiting verification by our team</span>
+                    <span className="font-medium text-sm leading-relaxed">
+                        {isRegional 
+                          ? "Payment Pending — Your registration is awaiting confirmation once regional payment is received"
+                          : "Payment Pending — Your transfer is awaiting verification by our team"}
+                    </span>
                 </div>
             );
         }
@@ -90,6 +95,7 @@ export default function CheckStatus() {
 
     const getPaymentMethodLabel = (method: string, status: string) => {
         const s = status?.toLowerCase() || '';
+        if (method === 'pay_via_region') return 'Regional Payment';
         if (method === 'pay_on_arrival' || s === 'pay_on_arrival') return 'Pay on Arrival';
         if (method === 'bank_transfer' || method === 'manual_transfer') return 'Bank Transfer';
         if (!method) return 'Bank Transfer';
