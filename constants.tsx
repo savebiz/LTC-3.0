@@ -75,8 +75,8 @@ export const REGIONS_AND_PROVINCES: Record<string, string[]> = {
     "Lagos Province 127"
   ],
   "Region 20": [
-    "Region 20 Headquarters", "Lagos Province 4", "Lagos Province 15", "Lagos Province 24",
-    "Lagos Province 34", "Lagos Province 35", "Lagos Province 39", "Lagos Province 47",
+    "Region 20 Headquarters", "Revelation Youth Province", "Lagos Province 4", "Lagos Province 15",
+    "Lagos Province 34", "Lagos Province 35", "Lagos Province 47", "Lagos Province 39",
     "Lagos Province 119", "Lagos Province 131"
   ],
   "Region 26": [
@@ -84,8 +84,8 @@ export const REGIONS_AND_PROVINCES: Record<string, string[]> = {
     "Lagos Province 63", "Lagos Province 75", "Lagos Province 97"
   ],
   "Region 31": [
-    "Region 31 Headquarters", "Lagos Province 7", "Lagos Province 25", "Lagos Province 29",
-    "Lagos Province 78", "Lagos Province 101", "Lagos Province 108", "Lagos Province 120",
+    "Region 31 Headquarters", "Regional Annex", "Lagos Province 7", "Lagos Province 25",
+    "Lagos Province 52", "Lagos Province 78", "Lagos Province 101", "Lagos Province 108", "Lagos Province 120",
     "Lagos Province 128"
   ],
   "Region 36": [
@@ -99,7 +99,7 @@ export const REGIONS_AND_PROVINCES: Record<string, string[]> = {
     "Lagos Province 123", "Lagos Province 129"
   ],
   "Region 51": [
-    "Region 51 Headquarters", "Lagos Province 5", "Lagos Province 46", "Lagos Province 48",
+    "Region 51 Headquarters", "Lagos Province 5", "Lagos Province 24", "Lagos Province 46", "Lagos Province 48",
     "Lagos Province 66", "Lagos Province 67", "Lagos Province 132"
   ],
   "Region 52": [
@@ -121,7 +121,7 @@ export const REGIONS_AND_PROVINCES: Record<string, string[]> = {
     "Lagos Province 113"
   ],
   "Region 61": [
-    "Region 61 Headquarters", "Lagos Province 37", "Lagos Province 52", "Lagos Province 59",
+    "Region 61 Headquarters", "Lagos Province 29", "Lagos Province 37", "Lagos Province 52", "Lagos Province 59",
     "Lagos Province 68", "Lagos Province 80", "Lagos Province 102"
   ],
   "Region 63": [
@@ -137,8 +137,7 @@ export const REGIONS_AND_PROVINCES: Record<string, string[]> = {
   "Region 12": [
     "Region 12 Headquarters", "Ogun Province 4", "Ogun Province 5", "Ogun Province 8",
     "Ogun Province 11", "Ogun Province 18", "Ogun Province 20", "Ogun Province 22",
-    "Ogun Province 23", "Ogun Province 30", "Ogun Province 31", "Ogun Province 33",
-    "Ogun Province 36"
+    "Ogun Province 23", "Ogun Province 30", "Ogun Province 31", "Ogun Province 33"
   ],
   "Region 32": [
     "Region 32 Headquarters", "Ogun Province 1", "Ogun Province 7", "Ogun Province 12",
@@ -151,7 +150,7 @@ export const REGIONS_AND_PROVINCES: Record<string, string[]> = {
   ],
   "Region 58": [
     "Region 58 Headquarters", "Ogun Province 2", "Ogun Province 9", "Ogun Province 13",
-    "Ogun Province 24", "Ogun Province 29", "Ogun Province 32"
+    "Ogun Province 24", "Ogun Province 29", "Ogun Province 32", "Ogun Province 36"
   ],
   "Region 62": [
     "Region 62 Headquarters", "Ogun Province 6", "Ogun Province 15", "Ogun Province 26",
