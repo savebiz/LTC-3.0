@@ -147,8 +147,8 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
                                 <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">${full_name}</td>
                             </tr>
                             <tr>
-                                <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Role:</td>
-                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a; capitalize">${role || 'Volunteer'}</td>
+                                <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Category:</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a; text-transform: capitalize;">${role || 'Volunteer'}</td>
                             </tr>
                             <tr>
                                 <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Department:</td>
