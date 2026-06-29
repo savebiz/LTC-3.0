@@ -41,6 +41,7 @@ export default function RegistrationTable() {
   const [data, setData] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
@@ -48,6 +49,19 @@ export default function RegistrationTable() {
   const [isRegionDropdownOpen, setIsRegionDropdownOpen] = useState(false);
   const regionDropdownRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Statistics states
+  interface StatsData {
+    status: string;
+    payment_status: string;
+    payment_method: string;
+    amount_due: number;
+  }
+  const [stats, setStats] = useState<StatsData[]>([]);
 
   // Receipt view state
   const [previewRegistration, setPreviewRegistration] = useState<Registration | null>(null);
@@ -75,21 +89,49 @@ export default function RegistrationTable() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Debounce search term
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  // Fetch stats once on mount
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  // Fetch registrations only when filters/page changes (clean double useEffect pattern to prevent double fetching)
+  useEffect(() => {
+    if (page === 1) {
+      fetchRegistrations();
+    } else {
+      setPage(1);
+    }
+  }, [debouncedSearchTerm, statusFilter, categoryFilter, selectedRegions]);
+
   useEffect(() => {
     fetchRegistrations();
+  }, [page]);
 
+  useEffect(() => {
     // Subscribe to real-time changes
     const channel = supabase
       .channel('table-registration-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations' }, () => {
         fetchRegistrations();
+        fetchStats();
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [page, debouncedSearchTerm, statusFilter, categoryFilter, selectedRegions]);
 
   // Fetch registrant history trail when sliding panel opens
   useEffect(() => {
@@ -122,17 +164,75 @@ export default function RegistrationTable() {
     setHistoryRegistrant(registrant);
   };
 
-  async function fetchRegistrations() {
-    setLoading(true);
-    const { data: regs, error } = await supabase
+  function getFilteredQuery(selectFields: string = '*', withCountOption: boolean = false) {
+    let query = supabase
       .from('registrations')
-      .select('*')
+      .select(selectFields, withCountOption ? { count: 'exact' } : undefined)
       .order('created_at', { ascending: false });
 
-    if (!error && regs) {
-      setData(regs as Registration[]);
+    // 1. Search term match
+    if (debouncedSearchTerm.trim()) {
+      const term = debouncedSearchTerm.trim();
+      query = query.or(`full_name.ilike.%${term}%,batch_reference.ilike.%${term}%,payment_reference.ilike.%${term}%`);
     }
-    setLoading(false);
+
+    // 2. Status filter match
+    if (statusFilter === 'pending') {
+      query = query.or('payment_status.eq.pending,status.eq.pending_payment,status.eq.pending_verification');
+    } else if (statusFilter === 'cleared') {
+      query = query.or('payment_status.eq.cleared,status.eq.confirmed');
+    } else if (statusFilter === 'pay_on_arrival') {
+      query = query.or('payment_status.eq.pay_on_arrival,status.eq.pay_on_arrival,payment_method.eq.pay_on_arrival');
+    }
+
+    // 3. Category filter match
+    if (categoryFilter === 'teenager') {
+      query = query.eq('category', 'teenager');
+    } else if (categoryFilter === 'teacher') {
+      query = query.ilike('category', '%teacher%');
+    }
+
+    // 4. Region filter match
+    if (selectedRegions.length > 0) {
+      query = query.in('region', selectedRegions);
+    }
+
+    return query;
+  }
+
+  async function fetchRegistrations() {
+    setLoading(true);
+    try {
+      const from = (page - 1) * 20;
+      const to = from + 19;
+
+      const { data: regs, count, error } = await getFilteredQuery('*', true).range(from, to);
+
+      if (!error && regs) {
+        setData(regs as Registration[]);
+        setTotalCount(count || 0);
+      } else if (error) {
+        throw error;
+      }
+    } catch (err: any) {
+      console.error('Failed to load registrations:', err);
+      toast.error('Error Loading Registrations', err.message || 'Database query failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchStats() {
+    try {
+      const { data: statsData, error } = await supabase
+        .from('registrations')
+        .select('status, payment_status, payment_method, amount_due');
+      if (!error && statsData) {
+        setStats(statsData as StatsData[]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch statistics:', err);
+    }
   }
 
   async function updateRegistration(id: string, updates: Record<string, any>) {
@@ -180,6 +280,7 @@ export default function RegistrationTable() {
 
       toast.success('Payment cleared successfully', 'Confirmation email sent to registrant');
       fetchRegistrations();
+      fetchStats();
     } catch (err: any) {
       console.error(err);
       toast.error('Error clearing registration', err.message);
@@ -216,6 +317,7 @@ export default function RegistrationTable() {
 
       toast.success('Payment recorded', 'Delegate cleared for entry');
       fetchRegistrations();
+      fetchStats();
     } catch (err: any) {
       console.error(err);
       toast.error('Error updating payment', err.message);
@@ -248,6 +350,7 @@ export default function RegistrationTable() {
 
       toast.success('Delegate checked in', `${fullName} has been marked as present`);
       fetchRegistrations();
+      fetchStats();
     } catch (err: any) {
       console.error(err);
       toast.error('Error checking in', err.message);
@@ -288,6 +391,7 @@ export default function RegistrationTable() {
 
       toast.error('Registration rejected', 'Registrant has been notified');
       fetchRegistrations();
+      fetchStats();
     } catch (err: any) {
       console.error(err);
       toast.error('Error rejecting payment', err.message);
@@ -308,332 +412,317 @@ export default function RegistrationTable() {
     return 'Other';
   };
 
-  // Metrics (computed from all registrations fetched)
-  const totalRegistered = data.length;
-  const totalCleared = data.filter(r => {
+  // Metrics (computed from all registrations fetched via stats query)
+  const totalRegistered = stats.length;
+  const totalCleared = stats.filter(r => {
     const ps = r.payment_status?.toLowerCase();
     const st = r.status?.toLowerCase();
     return ps === 'cleared' || st === 'confirmed';
   }).length;
-  const totalPending = data.filter(r => {
+  const totalPending = stats.filter(r => {
     const ps = r.payment_status?.toLowerCase();
     const st = r.status?.toLowerCase();
     return ps === 'pending' || st === 'pending_payment' || st === 'pending_verification';
   }).length;
-  const totalPayOnArrival = data.filter(r => {
+  const totalPayOnArrival = stats.filter(r => {
     const ps = r.payment_status?.toLowerCase();
     const st = r.status?.toLowerCase();
     const pm = r.payment_method?.toLowerCase();
     return ps === 'pay_on_arrival' || st === 'pay_on_arrival' || pm === 'pay_on_arrival';
   }).length;
-  const totalAmountCollected = data.reduce((sum, r) => {
+  const totalAmountCollected = stats.reduce((sum, r) => {
     const ps = r.payment_status?.toLowerCase();
     const st = r.status?.toLowerCase();
     const isCleared = ps === 'cleared' || st === 'confirmed';
     return isCleared ? sum + (Number(r.amount_due) || 0) : sum;
   }, 0);
 
-  // Filters application
-  const filteredData = data.filter(r => {
-    // 1. Search term match
-    const matchesSearch = !searchTerm.trim() || (
-      r.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.batch_reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.payment_reference?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // 2. Status filter match
-    const payStatus = r.payment_status?.toLowerCase() || '';
-    const status = r.status?.toLowerCase() || '';
-    let matchesStatus = true;
-    if (statusFilter === 'pending') {
-      matchesStatus = payStatus === 'pending' || status === 'pending_payment' || status === 'pending_verification';
-    } else if (statusFilter === 'cleared') {
-      matchesStatus = payStatus === 'cleared' || status === 'confirmed';
-    } else if (statusFilter === 'pay_on_arrival') {
-      matchesStatus = payStatus === 'pay_on_arrival' || status === 'pay_on_arrival' || r.payment_method?.toLowerCase() === 'pay_on_arrival';
-    }
-
-    // 3. Category filter match
-    const c = r.category?.toLowerCase() || '';
-    let matchesCategory = true;
-    if (categoryFilter === 'teenager') {
-      matchesCategory = c === 'teenager';
-    } else if (categoryFilter === 'teacher') {
-      matchesCategory = c === 'teacher' || c === 'teacher_adult' || c === 'teacher / adult' || c.includes('teacher');
-    }
-
-    // 4. Region filter match
-    let matchesRegion = true;
-    if (selectedRegions.length > 0) {
-      matchesRegion = selectedRegions.includes(r.region);
-    }
-
-    return matchesSearch && matchesStatus && matchesCategory && matchesRegion;
-  });
-
-  function exportCSV() {
-    const headers = [
-      'Reference Code', 'Full Name', 'Region', 'Province', 'Category', 
-      'Amount Due', 'Payment Method', 'Payment Reference', 'Payment Status', 'Checked In', 'Date Registered'
-    ];
-    const csvContent = [
-      headers.join(','),
-      ...filteredData.map(r => [
-        `"${r.batch_reference || ''}"`, 
-        `"${r.full_name || ''}"`, 
-        `"${r.region || ''}"`, 
-        `"${r.province || ''}"`, 
-        `"${r.category || ''}"`, 
-        r.amount_due || 0,
-        `"${r.payment_method || ''}"`, 
-        `"${r.payment_reference || ''}"`, 
-        `"${r.payment_status || r.status || ''}"`, 
-        r.checked_in ? 'Yes' : 'No',
-        `"${new Date(r.created_at).toLocaleDateString()}"`
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ltc_registrations_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  }
-
-  function exportPDF() {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const regionsText = selectedRegions.length > 0 ? selectedRegions.join(', ') : 'All Regions';
-    const exportDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-    const totalAmount = filteredData.reduce((sum, r) => sum + (Number(r.amount_due) || 0), 0);
-
-    const rows = filteredData.map(r => {
-      const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
-      const isPending = r.payment_status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'pending_payment' || r.status?.toLowerCase() === 'pending_verification';
-      const isArrival = r.payment_status?.toLowerCase() === 'pay_on_arrival' || r.status?.toLowerCase() === 'pay_on_arrival' || r.payment_method?.toLowerCase() === 'pay_on_arrival';
-      const isRejected = r.status?.toLowerCase() === 'rejected' || r.payment_status?.toLowerCase() === 'rejected';
-      
-      let statusClass = 'status-pending';
-      let statusLabel = r.payment_status || r.status || 'Pending';
-      if (isCleared) {
-        statusClass = 'status-cleared';
-        statusLabel = 'Cleared';
-      } else if (isArrival) {
-        statusClass = 'status-arrival';
-        statusLabel = 'Pay on Arrival';
-      } else if (isRejected) {
-        statusClass = 'status-rejected';
-        statusLabel = 'Rejected';
-      } else if (isPending) {
-        statusClass = 'status-pending';
-        statusLabel = 'Pending';
+  async function exportCSV() {
+    try {
+      const { data: exportData, error } = await getFilteredQuery().order('created_at', { ascending: false });
+      if (error) throw error;
+      if (!exportData || exportData.length === 0) {
+        toast.error('No Data', 'No records match your filters to export.');
+        return;
       }
 
-      return `
-        <tr>
-          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;"><span class="ref-code">${r.batch_reference || ''}</span></td>
-          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px; font-weight: bold; color: #0f172a;">${r.full_name || ''}</td>
-          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;"><span class="category-badge">${r.category || ''}</span></td>
-          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">${r.region || ''}</td>
-          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">${r.province || '-'}</td>
-          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">
-            <span class="status-badge ${statusClass}">${statusLabel}</span>
-          </td>
-          <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px; color: #64748b;">${new Date(r.created_at).toLocaleDateString()}</td>
-        </tr>
-      `;
-    }).join('');
+      const headers = [
+        'Reference Code', 'Full Name', 'Region', 'Province', 'Category', 
+        'Amount Due', 'Payment Method', 'Payment Reference', 'Payment Status', 'Checked In', 'Date Registered'
+      ];
+      const csvContent = [
+        headers.join(','),
+        ...exportData.map(r => [
+          `"${r.batch_reference || ''}"`, 
+          `"${r.full_name || ''}"`, 
+          `"${r.region || ''}"`, 
+          `"${r.province || ''}"`, 
+          `"${r.category || ''}"`, 
+          r.amount_due || 0,
+          `"${r.payment_method || ''}"`, 
+          `"${r.payment_reference || ''}"`, 
+          `"${r.payment_status || r.status || ''}"`, 
+          r.checked_in ? 'Yes' : 'No',
+          `"${new Date(r.created_at).toLocaleDateString()}"`
+        ].join(','))
+      ].join('\n');
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>C3TC Registration List</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-            
-            body {
-              font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-              color: #1e293b;
-              padding: 40px;
-              background-color: #ffffff;
-              margin: 0;
-            }
-            
-            .header-container {
-              border-bottom: 2px solid #f1f5f9;
-              padding-bottom: 16px;
-              margin-bottom: 24px;
-            }
-            
-            h1 {
-              font-size: 22px;
-              font-weight: 800;
-              color: #0f172a;
-              margin: 0 0 6px 0;
-              letter-spacing: -0.5px;
-            }
-            
-            .meta-grid {
-              display: grid;
-              grid-template-columns: 3fr 1fr;
-              gap: 15px;
-              font-size: 12px;
-              color: #64748b;
-            }
-            
-            .meta-label {
-              font-weight: 700;
-              color: #94a3b8;
-              text-transform: uppercase;
-              font-size: 9px;
-              letter-spacing: 0.5px;
-            }
-            
-            .meta-value {
-              font-weight: 600;
-              color: #334155;
-              margin-top: 2px;
-            }
-            
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 30px;
-              font-size: 11px;
-              text-align: left;
-            }
-            
-            th {
-              background-color: #f8fafc;
-              color: #475569;
-              font-weight: 700;
-              border-bottom: 2px solid #e2e8f0;
-              padding: 10px 8px;
-              text-transform: uppercase;
-              font-size: 9px;
-              letter-spacing: 0.5px;
-            }
-            
-            .ref-code {
-              font-family: monospace;
-              font-weight: 700;
-              color: #ea580c;
-              font-size: 12px;
-            }
-            
-            .category-badge {
-              font-weight: 600;
-              text-transform: capitalize;
-            }
-            
-            .status-badge {
-              display: inline-block;
-              padding: 3px 8px;
-              border-radius: 6px;
-              font-size: 9px;
-              font-weight: 700;
-              text-transform: uppercase;
-              border: 1px solid transparent;
-            }
-            
-            .status-cleared { background-color: #ecfdf5; border-color: #d1fae5; color: #065f46; }
-            .status-pending { background-color: #fff7ed; border-color: #ffedd5; color: #9a3412; }
-            .status-arrival { background-color: #eff6ff; border-color: #dbeafe; color: #1e40af; }
-            .status-rejected { background-color: #fef2f2; border-color: #fee2e2; color: #991b1b; }
-            
-            .footer-container {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              border-top: 2px solid #f1f5f9;
-              padding-top: 20px;
-              margin-top: 20px;
-            }
-            
-            .footer-card {
-              background-color: #f8fafc;
-              border: 1px solid #e2e8f0;
-              border-radius: 12px;
-              padding: 12px 24px;
-              min-width: 150px;
-            }
-            
-            .footer-label {
-              font-size: 10px;
-              color: #64748b;
-              font-weight: 700;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
-            
-            .footer-value {
-              font-size: 22px;
-              font-weight: 800;
-              color: #0f172a;
-              margin-top: 4px;
-            }
-            
-            @media print {
-              body { padding: 0; }
-              @page { size: A4 landscape; margin: 1.2cm; }
-              tr { page-break-inside: avoid; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header-container">
-            <h1>C3TC T.I.M.E '26 — Registration List</h1>
-            <div class="meta-grid">
-              <div>
-                <div class="meta-label">Selected Region(s)</div>
-                <div class="meta-value">${regionsText}</div>
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ltc_registrations_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    } catch (err: any) {
+      console.error('Failed to export CSV:', err);
+      toast.error('Export Failed', err.message || 'Database query failed.');
+    }
+  }
+
+  async function exportPDF() {
+    try {
+      const { data: exportData, error } = await getFilteredQuery().order('created_at', { ascending: false });
+      if (error) throw error;
+      if (!exportData || exportData.length === 0) {
+        toast.error('No Data', 'No records match your filters to export.');
+        return;
+      }
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) return;
+
+      const regionsText = selectedRegions.length > 0 ? selectedRegions.join(', ') : 'All Regions';
+      const exportDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      const totalAmount = exportData.reduce((sum, r) => sum + (Number(r.amount_due) || 0), 0);
+
+      const rows = exportData.map(r => {
+        const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
+        const isPending = r.payment_status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'pending_payment' || r.status?.toLowerCase() === 'pending_verification';
+        const isArrival = r.payment_status?.toLowerCase() === 'pay_on_arrival' || r.status?.toLowerCase() === 'pay_on_arrival' || r.payment_method?.toLowerCase() === 'pay_on_arrival';
+        const isRejected = r.status?.toLowerCase() === 'rejected' || r.payment_status?.toLowerCase() === 'rejected';
+        
+        let statusClass = 'status-pending';
+        let statusLabel = r.payment_status || r.status || 'Pending';
+        if (isCleared) {
+          statusClass = 'status-cleared';
+          statusLabel = 'Cleared';
+        } else if (isArrival) {
+          statusClass = 'status-arrival';
+          statusLabel = 'Pay on Arrival';
+        } else if (isRejected) {
+          statusClass = 'status-rejected';
+          statusLabel = 'Rejected';
+        } else if (isPending) {
+          statusClass = 'status-pending';
+          statusLabel = 'Pending';
+        }
+
+        return `
+          <tr>
+            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;"><span class="ref-code">${r.batch_reference || ''}</span></td>
+            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px; font-weight: bold; color: #0f172a;">${r.full_name || ''}</td>
+            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;"><span class="category-badge">${r.category || ''}</span></td>
+            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">${r.region || ''}</td>
+            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">${r.province || '-'}</td>
+            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">
+              <span class="status-badge ${statusClass}">${statusLabel}</span>
+            </td>
+            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px; color: #64748b;">${new Date(r.created_at).toLocaleDateString()}</td>
+          </tr>
+        `;
+      }).join('');
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>C3TC Registration List</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+              
+              body {
+                font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+                color: #1e293b;
+                padding: 40px;
+                background-color: #ffffff;
+                margin: 0;
+              }
+              
+              .header-container {
+                border-bottom: 2px solid #f1f5f9;
+                padding-bottom: 16px;
+                margin-bottom: 24px;
+              }
+              
+              h1 {
+                font-size: 22px;
+                font-weight: 800;
+                color: #0f172a;
+                margin: 0 0 6px 0;
+                letter-spacing: -0.5px;
+              }
+              
+              .meta-grid {
+                display: grid;
+                grid-template-columns: 3fr 1fr;
+                gap: 15px;
+                font-size: 12px;
+                color: #64748b;
+              }
+              
+              .meta-label {
+                font-weight: 700;
+                color: #94a3b8;
+                text-transform: uppercase;
+                font-size: 9px;
+                letter-spacing: 0.5px;
+              }
+              
+              .meta-value {
+                font-weight: 600;
+                color: #334155;
+                margin-top: 2px;
+              }
+              
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 30px;
+                font-size: 11px;
+                text-align: left;
+              }
+              
+              th {
+                background-color: #f8fafc;
+                color: #475569;
+                font-weight: 700;
+                border-bottom: 2px solid #e2e8f0;
+                padding: 10px 8px;
+                text-transform: uppercase;
+                font-size: 9px;
+                letter-spacing: 0.5px;
+              }
+              
+              .ref-code {
+                font-family: monospace;
+                font-weight: 700;
+                color: #ea580c;
+                font-size: 12px;
+              }
+              
+              .category-badge {
+                font-weight: 600;
+                text-transform: capitalize;
+              }
+              
+              .status-badge {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 6px;
+                font-size: 9px;
+                font-weight: 700;
+                text-transform: uppercase;
+                border: 1px solid transparent;
+              }
+              
+              .status-cleared { background-color: #ecfdf5; border-color: #d1fae5; color: #065f46; }
+              .status-pending { background-color: #fff7ed; border-color: #ffedd5; color: #9a3412; }
+              .status-arrival { background-color: #eff6ff; border-color: #dbeafe; color: #1e40af; }
+              .status-rejected { background-color: #fef2f2; border-color: #fee2e2; color: #991b1b; }
+              
+              .footer-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-top: 2px solid #f1f5f9;
+                padding-top: 20px;
+                margin-top: 20px;
+              }
+              
+              .footer-card {
+                background-color: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 12px 24px;
+                min-width: 150px;
+              }
+              
+              .footer-label {
+                font-size: 10px;
+                color: #64748b;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              }
+              
+              .footer-value {
+                font-size: 22px;
+                font-weight: 800;
+                color: #0f172a;
+                margin-top: 4px;
+              }
+              
+              @media print {
+                body { padding: 0; }
+                @page { size: A4 landscape; margin: 1.2cm; }
+                tr { page-break-inside: avoid; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header-container">
+              <h1>C3TC T.I.M.E '26 — Registration List</h1>
+              <div class="meta-grid">
+                <div>
+                  <div class="meta-label">Selected Region(s)</div>
+                  <div class="meta-value">${regionsText}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div class="meta-label">Export Date</div>
+                  <div class="meta-value">${exportDate}</div>
+                </div>
               </div>
-              <div style="text-align: right;">
-                <div class="meta-label">Export Date</div>
-                <div class="meta-value">${exportDate}</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Ref Code</th>
+                  <th>Full Name</th>
+                  <th>Category</th>
+                  <th>Region</th>
+                  <th>Province</th>
+                  <th>Payment Status</th>
+                  <th>Registration Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+            </table>
+            <div class="footer-container">
+              <div class="footer-card">
+                <div class="footer-label">Total Delegates</div>
+                <div class="footer-value">${exportData.length}</div>
+              </div>
+              <div class="footer-card" style="text-align: right;">
+                <div class="footer-label">Total Amount Due</div>
+                <div class="footer-value" style="font-family: monospace;">₦${totalAmount.toLocaleString()}</div>
               </div>
             </div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Ref Code</th>
-                <th>Full Name</th>
-                <th>Category</th>
-                <th>Region</th>
-                <th>Province</th>
-                <th>Payment Status</th>
-                <th>Registration Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows}
-            </tbody>
-          </table>
-          <div class="footer-container">
-            <div class="footer-card">
-              <div class="footer-label">Total Delegates</div>
-              <div class="footer-value">${filteredData.length}</div>
-            </div>
-            <div class="footer-card" style="text-align: right;">
-              <div class="footer-label">Total Amount Due</div>
-              <div class="footer-value" style="font-family: monospace;">₦${totalAmount.toLocaleString()}</div>
-            </div>
-          </div>
-          <script>
-            window.onload = function() {
-              window.print();
-              window.close();
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+            <script>
+              window.onload = function() {
+                window.print();
+                window.close();
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (err: any) {
+      console.error('Failed to export PDF:', err);
+      toast.error('Export Failed', err.message || 'Database query failed.');
+    }
   }
 
   const handleClearFromModal = async () => {
@@ -899,14 +988,14 @@ export default function RegistrationTable() {
                     Loading registrations...
                   </td>
                 </tr>
-              ) : filteredData.length === 0 ? (
+              ) : data.length === 0 ? (
                 <tr>
                   <td colSpan={12} className="py-12 text-center text-slate-500">
                     No registrations found matching filters.
                   </td>
                 </tr>
               ) : (
-                filteredData.map((reg) => {
+                data.map((reg) => {
                   const isCleared = reg.payment_status?.toLowerCase() === 'cleared' || reg.status?.toLowerCase() === 'confirmed';
                   const isPending = reg.payment_status?.toLowerCase() === 'pending' || reg.status?.toLowerCase() === 'pending_payment' || reg.status?.toLowerCase() === 'pending_verification';
                   const isArrival = reg.payment_status?.toLowerCase() === 'pay_on_arrival' || reg.status?.toLowerCase() === 'pay_on_arrival' || reg.payment_method?.toLowerCase() === 'pay_on_arrival';
@@ -1049,12 +1138,12 @@ export default function RegistrationTable() {
             <Loader2 className="mx-auto h-8 w-8 animate-spin mb-2" />
             Loading registrations...
           </div>
-        ) : filteredData.length === 0 ? (
+        ) : data.length === 0 ? (
           <div className="py-12 text-center text-slate-500 border border-dashed rounded-xl bg-white">
             No registrations found matching filters.
           </div>
         ) : (
-          filteredData.map((reg) => {
+          data.map((reg) => {
             const isCleared = reg.payment_status?.toLowerCase() === 'cleared' || reg.status?.toLowerCase() === 'confirmed';
             const isPending = reg.payment_status?.toLowerCase() === 'pending' || reg.status?.toLowerCase() === 'pending_payment' || reg.status?.toLowerCase() === 'pending_verification';
             const isArrival = reg.payment_status?.toLowerCase() === 'pay_on_arrival' || reg.status?.toLowerCase() === 'pay_on_arrival' || reg.payment_method?.toLowerCase() === 'pay_on_arrival';
