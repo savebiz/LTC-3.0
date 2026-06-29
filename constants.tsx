@@ -51,7 +51,7 @@ export const INTERESTS = [
 ];
 
 export const VOLUNTEER_DEPARTMENTS = [
-  "Medical", "Counselling", "Protocol/Ushering", "Prayer", "Sanitation", "Registration"
+  "Medical", "Counselling", "Protocol/Ushering", "Prayer", "Sanitation", "Welfare", "Registration"
 ];
 
 export const REGIONS_AND_PROVINCES: Record<string, string[]> = {
