@@ -19,6 +19,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { supabase } from "@/lib/supabase";
 import { TEEN_ROLES, EXEC_LEVELS, LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVINCES } from "@/constants"
+import { getJaroWinklerDistance, cleanNameForComparison } from "@/lib/similarity"
+import { DuplicateWarningModal } from "../ui/DuplicateWarningModal"
 import imageCompression from 'browser-image-compression';
 import DPCardGenerator from "@/components/DPCardGenerator";
 import regionalBanksData from "@/regional_banks.json";
@@ -170,6 +172,11 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
     const [delegates, setDelegates] = useState<any[]>([]);
 
+    // Duplicate warnings states
+    const [duplicateMatches, setDuplicateMatches] = useState<any[]>([]);
+    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+    const [pendingDelegateCallback, setPendingDelegateCallback] = useState<((dupAck: boolean, dupReason: string | null) => void) | null>(null);
+
     const [qrSize, setQrSize] = useState(180);
 
     useEffect(() => {
@@ -253,50 +260,57 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             if (!isValid) return;
             
             const values = form.getValues();
-            const newDelegate = {
-                fullName: values.fullName,
-                email: values.email,
-                phone: values.phone,
-                category: values.category,
-                age: values.category === "Teenager" ? values.age : null,
-                gender: values.gender,
-                region: values.region,
-                province: values.region === "Other (Outside Lagos/Ogun)" ? "Other" : values.province,
-                otherRegionSpecified: values.region === "Other (Outside Lagos/Ogun)" ? values.otherRegionSpecified : null,
-                role: values.role,
-                execLevel: values.role === "Teens Executive" ? values.execLevel : null,
-                execPosition: values.role === "Teens Executive" ? values.execPosition : null,
-            };
-            finalDelegates.push(newDelegate);
-            setDelegates(finalDelegates);
-            
-            // Reset form inputs for delegate section
-            form.setValue("fullName", "");
-            form.setValue("email", "");
-            form.setValue("phone", "");
-            form.setValue("category", "Teenager");
-            form.setValue("age", 15);
-            form.setValue("gender", undefined as any);
-            form.setValue("region", "");
-            form.setValue("province", "");
-            form.setValue("otherRegionSpecified", "");
-            form.setValue("role", "Member");
-            form.setValue("execLevel", undefined);
-            form.setValue("execPosition", "");
-            
-            form.clearErrors([
-                "fullName", "email", "phone", "category", "age", "gender", 
-                "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
-            ]);
-        }
 
-        if (finalDelegates.length === 0) {
-            await form.trigger(["fullName", "email", "phone", "category", "gender", "region"]);
-            return;
-        }
+            checkDuplicateAndAdd(values, (dupAck, dupReason) => {
+                const newDelegate = {
+                    fullName: values.fullName,
+                    email: values.email,
+                    phone: values.phone,
+                    category: values.category,
+                    age: values.category === "Teenager" ? values.age : null,
+                    gender: values.gender,
+                    region: values.region,
+                    province: values.region === "Other (Outside Lagos/Ogun)" ? "Other" : values.province,
+                    otherRegionSpecified: values.region === "Other (Outside Lagos/Ogun)" ? values.otherRegionSpecified : null,
+                    role: values.role,
+                    execLevel: values.role === "Teens Executive" ? values.execLevel : null,
+                    execPosition: values.role === "Teens Executive" ? values.execPosition : null,
+                    duplicateAcknowledged: dupAck,
+                    duplicateFlagReason: dupReason
+                };
+                finalDelegates.push(newDelegate);
+                setDelegates(finalDelegates);
+                
+                // Reset form inputs for delegate section
+                form.setValue("fullName", "");
+                form.setValue("email", "");
+                form.setValue("phone", "");
+                form.setValue("category", "Teenager");
+                form.setValue("age", 15);
+                form.setValue("gender", undefined as any);
+                form.setValue("region", "");
+                form.setValue("province", "");
+                form.setValue("otherRegionSpecified", "");
+                form.setValue("role", "Member");
+                form.setValue("execLevel", undefined);
+                form.setValue("execPosition", "");
+                
+                form.clearErrors([
+                    "fullName", "email", "phone", "category", "age", "gender", 
+                    "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
+                ]);
 
-        setStep('step2');
-        onStepChange?.('payment');
+                setStep('step2');
+                onStepChange?.('payment');
+            });
+        } else {
+            if (finalDelegates.length === 0) {
+                await form.trigger(["fullName", "email", "phone", "category", "gender", "region"]);
+                return;
+            }
+            setStep('step2');
+            onStepChange?.('payment');
+        }
     }
 
     async function performSubmit() {
@@ -368,7 +382,9 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 payment_method: isNoPaymentFlow ? 'pay_via_region' : 'bank_transfer',
                 payment_reference: isNoPaymentFlow ? 'REGIONAL-PAYMENT' : paymentRef.trim(),
                 payment_status: 'pending',
-                receipt_url: receiptUrl
+                receipt_url: receiptUrl,
+                duplicate_acknowledged: d.duplicateAcknowledged || false,
+                duplicate_flag_reason: d.duplicateFlagReason || null
             }));
 
             const { data: regData, error: regError } = await supabase
@@ -431,6 +447,49 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
         }
     }
 
+    async function checkDuplicateAndAdd(values: any, onConfirm: (dupAck: boolean, dupReason: string | null) => void) {
+        if (!values.phone || !values.phone.trim()) {
+            onConfirm(false, null);
+            return;
+        }
+
+        try {
+            const cleanPhone = values.phone.trim();
+            const { data: existing, error } = await supabase
+                .from('registrations')
+                .select('*')
+                .eq('phone', cleanPhone)
+                .neq('status', 'rejected');
+
+            if (error) throw error;
+
+            if (existing && existing.length > 0) {
+                const targetNameClean = cleanNameForComparison(values.fullName);
+                const matchingRegs = existing
+                    .map(r => {
+                        const existingNameClean = cleanNameForComparison(r.full_name);
+                        const similarity = getJaroWinklerDistance(targetNameClean, existingNameClean);
+                        return { ...r, similarity };
+                    })
+                    .filter(r => r.similarity >= 0.80)
+                    .slice(0, 3);
+
+                if (matchingRegs.length > 0) {
+                    setDuplicateMatches(matchingRegs);
+                    setPendingDelegateCallback(() => (dupAck: boolean, dupReason: string | null) => {
+                        onConfirm(dupAck, dupReason);
+                    });
+                    setShowDuplicateModal(true);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error("Duplicate check failed (non-blocking):", err);
+        }
+
+        onConfirm(false, null);
+    }
+
     async function addDelegateToList() {
         const isValid = await form.trigger([
             "fullName", "email", "phone", "category", "age", "gender", 
@@ -440,41 +499,46 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
         if (!isValid) return;
         
         const values = form.getValues();
-        const newDelegate = {
-            fullName: values.fullName,
-            email: values.email,
-            phone: values.phone,
-            category: values.category,
-            age: values.category === "Teenager" ? values.age : null,
-            gender: values.gender,
-            region: values.region,
-            province: values.region === "Other (Outside Lagos/Ogun)" ? "Other" : values.province,
-            otherRegionSpecified: values.region === "Other (Outside Lagos/Ogun)" ? values.otherRegionSpecified : null,
-            role: values.role,
-            execLevel: values.role === "Teens Executive" ? values.execLevel : null,
-            execPosition: values.role === "Teens Executive" ? values.execPosition : null,
-        };
-        
-        setDelegates(prev => [...prev, newDelegate]);
-        
-        // Reset form inputs for delegate section
-        form.setValue("fullName", "");
-        form.setValue("email", "");
-        form.setValue("phone", "");
-        form.setValue("category", "Teenager");
-        form.setValue("age", 15);
-        form.setValue("gender", undefined as any);
-        form.setValue("region", "");
-        form.setValue("province", "");
-        form.setValue("otherRegionSpecified", "");
-        form.setValue("role", "Member");
-        form.setValue("execLevel", undefined);
-        form.setValue("execPosition", "");
-        
-        form.clearErrors([
-            "fullName", "email", "phone", "category", "age", "gender", 
-            "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
-        ]);
+
+        checkDuplicateAndAdd(values, (dupAck, dupReason) => {
+            const newDelegate = {
+                fullName: values.fullName,
+                email: values.email,
+                phone: values.phone,
+                category: values.category,
+                age: values.category === "Teenager" ? values.age : null,
+                gender: values.gender,
+                region: values.region,
+                province: values.region === "Other (Outside Lagos/Ogun)" ? "Other" : values.province,
+                otherRegionSpecified: values.region === "Other (Outside Lagos/Ogun)" ? values.otherRegionSpecified : null,
+                role: values.role,
+                execLevel: values.role === "Teens Executive" ? values.execLevel : null,
+                execPosition: values.role === "Teens Executive" ? values.execPosition : null,
+                duplicateAcknowledged: dupAck,
+                duplicateFlagReason: dupReason
+            };
+            
+            setDelegates(prev => [...prev, newDelegate]);
+            
+            // Reset form inputs for delegate section
+            form.setValue("fullName", "");
+            form.setValue("email", "");
+            form.setValue("phone", "");
+            form.setValue("category", "Teenager");
+            form.setValue("age", 15);
+            form.setValue("gender", undefined as any);
+            form.setValue("region", "");
+            form.setValue("province", "");
+            form.setValue("otherRegionSpecified", "");
+            form.setValue("role", "Member");
+            form.setValue("execLevel", undefined);
+            form.setValue("execPosition", "");
+            
+            form.clearErrors([
+                "fullName", "email", "phone", "category", "age", "gender", 
+                "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
+            ]);
+        });
     }
 
     async function handleManualPaymentConfirmation() {
@@ -1130,6 +1194,22 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                       : (isNoPaymentFlow ? 'Complete Registration' : 'Proceed to Payment')}
                 </Button>
             </form>
+            <DuplicateWarningModal
+                isOpen={showDuplicateModal}
+                type="delegate"
+                matches={duplicateMatches}
+                onCancel={() => {
+                    setShowDuplicateModal(false);
+                    if (pendingDelegateCallback) {
+                        const match = duplicateMatches[0];
+                        const values = form.getValues();
+                        const maskedPhone = values.phone.length > 4 ? "****" + values.phone.slice(-4) : values.phone;
+                        const reason = `Phone matched ${maskedPhone}, name similarity: ${Math.round(match.similarity * 100)}%`;
+                        pendingDelegateCallback(true, reason);
+                    }
+                }}
+                onClose={() => setShowDuplicateModal(false)}
+            />
         </Form>
     )
 }

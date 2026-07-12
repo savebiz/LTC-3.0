@@ -113,7 +113,11 @@ export default function VolunteerTable() {
             r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             r.department?.toLowerCase().includes(searchTerm.toLowerCase());
             
-        const matchesStatus = statusFilter === 'all' || (r.status || 'pending') === statusFilter;
+        const matchesStatus = statusFilter === 'all' 
+            ? true 
+            : statusFilter === 'duplicates' 
+                ? r.duplicate_acknowledged === true 
+                : (r.status || 'pending') === statusFilter;
         
         return matchesSearch && matchesStatus;
     });
@@ -208,6 +212,7 @@ export default function VolunteerTable() {
                             <option value="pending">Pending</option>
                             <option value="confirmed">Confirmed</option>
                             <option value="rejected">Rejected</option>
+                            <option value="duplicates">Flagged Duplicates</option>
                         </select>
                     </div>
                     <Button variant="outline" onClick={exportCSV} className="gap-2 h-10 border-slate-200 rounded-xl font-bold text-xs">
@@ -253,10 +258,24 @@ export default function VolunteerTable() {
 
                                     return (
                                         <tr key={vol.id} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-6 py-4 font-semibold text-slate-900">{vol.full_name}</td>
+                                            <td className="px-6 py-4 font-semibold text-slate-900">
+                                                <div className="flex flex-col gap-0.5">
+                                                  <span>{vol.full_name}</span>
+                                                  {vol.duplicate_acknowledged && (
+                                                    <span className="inline-flex items-center gap-1 w-fit bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase leading-none">
+                                                      ⚠️ Dup
+                                                    </span>
+                                                  )}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-4 text-slate-500">
                                                 <div className="font-medium text-slate-700">{vol.email}</div>
                                                 <div className="text-xs text-slate-400 mt-0.5">{vol.phone}</div>
+                                                {vol.duplicate_acknowledged && vol.duplicate_flag_reason && (
+                                                  <div className="text-[10px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-1.5 py-0.5 mt-1 font-medium max-w-[200px] break-words whitespace-normal leading-normal">
+                                                    {vol.duplicate_flag_reason}
+                                                  </div>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className="status-badge px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 capitalize shrink-0">
@@ -329,7 +348,14 @@ export default function VolunteerTable() {
                         return (
                             <div key={vol.id} className="bg-white border rounded-xl p-4 shadow-sm space-y-3 text-sm">
                                 <div className="flex justify-between items-start gap-2">
-                                    <h4 className="font-bold text-base text-slate-900 leading-tight">{vol.full_name}</h4>
+                                    <div className="flex flex-col gap-1">
+                                        <h4 className="font-bold text-base text-slate-900 leading-tight">{vol.full_name}</h4>
+                                        {vol.duplicate_acknowledged && (
+                                            <span className="inline-flex items-center gap-1 w-fit bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase leading-none">
+                                              ⚠️ Dup
+                                            </span>
+                                        )}
+                                    </div>
                                     <span className={`status-badge px-2.5 py-0.5 rounded-full text-[11px] font-bold border capitalize shrink-0 whitespace-nowrap
                                         ${statusVal === 'confirmed' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
                                           statusVal === 'rejected' ? 'bg-red-50 border-red-100 text-red-700' :
@@ -347,9 +373,14 @@ export default function VolunteerTable() {
                                 </div>
 
                                 <div className="space-y-0.5 text-slate-500 text-xs">
-                                    <div className="font-medium text-slate-700 break-all">{vol.email}</div>
-                                    <div>{vol.phone}</div>
-                                </div>
+                                     <div className="font-medium text-slate-700 break-all">{vol.email}</div>
+                                     <div>{vol.phone}</div>
+                                     {vol.duplicate_acknowledged && vol.duplicate_flag_reason && (
+                                         <div className="text-[10px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-1.5 py-0.5 mt-1 font-medium break-words leading-normal">
+                                             {vol.duplicate_flag_reason}
+                                         </div>
+                                     )}
+                                 </div>
 
                                 <div className="flex justify-between items-center text-xs text-slate-500 border-t border-slate-100 pt-2.5">
                                     <span>Region: <strong className="text-slate-700 font-semibold">{vol.region}</strong></span>

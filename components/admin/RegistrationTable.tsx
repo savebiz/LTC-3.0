@@ -34,6 +34,8 @@ interface Registration {
   rejection_reason?: string;
   batch_reference: string;
   receipt_url?: string;
+  duplicate_acknowledged?: boolean;
+  duplicate_flag_reason?: string;
 }
 
 export default function RegistrationTable() {
@@ -183,6 +185,8 @@ export default function RegistrationTable() {
       query = query.or('payment_status.eq.cleared,status.eq.confirmed');
     } else if (statusFilter === 'pay_on_arrival') {
       query = query.or('payment_status.eq.pay_on_arrival,status.eq.pay_on_arrival,payment_method.eq.pay_on_arrival');
+    } else if (statusFilter === 'duplicates') {
+      query = query.eq('duplicate_acknowledged', true);
     }
 
     // 3. Category filter match
@@ -852,6 +856,7 @@ export default function RegistrationTable() {
                 <option value="pending">Pending Verification</option>
                 <option value="cleared">Cleared Payments</option>
                 <option value="pay_on_arrival">Pay on Arrival</option>
+                <option value="duplicates">Flagged Duplicates</option>
               </select>
             </div>
 
@@ -1012,7 +1017,16 @@ export default function RegistrationTable() {
                   return (
                     <tr key={reg.id} className="hover:bg-slate-50/50 transition-colors text-slate-700 text-xs font-semibold">
                       <td className="px-4 py-4 font-mono font-bold text-orange-600">{reg.batch_reference}</td>
-                      <td className="px-4 py-4 text-slate-900 font-bold truncate max-w-[120px]" title={reg.full_name}>{reg.full_name}</td>
+                      <td className="px-4 py-4 text-slate-900 font-bold truncate max-w-[120px]" title={reg.full_name}>
+                        <div className="flex flex-col gap-0.5">
+                          <span>{reg.full_name}</span>
+                          {reg.duplicate_acknowledged && (
+                            <span className="inline-flex items-center gap-1 w-fit bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase leading-none">
+                              ⚠️ Dup
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-4 text-slate-600 truncate max-w-[100px]">{reg.region}</td>
                       <td className="px-4 py-4 text-slate-500 truncate max-w-[120px]" title={reg.province}>{reg.province || '-'}</td>
                       <td className="px-4 py-4 text-xs">
@@ -1174,7 +1188,14 @@ export default function RegistrationTable() {
                 </div>
 
                 <div className="space-y-0.5">
-                  <h4 className="font-bold text-slate-900 text-base">{reg.full_name}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-slate-900 text-base">{reg.full_name}</h4>
+                    {reg.duplicate_acknowledged && (
+                      <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase leading-none">
+                        ⚠️ Dup
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-400">{reg.province || 'No Province Specified'}</p>
                 </div>
 
@@ -1457,6 +1478,18 @@ export default function RegistrationTable() {
                 <X size={22} />
               </button>
             </div>
+
+            {historyRegistrant.duplicate_acknowledged && (
+              <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4 text-xs flex gap-2.5 animate-in fade-in slide-in-from-top-2">
+                <span className="text-base select-none leading-none">⚠️</span>
+                <div>
+                  <p className="font-bold text-amber-950">Flagged Duplicate Acknowledged</p>
+                  <p className="mt-1 font-semibold leading-relaxed text-amber-900">
+                    {historyRegistrant.duplicate_flag_reason || 'No details provided.'}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {historyLoading ? (
               <div className="flex flex-col items-center justify-center flex-1 py-12 gap-2 text-slate-400">

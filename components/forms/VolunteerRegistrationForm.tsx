@@ -18,6 +18,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { supabase } from "@/lib/supabase";
 import { VOLUNTEER_DEPARTMENTS, REGIONS_AND_PROVINCES, LAGOS_REGIONS, OGUN_REGIONS } from "@/constants"
+import { getJaroWinklerDistance, cleanNameForComparison } from "@/lib/similarity"
+import { DuplicateWarningModal } from "../ui/DuplicateWarningModal"
 
 const volunteerSchema = z.object({
     fullName: z.string().min(2, { message: "Required" }),
@@ -76,6 +78,11 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
     const [isSubmitting, setIsSubmitting] = useState(false)
     const { toast } = useDialog()
 
+    // Duplicate detection states
+    const [duplicateMatches, setDuplicateMatches] = useState<any[]>([])
+    const [showDuplicateModal, setShowDuplicateModal] = useState(false)
+    const [pendingValues, setPendingValues] = useState<z.infer<typeof volunteerSchema> | null>(null)
+
     const form = useForm<z.infer<typeof volunteerSchema>>({
         resolver: zodResolver(volunteerSchema) as any,
         defaultValues: { fullName: "", email: "", phone: "", age: 15, region: "", province: "", otherRegionSpecified: "", role: "Teenager", department: "" },
@@ -84,7 +91,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
     const watchRole = form.watch("role")
     const provinces = (watchRegion && watchRegion !== "Other (Outside Lagos/Ogun)") ? REGIONS_AND_PROVINCES[watchRegion] || [] : []
 
-    async function onSubmit(values: z.infer<typeof volunteerSchema>) {
+    async function proceedToInsert(values: z.infer<typeof volunteerSchema>, dupAck = false, dupReason: string | null = null) {
         setIsSubmitting(true)
         try {
             const { error } = await supabase.from('volunteers').insert([
@@ -99,13 +106,14 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                     other_region_specified: values.region === "Other (Outside Lagos/Ogun)" ? values.otherRegionSpecified : null,
                     role: values.role, // 'Teenager' or 'Teacher' stored directly
                     department: values.department,
-                    status: 'pending' // Default status
+                    status: 'pending', // Default status
+                    duplicate_acknowledged: dupAck,
+                    duplicate_flag_reason: dupReason
                 }
             ]);
 
             if (error) throw error;
 
-            // onSuccess(); // Skip success modal to avoid flash, just redirect
             window.location.href = '/registration-success?type=volunteer';
         } catch (error: any) {
             console.error("Volunteer Registration Error:", error);
@@ -113,6 +121,48 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
         } finally {
             setIsSubmitting(false);
         }
+    }
+
+    async function onSubmit(values: z.infer<typeof volunteerSchema>) {
+        if (!values.phone || !values.phone.trim()) {
+            await proceedToInsert(values);
+            return;
+        }
+
+        // Run duplicate check
+        try {
+            const cleanPhone = values.phone.trim();
+            const { data: existing, error } = await supabase
+                .from('volunteers')
+                .select('*')
+                .eq('phone', cleanPhone)
+                .neq('status', 'rejected');
+
+            if (error) throw error;
+
+            if (existing && existing.length > 0) {
+                const targetNameClean = cleanNameForComparison(values.fullName);
+                const matchingVols = existing
+                    .map(v => {
+                        const existingNameClean = cleanNameForComparison(v.full_name);
+                        const similarity = getJaroWinklerDistance(targetNameClean, existingNameClean);
+                        return { ...v, similarity };
+                    })
+                    .filter(v => v.similarity >= 0.80)
+                    .slice(0, 3);
+
+                if (matchingVols.length > 0) {
+                    setDuplicateMatches(matchingVols);
+                    setPendingValues(values);
+                    setShowDuplicateModal(true);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error("Duplicate check failed (non-blocking):", err);
+        }
+
+        await proceedToInsert(values);
     }
 
     return (
@@ -274,6 +324,21 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                     {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registering...</> : "Join Volunteer Force"}
                 </Button>
             </form>
+            <DuplicateWarningModal
+                isOpen={showDuplicateModal}
+                type="volunteer"
+                matches={duplicateMatches}
+                onCancel={() => {
+                    setShowDuplicateModal(false);
+                    if (pendingValues) {
+                        const maskedPhone = pendingValues.phone.length > 4 ? "****" + pendingValues.phone.slice(-4) : pendingValues.phone;
+                        const match = duplicateMatches[0];
+                        const reason = `Phone matched ${maskedPhone}, name similarity: ${Math.round(match.similarity * 100)}%`;
+                        proceedToInsert(pendingValues, true, reason);
+                    }
+                }}
+                onClose={() => setShowDuplicateModal(false)}
+            />
         </Form>
     )
 }
