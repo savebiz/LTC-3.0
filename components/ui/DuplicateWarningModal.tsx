@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
+import { Dialog, DialogContent } from './dialog';
 import { Button } from './button';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 interface DuplicateMatch {
   id: string;
@@ -37,39 +37,10 @@ export function DuplicateWarningModal({
   onCancel,
   onClose
 }: DuplicateWarningModalProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!isOpen || matches.length === 0) return null;
-  if (!mounted) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
-        onClick={onClose}
-      />
-      
-      {/* Modal Container (Bottom sheet on mobile, Centered Card on desktop) */}
-      <div 
-        role="dialog"
-        aria-modal="true"
-        className="w-full max-h-[90vh] sm:max-h-[85vh] rounded-t-[20px] sm:rounded-[12px] bg-white border-t sm:border border-slate-200 p-6 shadow-2xl relative z-10 text-slate-900 transition-all duration-200 animate-in slide-in-from-bottom sm:zoom-in-95 max-w-lg overflow-y-auto"
-      >
-        {/* Close Button */}
-        <button 
-          onClick={onClose}
-          className="absolute right-4 top-4 text-slate-400 hover:text-slate-650 rounded-lg p-1 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
-          title="Close Warning"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        <div className="flex flex-col sm:flex-row gap-4 items-start">
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="fixed w-full max-h-[90vh] sm:max-h-[85vh] rounded-t-[20px] sm:rounded-[12px] bg-white border-t sm:border border-slate-200 p-6 shadow-2xl text-slate-900 overflow-y-auto left-0 bottom-0 top-auto translate-y-0 translate-x-0 sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:bottom-auto sm:max-w-lg z-[9999]">
+        <div className="flex flex-col sm:flex-row gap-4 items-start pr-4 sm:pr-0">
           {/* Amber Warning Icon */}
           <div className="p-3 bg-amber-50 border border-amber-200 text-amber-500 rounded-full shrink-0">
             <AlertTriangle className="h-6 w-6" />
@@ -151,8 +122,7 @@ export function DuplicateWarningModal({
             Cancel
           </button>
         </div>
-      </div>
-    </div>,
-    document.body
+      </DialogContent>
+    </Dialog>
   );
 }
