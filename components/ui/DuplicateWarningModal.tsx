@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from './button';
-import { AlertTriangle, ExternalLink, X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 
 interface DuplicateMatch {
   id: string;
@@ -36,18 +36,7 @@ export function DuplicateWarningModal({
   onCancel,
   onClose
 }: DuplicateWarningModalProps) {
-  const [showStatusInline, setShowStatusInline] = useState(false);
-
   if (!isOpen || matches.length === 0) return null;
-
-  const handlePrimaryClick = (match: DuplicateMatch) => {
-    if (type === 'delegate') {
-      const refCode = match.batch_reference || '';
-      window.open(`/check-status?ref=${encodeURIComponent(refCode)}`, '_blank');
-    } else {
-      setShowStatusInline(prev => !prev);
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
@@ -84,7 +73,7 @@ export function DuplicateWarningModal({
             </h3>
             
             <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-              It looks like this person may already be registered. Please check before continuing to avoid a duplicate.
+              It looks like this person may already be registered. If this is you, please check with your coordinator or the registration team on the day. If this is a different person, tap Continue below.
             </p>
 
             {/* Matched Records Card List */}
@@ -134,45 +123,25 @@ export function DuplicateWarningModal({
                 );
               })}
             </div>
-
-            {/* Volunteer Inline Status Block */}
-            {type === 'volunteer' && showStatusInline && (
-              <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 leading-relaxed animate-in fade-in slide-in-from-top-2">
-                <p className="font-bold text-amber-950">Volunteer Application Status Details:</p>
-                {matches.slice(0, 3).map((match) => (
-                  <div key={match.id} className="mt-2 border-t border-amber-100 pt-2">
-                    <p className="font-semibold text-slate-800">
-                      {match.full_name} is currently <span className="capitalize font-bold text-amber-800">{match.status}</span>.
-                    </p>
-                    <p className="mt-1 text-slate-650 font-medium">
-                      {match.status === 'confirmed' 
-                        ? 'This volunteer force application has been approved. You are set to join!' 
-                        : match.status === 'rejected' 
-                          ? `This application was rejected. Reason: ${match.rejection_reason || 'No reason provided.'}`
-                          : 'This application is currently pending review. Please check your email for updates.'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-6 flex flex-col gap-3">
+        <div className="mt-6 flex flex-col gap-4 items-center">
           <Button
-            className="w-full h-12 sm:h-10 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer text-sm"
-            onClick={() => handlePrimaryClick(matches[0])}
-          >
-            Check Existing Registration {type === 'delegate' && <ExternalLink size={14} />}
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full h-12 sm:h-10 border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 cursor-pointer text-sm"
+            className="w-full h-12 sm:h-10 bg-orange-500 hover:bg-orange-650 text-white font-bold rounded-xl flex items-center justify-center cursor-pointer text-sm"
             onClick={onCancel}
           >
             Different Person — Continue Registration
           </Button>
+          
+          <button
+            type="button"
+            className="text-slate-500 hover:text-slate-750 font-semibold text-sm underline cursor-pointer py-1.5 focus:outline-none"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>
