@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from './button';
 import { AlertTriangle, X } from 'lucide-react';
 
@@ -36,9 +37,16 @@ export function DuplicateWarningModal({
   onCancel,
   onClose
 }: DuplicateWarningModalProps) {
-  if (!isOpen || matches.length === 0) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || matches.length === 0) return null;
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
       {/* Backdrop */}
       <div 
@@ -144,6 +152,7 @@ export function DuplicateWarningModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
