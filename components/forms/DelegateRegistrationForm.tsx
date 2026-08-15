@@ -19,7 +19,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { supabase } from "@/lib/supabase";
 import { TEEN_ROLES, EXEC_LEVELS, LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVINCES } from "@/constants"
-import { getJaroWinklerDistance, cleanNameForComparison } from "@/lib/similarity"
+import { getJaroWinklerDistance, cleanNameForComparison, normalizePhone, normalizeEmail } from "@/lib/similarity"
 import { DuplicateWarningModal } from "../ui/DuplicateWarningModal"
 import imageCompression from 'browser-image-compression';
 import DPCardGenerator from "@/components/DPCardGenerator";
@@ -175,6 +175,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     // Duplicate warnings states
     const [duplicateMatches, setDuplicateMatches] = useState<any[]>([]);
     const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+    const [duplicateMode, setDuplicateMode] = useState<'soft' | 'hard'>('soft');
     const [pendingDelegateCallback, setPendingDelegateCallback] = useState<((dupAck: boolean, dupReason: string | null) => void) | null>(null);
 
     const [qrSize, setQrSize] = useState(180);
@@ -361,8 +362,8 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
             const payload = delegates.map(d => ({
                 full_name: d.fullName,
-                email: d.email,
-                phone: d.phone,
+                email: normalizeEmail(d.email),
+                phone: normalizePhone(d.phone) || d.phone,
                 gender: d.gender,
                 age: d.age,
                 region: d.region,
@@ -448,43 +449,92 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     }
 
     async function checkDuplicateAndAdd(values: any, onConfirm: (dupAck: boolean, dupReason: string | null) => void) {
-        if (!values.phone || !values.phone.trim()) {
-            onConfirm(false, null);
-            return;
-        }
-
+        // Run duplicate check (fail-closed: if check fails, block the add)
         try {
-            const cleanPhone = values.phone.trim();
-            const { data: existing, error } = await supabase
-                .from('registrations')
-                .select('*')
-                .eq('phone', cleanPhone)
-                .neq('status', 'rejected');
+            const normalizedPhoneVal = normalizePhone(values.phone);
+            const normalizedEmailVal = normalizeEmail(values.email);
+            const allMatches: any[] = [];
+            const seenIds = new Set<string>();
 
-            if (error) throw error;
+            // Query by normalized phone (if provided)
+            if (normalizedPhoneVal) {
+                const { data: phoneMatches, error: phoneErr } = await supabase
+                    .from('registrations')
+                    .select('*')
+                    .eq('phone', normalizedPhoneVal)
+                    .neq('status', 'rejected');
+                if (phoneErr) throw phoneErr;
+                if (phoneMatches) {
+                    for (const m of phoneMatches) {
+                        if (!seenIds.has(m.id)) { seenIds.add(m.id); allMatches.push(m); }
+                    }
+                }
+            }
 
-            if (existing && existing.length > 0) {
+            // Query by email (if provided)
+            if (normalizedEmailVal) {
+                const { data: emailMatches, error: emailErr } = await supabase
+                    .from('registrations')
+                    .select('*')
+                    .eq('email', normalizedEmailVal)
+                    .neq('status', 'rejected');
+                if (emailErr) throw emailErr;
+                if (emailMatches) {
+                    for (const m of emailMatches) {
+                        if (!seenIds.has(m.id)) { seenIds.add(m.id); allMatches.push(m); }
+                    }
+                }
+            }
+
+            // Also try matching with the raw phone in case DB hasn't been normalized yet
+            const rawPhone = values.phone?.trim();
+            if (rawPhone && rawPhone !== normalizedPhoneVal) {
+                const { data: rawPhoneMatches, error: rawPhoneErr } = await supabase
+                    .from('registrations')
+                    .select('*')
+                    .eq('phone', rawPhone)
+                    .neq('status', 'rejected');
+                if (rawPhoneErr) throw rawPhoneErr;
+                if (rawPhoneMatches) {
+                    for (const m of rawPhoneMatches) {
+                        if (!seenIds.has(m.id)) { seenIds.add(m.id); allMatches.push(m); }
+                    }
+                }
+            }
+
+            if (allMatches.length > 0) {
                 const targetNameClean = cleanNameForComparison(values.fullName);
-                const matchingRegs = existing
+                const scoredMatches = allMatches
                     .map(r => {
                         const existingNameClean = cleanNameForComparison(r.full_name);
                         const similarity = getJaroWinklerDistance(targetNameClean, existingNameClean);
                         return { ...r, similarity };
                     })
                     .filter(r => r.similarity >= 0.80)
+                    .sort((a, b) => b.similarity - a.similarity)
                     .slice(0, 3);
 
-                if (matchingRegs.length > 0) {
-                    setDuplicateMatches(matchingRegs);
-                    setPendingDelegateCallback(() => (dupAck: boolean, dupReason: string | null) => {
-                        onConfirm(dupAck, dupReason);
-                    });
+                if (scoredMatches.length > 0) {
+                    const topSimilarity = scoredMatches[0].similarity;
+                    setDuplicateMatches(scoredMatches);
+                    // ≥95% = hard block, 80-94% = soft warning
+                    setDuplicateMode(topSimilarity >= 0.95 ? 'hard' : 'soft');
+                    if (topSimilarity >= 0.95) {
+                        // Hard block: don't store callback, modal only shows "Go Back"
+                        setPendingDelegateCallback(null);
+                    } else {
+                        setPendingDelegateCallback(() => (dupAck: boolean, dupReason: string | null) => {
+                            onConfirm(dupAck, dupReason);
+                        });
+                    }
                     setShowDuplicateModal(true);
                     return;
                 }
             }
         } catch (err) {
-            console.error("Duplicate check failed (non-blocking):", err);
+            console.error("Duplicate check failed:", err);
+            toast.error("Could not verify registration. Please try again.", "Network error during verification.");
+            return; // Fail-closed: block the add
         }
 
         onConfirm(false, null);
@@ -1198,13 +1248,14 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 isOpen={showDuplicateModal}
                 type="delegate"
                 matches={duplicateMatches}
+                mode={duplicateMode}
                 onCancel={() => {
                     setShowDuplicateModal(false);
-                    if (pendingDelegateCallback) {
+                    if (pendingDelegateCallback && duplicateMode === 'soft') {
                         const match = duplicateMatches[0];
                         const values = form.getValues();
                         const maskedPhone = values.phone.length > 4 ? "****" + values.phone.slice(-4) : values.phone;
-                        const reason = `Phone matched ${maskedPhone}, name similarity: ${Math.round(match.similarity * 100)}%`;
+                        const reason = `Phone/email matched ${maskedPhone}, name similarity: ${Math.round(match.similarity * 100)}%`;
                         pendingDelegateCallback(true, reason);
                     }
                 }}

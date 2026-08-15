@@ -18,7 +18,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { supabase } from "@/lib/supabase";
 import { VOLUNTEER_DEPARTMENTS, REGIONS_AND_PROVINCES, LAGOS_REGIONS, OGUN_REGIONS } from "@/constants"
-import { getJaroWinklerDistance, cleanNameForComparison } from "@/lib/similarity"
+import { getJaroWinklerDistance, cleanNameForComparison, normalizePhone, normalizeEmail } from "@/lib/similarity"
 import { DuplicateWarningModal } from "../ui/DuplicateWarningModal"
 
 const volunteerSchema = z.object({
@@ -81,6 +81,7 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
     // Duplicate detection states
     const [duplicateMatches, setDuplicateMatches] = useState<any[]>([])
     const [showDuplicateModal, setShowDuplicateModal] = useState(false)
+    const [duplicateMode, setDuplicateMode] = useState<'soft' | 'hard'>('soft')
     const [pendingValues, setPendingValues] = useState<z.infer<typeof volunteerSchema> | null>(null)
 
     const form = useForm<z.infer<typeof volunteerSchema>>({
@@ -97,8 +98,8 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
             const { error } = await supabase.from('volunteers').insert([
                 {
                     full_name: values.fullName,
-                    email: values.email,
-                    phone: values.phone,
+                    email: normalizeEmail(values.email),
+                    phone: normalizePhone(values.phone) || values.phone,
                     age: values.role === "Teenager" ? values.age : null,
                     gender: values.gender,
                     region: values.region,
@@ -124,42 +125,85 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
     }
 
     async function onSubmit(values: z.infer<typeof volunteerSchema>) {
-        if (!values.phone || !values.phone.trim()) {
-            await proceedToInsert(values);
-            return;
-        }
-
-        // Run duplicate check
+        // Run duplicate check (fail-closed: if check fails, block submission)
         try {
-            const cleanPhone = values.phone.trim();
-            const { data: existing, error } = await supabase
-                .from('volunteers')
-                .select('*')
-                .eq('phone', cleanPhone)
-                .neq('status', 'rejected');
+            const normalizedPhone = normalizePhone(values.phone);
+            const normalizedEmailVal = normalizeEmail(values.email);
+            const allMatches: any[] = [];
+            const seenIds = new Set<string>();
 
-            if (error) throw error;
+            // Query by phone (if provided)
+            if (normalizedPhone) {
+                const { data: phoneMatches, error: phoneErr } = await supabase
+                    .from('volunteers')
+                    .select('*')
+                    .eq('phone', normalizedPhone)
+                    .neq('status', 'rejected');
+                if (phoneErr) throw phoneErr;
+                if (phoneMatches) {
+                    for (const m of phoneMatches) {
+                        if (!seenIds.has(m.id)) { seenIds.add(m.id); allMatches.push(m); }
+                    }
+                }
+            }
 
-            if (existing && existing.length > 0) {
+            // Query by email (if provided)
+            if (normalizedEmailVal) {
+                const { data: emailMatches, error: emailErr } = await supabase
+                    .from('volunteers')
+                    .select('*')
+                    .eq('email', normalizedEmailVal)
+                    .neq('status', 'rejected');
+                if (emailErr) throw emailErr;
+                if (emailMatches) {
+                    for (const m of emailMatches) {
+                        if (!seenIds.has(m.id)) { seenIds.add(m.id); allMatches.push(m); }
+                    }
+                }
+            }
+
+            // Also try matching with the raw phone in case DB hasn't been normalized yet
+            const rawPhone = values.phone?.trim();
+            if (rawPhone && rawPhone !== normalizedPhone) {
+                const { data: rawPhoneMatches, error: rawPhoneErr } = await supabase
+                    .from('volunteers')
+                    .select('*')
+                    .eq('phone', rawPhone)
+                    .neq('status', 'rejected');
+                if (rawPhoneErr) throw rawPhoneErr;
+                if (rawPhoneMatches) {
+                    for (const m of rawPhoneMatches) {
+                        if (!seenIds.has(m.id)) { seenIds.add(m.id); allMatches.push(m); }
+                    }
+                }
+            }
+
+            if (allMatches.length > 0) {
                 const targetNameClean = cleanNameForComparison(values.fullName);
-                const matchingVols = existing
+                const scoredMatches = allMatches
                     .map(v => {
                         const existingNameClean = cleanNameForComparison(v.full_name);
                         const similarity = getJaroWinklerDistance(targetNameClean, existingNameClean);
                         return { ...v, similarity };
                     })
                     .filter(v => v.similarity >= 0.80)
+                    .sort((a, b) => b.similarity - a.similarity)
                     .slice(0, 3);
 
-                if (matchingVols.length > 0) {
-                    setDuplicateMatches(matchingVols);
+                if (scoredMatches.length > 0) {
+                    const topSimilarity = scoredMatches[0].similarity;
+                    setDuplicateMatches(scoredMatches);
                     setPendingValues(values);
+                    // ≥95% = hard block, 80-94% = soft warning
+                    setDuplicateMode(topSimilarity >= 0.95 ? 'hard' : 'soft');
                     setShowDuplicateModal(true);
                     return;
                 }
             }
         } catch (err) {
-            console.error("Duplicate check failed (non-blocking):", err);
+            console.error("Duplicate check failed:", err);
+            toast.error("Could not verify registration. Please try again.", "Network error during verification.");
+            return; // Fail-closed: block submission
         }
 
         await proceedToInsert(values);
@@ -328,12 +372,13 @@ export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void
                 isOpen={showDuplicateModal}
                 type="volunteer"
                 matches={duplicateMatches}
+                mode={duplicateMode}
                 onCancel={() => {
                     setShowDuplicateModal(false);
-                    if (pendingValues) {
+                    if (pendingValues && duplicateMode === 'soft') {
                         const maskedPhone = pendingValues.phone.length > 4 ? "****" + pendingValues.phone.slice(-4) : pendingValues.phone;
                         const match = duplicateMatches[0];
-                        const reason = `Phone matched ${maskedPhone}, name similarity: ${Math.round(match.similarity * 100)}%`;
+                        const reason = `Phone/email matched ${maskedPhone}, name similarity: ${Math.round(match.similarity * 100)}%`;
                         proceedToInsert(pendingValues, true, reason);
                     }
                 }}

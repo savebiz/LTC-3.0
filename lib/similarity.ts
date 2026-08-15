@@ -65,3 +65,37 @@ export function cleanNameForComparison(name: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/**
+ * Normalize a phone number to a canonical digits-only form.
+ * Strips spaces, dashes, parentheses, dots, and country code prefixes (+234, 234).
+ * Converts leading 0 to the local 10-digit form.
+ * Examples:
+ *   "+234 801 234 5678" → "8012345678"
+ *   "08012345678"       → "8012345678"
+ *   "234-801-234-5678"  → "8012345678"
+ *   "0801 234 5678"     → "8012345678"
+ */
+export function normalizePhone(phone: string): string {
+  if (!phone) return '';
+  // Strip all non-digit characters
+  let digits = phone.replace(/\D/g, '');
+  // Strip leading country code 234
+  if (digits.startsWith('234') && digits.length > 10) {
+    digits = digits.slice(3);
+  }
+  // Strip leading 0 (Nigerian local format)
+  if (digits.startsWith('0') && digits.length > 9) {
+    digits = digits.slice(1);
+  }
+  return digits;
+}
+
+/**
+ * Normalize an email for comparison.
+ * Lowercases and trims whitespace.
+ */
+export function normalizeEmail(email: string): string {
+  if (!email) return '';
+  return email.toLowerCase().trim();
+}
