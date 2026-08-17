@@ -1183,6 +1183,7 @@ export default function RegistrationTable() {
                             >
                               Mark as Paid
                             </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="outline"
