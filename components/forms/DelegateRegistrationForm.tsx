@@ -246,6 +246,39 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     const bankDetails = regionalBanks[currentRegion];
     const isNoPaymentFlow = currentRegion ? (!bankDetails && currentRegion !== "Other (Outside Lagos/Ogun)") : false;
 
+    function getFieldsToValidate() {
+        const watchType = form.getValues("registrationType");
+        const watchCat = form.getValues("category");
+        const watchRoleVal = form.getValues("role");
+        const watchReg = form.getValues("region");
+
+        const fields: any[] = [
+            "fullName", "email", "phone", "category", "gender", 
+            "region", "registrationType"
+        ];
+
+        if (watchCat === "Teenager") {
+            fields.push("age", "role");
+            if (watchRoleVal === "Teens Executive") {
+                fields.push("execLevel", "execPosition");
+            }
+        }
+
+        if (watchReg === "Other (Outside Lagos/Ogun)") {
+            fields.push("otherRegionSpecified");
+        } else if (watchReg) {
+            fields.push("province");
+        }
+
+        if (watchType === "individual") {
+            fields.push("emergencyContactName", "emergencyContactPhone");
+        } else if (watchType === "group") {
+            fields.push("groupName", "groupCoordinatorName", "groupCoordinatorPhone");
+        }
+
+        return fields;
+    }
+
     async function proceedToPayment() {
         const currentName = form.getValues("fullName");
         const currentEmail = form.getValues("email");
@@ -253,12 +286,13 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
         let finalDelegates = [...delegates];
         
         if (currentName.trim() || currentEmail.trim()) {
-            const isValid = await form.trigger([
-                "fullName", "email", "phone", "category", "age", "gender", 
-                "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
-            ]);
+            const fieldsToValidate = getFieldsToValidate();
+            const isValid = await form.trigger(fieldsToValidate);
             
-            if (!isValid) return;
+            if (!isValid) {
+                toast.error("Form incomplete", "Please fill in all required fields for the current delegate, or clear the name field before proceeding.");
+                return;
+            }
             
             const values = form.getValues();
 
@@ -289,16 +323,13 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 form.setValue("category", "Teenager");
                 form.setValue("age", 15);
                 form.setValue("gender", undefined as any);
-                form.setValue("region", "");
-                form.setValue("province", "");
-                form.setValue("otherRegionSpecified", "");
                 form.setValue("role", "Member");
                 form.setValue("execLevel", undefined);
                 form.setValue("execPosition", "");
                 
                 form.clearErrors([
                     "fullName", "email", "phone", "category", "age", "gender", 
-                    "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
+                    "role", "execLevel", "execPosition"
                 ]);
 
                 setStep('step2');
@@ -306,7 +337,11 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             });
         } else {
             if (finalDelegates.length === 0) {
-                await form.trigger(["fullName", "email", "phone", "category", "gender", "region"]);
+                const fieldsToValidate = getFieldsToValidate();
+                const isValid = await form.trigger(fieldsToValidate);
+                if (!isValid) {
+                    toast.error("Form incomplete", "Please fill in the required details and click Add Person to add a delegate.");
+                }
                 return;
             }
             setStep('step2');
@@ -541,12 +576,13 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     }
 
     async function addDelegateToList() {
-        const isValid = await form.trigger([
-            "fullName", "email", "phone", "category", "age", "gender", 
-            "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
-        ]);
+        const fieldsToValidate = getFieldsToValidate();
+        const isValid = await form.trigger(fieldsToValidate);
         
-        if (!isValid) return;
+        if (!isValid) {
+            toast.error("Cannot add person", "Please fill in all required fields (including Region, Province, and Contact details) before adding.");
+            return;
+        }
         
         const values = form.getValues();
 
@@ -570,24 +606,23 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             
             setDelegates(prev => [...prev, newDelegate]);
             
-            // Reset form inputs for delegate section
+            // Reset person-specific inputs (preserve region, province, and group details)
             form.setValue("fullName", "");
             form.setValue("email", "");
             form.setValue("phone", "");
             form.setValue("category", "Teenager");
             form.setValue("age", 15);
             form.setValue("gender", undefined as any);
-            form.setValue("region", "");
-            form.setValue("province", "");
-            form.setValue("otherRegionSpecified", "");
             form.setValue("role", "Member");
             form.setValue("execLevel", undefined);
             form.setValue("execPosition", "");
             
             form.clearErrors([
                 "fullName", "email", "phone", "category", "age", "gender", 
-                "region", "province", "otherRegionSpecified", "role", "execLevel", "execPosition"
+                "role", "execLevel", "execPosition"
             ]);
+
+            toast.success("Person Added", `${newDelegate.fullName} has been added to your delegate list.`);
         });
     }
 
