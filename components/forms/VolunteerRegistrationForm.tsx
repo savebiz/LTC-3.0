@@ -63,7 +63,7 @@ const volunteerSchema = z.object({
                 path: ["otherRegionSpecified"],
             });
         }
-    } else {
+    } else if (data.region && data.region.length > 0) {
         if (!data.province || data.province.trim().length === 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,

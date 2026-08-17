@@ -102,7 +102,7 @@ const delegateSchema = z.object({
                 path: ["otherRegionSpecified"],
             });
         }
-    } else {
+    } else if (data.region && data.region.length > 0) {
         if (!data.province || data.province.trim().length === 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
@@ -266,7 +266,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
 
         if (watchReg === "Other (Outside Lagos/Ogun)") {
             fields.push("otherRegionSpecified");
-        } else if (watchReg) {
+        } else {
             fields.push("province");
         }
 
@@ -277,6 +277,48 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
         }
 
         return fields;
+    }
+
+    function scrollToFirstError(errors: Record<string, any>) {
+        const errorKeys = Object.keys(errors);
+        if (errorKeys.length === 0) {
+            toast.error("Form incomplete", "Please fill in all required fields before proceeding.");
+            return;
+        }
+
+        const labelMap: Record<string, string> = {
+            fullName: "Full Name",
+            email: "Email",
+            phone: "Phone Number",
+            category: "Category",
+            age: "Age",
+            gender: "Gender",
+            region: "Region",
+            province: "Province",
+            otherRegionSpecified: "Specified Region",
+            role: "Role",
+            execLevel: "Executive Level",
+            execPosition: "Executive Position",
+            emergencyContactName: "Emergency Contact Name",
+            emergencyContactPhone: "Emergency Contact Phone Number",
+            groupName: "Group / Parish Name",
+            groupCoordinatorName: "Group Coordinator Full Name",
+            groupCoordinatorPhone: "Group Coordinator Phone"
+        };
+
+        const missingLabels = errorKeys.map(k => labelMap[k] || k).filter(Boolean);
+        const uniqueLabels = Array.from(new Set(missingLabels));
+        const summaryText = uniqueLabels.slice(0, 3).join(", ") + (uniqueLabels.length > 3 ? "..." : "");
+
+        toast.error("Form incomplete", `Please complete: ${summaryText}`);
+
+        // Smooth scroll to the first invalid field
+        const firstErrorKey = errorKeys[0];
+        const element = document.querySelector(`[name="${firstErrorKey}"]`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            (element as HTMLElement).focus?.();
+        }
     }
 
     async function proceedToPayment() {
@@ -290,7 +332,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
             const isValid = await form.trigger(fieldsToValidate);
             
             if (!isValid) {
-                toast.error("Form incomplete", "Please fill in all required fields for the current delegate, or clear the name field before proceeding.");
+                scrollToFirstError(form.formState.errors);
                 return;
             }
             
@@ -340,7 +382,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 const fieldsToValidate = getFieldsToValidate();
                 const isValid = await form.trigger(fieldsToValidate);
                 if (!isValid) {
-                    toast.error("Form incomplete", "Please fill in the required details and click Add Person to add a delegate.");
+                    scrollToFirstError(form.formState.errors);
                 }
                 return;
             }
@@ -580,7 +622,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
         const isValid = await form.trigger(fieldsToValidate);
         
         if (!isValid) {
-            toast.error("Cannot add person", "Please fill in all required fields (including Region, Province, and Contact details) before adding.");
+            scrollToFirstError(form.formState.errors);
             return;
         }
         
