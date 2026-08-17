@@ -8,7 +8,7 @@ import {
   Download, Search, Loader2, Users, CheckCircle2, 
   AlertCircle, MapPin, CreditCard, UserCheck, Trash2,
   History, X, Clock, FileText, Paperclip, Eye, Zap,
-  ChevronDown
+  ChevronDown, Mail
 } from 'lucide-react';
 import { LAGOS_REGIONS, OGUN_REGIONS } from "@/constants";
 import { useDialog } from '../ui/DialogProvider';
@@ -399,6 +399,54 @@ export default function RegistrationTable() {
     } catch (err: any) {
       console.error(err);
       toast.error('Error rejecting payment', err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleResendEmail(id: string, email: string, name: string) {
+    if (!email || !email.trim()) {
+      toast.error('Cannot Resend Email', 'This registrant does not have a valid email address.');
+      return;
+    }
+
+    const { confirmed } = await confirm({
+      type: 'primary',
+      title: 'Resend Confirmation Email',
+      body: `Are you sure you want to resend the confirmation email to ${name} (${email})?`,
+      confirmText: 'Resend Email'
+    });
+    if (!confirmed) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/resend-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': 'C3TC@admin2026'
+        },
+        body: JSON.stringify({ id, type: 'delegate', performed_by: volunteer })
+      });
+
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(resData.error || `HTTP error ${res.status}`);
+      }
+
+      toast.success('Email Resent Successfully', `Confirmation email sent to ${email}`);
+
+      if (historyRegistrant && historyRegistrant.id === id) {
+        const { data: logs } = await supabase
+          .from('audit_log')
+          .select('*')
+          .eq('registration_id', id)
+          .order('created_at', { ascending: false });
+        if (logs) setHistoryLogs(logs);
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Error Resending Email', err.message || 'Failed to resend email.');
     } finally {
       setIsSubmitting(false);
     }
@@ -1135,7 +1183,17 @@ export default function RegistrationTable() {
                             >
                               Mark as Paid
                             </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-orange-200 text-orange-600 hover:bg-orange-50 font-bold flex items-center gap-1 cursor-pointer"
+                            onClick={() => handleResendEmail(reg.id, reg.email, reg.full_name)}
+                            disabled={isSubmitting}
+                            title="Resend Confirmation Email"
+                          >
+                            <Mail size={13} />
+                            Resend Email
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -1479,6 +1537,17 @@ export default function RegistrationTable() {
               </button>
             </div>
 
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleResendEmail(historyRegistrant.id, historyRegistrant.email, historyRegistrant.full_name)}
+              disabled={isSubmitting}
+              className="w-full mb-4 border-orange-200 text-orange-700 bg-orange-50/80 hover:bg-orange-100 font-bold flex items-center justify-center gap-2 h-10 rounded-xl cursor-pointer shrink-0"
+            >
+              <Mail size={15} />
+              Resend Confirmation Email
+            </Button>
+
             {historyRegistrant.duplicate_acknowledged && (
               <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4 text-xs flex gap-2.5 animate-in fade-in slide-in-from-top-2">
                 <span className="text-base select-none leading-none">⚠️</span>
@@ -1516,6 +1585,9 @@ export default function RegistrationTable() {
                   } else if (log.action === 'registration_created') {
                       statusColor = "bg-blue-500 text-white";
                       actionText = "Registration Created";
+                  } else if (log.action === 'email_resent') {
+                      statusColor = "bg-orange-500 text-white";
+                      actionText = "Confirmation Email Resent";
                   } else if (log.action === 'payment_rejected') {
                       statusColor = "bg-red-500 text-white";
                       actionText = "Payment Rejected";

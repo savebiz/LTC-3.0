@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Download, Search, Loader2, Users, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Download, Search, Loader2, Users, CheckCircle2, Clock, XCircle, Mail } from 'lucide-react';
 import { useDialog } from '../ui/DialogProvider';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -13,6 +13,8 @@ export default function VolunteerTable() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const volunteerSession = typeof window !== 'undefined' ? sessionStorage.getItem('c3tc_admin_volunteer') || 'admin' : 'admin';
 
     const { confirm, toast } = useDialog();
 
@@ -102,6 +104,45 @@ export default function VolunteerTable() {
         } catch (err: any) {
             console.error(err);
             toast.error('Error Rejecting Volunteer', err.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    async function handleResendEmail(id: string, email: string, name: string) {
+        if (!email || !email.trim()) {
+            toast.error('Cannot Resend Email', 'This volunteer does not have a valid email address.');
+            return;
+        }
+
+        const { confirmed } = await confirm({
+            type: 'primary',
+            title: 'Resend Volunteer Email',
+            body: `Are you sure you want to resend the approval email to ${name} (${email})?`,
+            confirmText: 'Resend Email'
+        });
+        if (!confirmed) return;
+
+        setIsSubmitting(true);
+        try {
+            const res = await fetch('/api/admin/resend-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-admin-key': 'C3TC@admin2026'
+                },
+                body: JSON.stringify({ id, type: 'volunteer', performed_by: volunteerSession })
+            });
+
+            const resData = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(resData.error || `HTTP error ${res.status}`);
+            }
+
+            toast.success('Email Resent Successfully', `Approval email sent to ${email}`);
+        } catch (err: any) {
+            console.error(err);
+            toast.error('Error Resending Email', err.message || 'Failed to resend email.');
         } finally {
             setIsSubmitting(false);
         }
@@ -297,28 +338,39 @@ export default function VolunteerTable() {
                                                 {new Date(vol.created_at).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                {isPending ? (
-                                                    <div className="flex gap-1.5 justify-end items-center">
-                                                        <Button
-                                                            size="sm"
-                                                            className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white font-bold"
-                                                            onClick={() => handleApprove(vol.id)}
-                                                            disabled={isSubmitting}
-                                                        >
-                                                            Approve
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            className="h-7 text-xs bg-red-500 hover:bg-red-600 text-white font-bold"
-                                                            onClick={() => handleRejectClick(vol.id)}
-                                                            disabled={isSubmitting}
-                                                        >
-                                                            Reject
-                                                        </Button>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-slate-400">-</span>
-                                                )}
+                                                <div className="flex gap-1.5 justify-end items-center">
+                                                    {isPending && (
+                                                        <>
+                                                            <Button
+                                                                size="sm"
+                                                                className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white font-bold"
+                                                                onClick={() => handleApprove(vol.id)}
+                                                                disabled={isSubmitting}
+                                                            >
+                                                                Approve
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                className="h-7 text-xs bg-red-500 hover:bg-red-600 text-white font-bold"
+                                                                onClick={() => handleRejectClick(vol.id)}
+                                                                disabled={isSubmitting}
+                                                            >
+                                                                Reject
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-7 text-xs border-orange-200 text-orange-600 hover:bg-orange-50 font-bold flex items-center gap-1 cursor-pointer"
+                                                        onClick={() => handleResendEmail(vol.id, vol.email, vol.full_name)}
+                                                        disabled={isSubmitting}
+                                                        title="Resend Approval Email"
+                                                    >
+                                                        <Mail size={13} />
+                                                        Resend Email
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -387,26 +439,38 @@ export default function VolunteerTable() {
                                     <span>{new Date(vol.created_at).toLocaleDateString()}</span>
                                 </div>
 
-                                {isPending && (
-                                    <div className="flex gap-2 pt-2 border-t border-slate-100 w-full">
-                                        <Button
-                                            size="sm"
-                                            className="flex-1 h-9 text-xs bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg cursor-pointer active:scale-95 transition-all"
-                                            onClick={() => handleApprove(vol.id)}
-                                            disabled={isSubmitting}
-                                        >
-                                            Approve
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            className="flex-1 h-9 text-xs bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg cursor-pointer active:scale-95 transition-all"
-                                            onClick={() => handleRejectClick(vol.id)}
-                                            disabled={isSubmitting}
-                                        >
-                                            Reject
-                                        </Button>
-                                    </div>
-                                )}
+                                <div className="flex gap-2 pt-2 border-t border-slate-100 w-full">
+                                    {isPending && (
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                className="flex-1 h-9 text-xs bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg cursor-pointer active:scale-95 transition-all"
+                                                onClick={() => handleApprove(vol.id)}
+                                                disabled={isSubmitting}
+                                            >
+                                                Approve
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                className="flex-1 h-9 text-xs bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg cursor-pointer active:scale-95 transition-all"
+                                                onClick={() => handleRejectClick(vol.id)}
+                                                disabled={isSubmitting}
+                                            >
+                                                Reject
+                                            </Button>
+                                        </>
+                                    )}
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1 h-9 text-xs border-orange-200 text-orange-600 hover:bg-orange-50 font-bold rounded-lg cursor-pointer active:scale-95 transition-all flex items-center justify-center gap-1"
+                                        onClick={() => handleResendEmail(vol.id, vol.email, vol.full_name)}
+                                        disabled={isSubmitting}
+                                    >
+                                        <Mail size={13} />
+                                        Resend Email
+                                    </Button>
+                                </div>
                             </div>
                         );
                     })
