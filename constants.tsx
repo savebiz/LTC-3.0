@@ -38,12 +38,12 @@ export const SPEAKERS: Speaker[] = [
 // Using local images
 // Using local images
 export const GALLERY_RECAP: GalleryItem[] = [
-  { id: '1', url: '/images/ltc2/LTC%202.0-100.jpg', caption: 'Praise Session' },
-  { id: '2', url: '/images/ltc2/LTC%202.0-106.jpg', caption: 'Worship Wave' },
-  { id: '3', url: '/images/ltc2/LTC%202.0-111.jpg', caption: 'Interactive Moments' },
-  { id: '4', url: '/images/ltc2/LTC%202.0-14.jpg', caption: 'Prayer Focus' },
-  { id: '5', url: '/images/ltc2/LTC%202.0-15.jpg', caption: 'Song Ministration' },
-  { id: '6', url: '/images/ltc2/LTC%202.0-18.jpg', caption: 'Leadership' }
+  { id: '1', url: '/images/ltc2/LTC%202.0-100.webp', caption: 'Praise Session' },
+  { id: '2', url: '/images/ltc2/LTC%202.0-106.webp', caption: 'Worship Wave' },
+  { id: '3', url: '/images/ltc2/LTC%202.0-111.webp', caption: 'Interactive Moments' },
+  { id: '4', url: '/images/ltc2/LTC%202.0-14.webp', caption: 'Prayer Focus' },
+  { id: '5', url: '/images/ltc2/LTC%202.0-15.webp', caption: 'Song Ministration' },
+  { id: '6', url: '/images/ltc2/LTC%202.0-18.webp', caption: 'Leadership' }
 ];
 
 export const INTERESTS = [

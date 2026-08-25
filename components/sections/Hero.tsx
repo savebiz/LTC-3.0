@@ -30,6 +30,8 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                     loop
                     muted
                     playsInline
+                    preload="metadata"
+                    poster="/images/hero-poster.webp"
                     className="w-full h-full object-cover opacity-60"
                 >
                     <source src="/videos/hero-reel.mp4" type="video/mp4" />
