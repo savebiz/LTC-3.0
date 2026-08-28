@@ -108,7 +108,7 @@ export const REGIONS_AND_PROVINCES: Record<string, string[]> = {
   ],
   "Region 53": [
     "Region 53 Headquarters", "Lagos Province 14", "Lagos Province 51", "Lagos Province 85",
-    "Lagos Province 105", "Lagos Province 106"
+    "Lagos Province 105", "Lagos Province 106", "Lagos Province 112"
   ],
   "Region 54": [
     "Region 54 Headquarters", "Lagos Province 3", "Lagos Province 32", "Lagos Province 44",
