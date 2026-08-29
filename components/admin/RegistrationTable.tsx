@@ -10,7 +10,7 @@ import {
   History, X, Clock, FileText, Paperclip, Eye, Zap,
   ChevronDown, Mail
 } from 'lucide-react';
-import { LAGOS_REGIONS, OGUN_REGIONS } from "@/constants";
+import { LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVINCES } from "@/constants";
 import { useDialog } from '../ui/DialogProvider';
 
 const allRegions = [...LAGOS_REGIONS, ...OGUN_REGIONS, "Other (Outside Lagos/Ogun)"];
@@ -537,10 +537,8 @@ export default function RegistrationTable() {
     try {
       const { data: rawExportData, error } = await getFilteredQuery().order('created_at', { ascending: false });
       if (error) throw error;
-      if (!rawExportData || rawExportData.length === 0) {
-        toast.error('No Data', 'No records match your filters to export.');
-        return;
-      }
+      
+      const records = rawExportData || [];
 
       // Helper for Category ordering: Teenager (1) MUST come before Teacher (2) before Others (3)
       const getCategoryRank = (cat: string) => {
@@ -550,98 +548,117 @@ export default function RegistrationTable() {
         return 3;
       };
 
-      // 4-Level Data Hierarchy Sort: REGION -> PROVINCE -> CATEGORY (Teenager first) -> FULL NAME
-      const exportData = [...rawExportData].sort((a, b) => {
-        // 1. Region (Numerical-aware)
-        const regA = a.region || 'Unspecified Region';
-        const regB = b.region || 'Unspecified Region';
-        const regComp = regA.localeCompare(regB, undefined, { numeric: true, sensitivity: 'base' });
-        if (regComp !== 0) return regComp;
+      // Determine target regions to include in the report
+      let targetRegionNames: string[] = [];
+      if (selectedRegions.length > 0) {
+        targetRegionNames = [...selectedRegions];
+      } else {
+        const predefinedRegions = Object.keys(REGIONS_AND_PROVINCES);
+        const actualRegions = records.map(r => r.region).filter(Boolean);
+        targetRegionNames = Array.from(new Set([...predefinedRegions, ...allRegions, ...actualRegions]));
+      }
 
-        // 2. Province (Numerical-aware)
-        const provA = a.province || 'Unspecified Province';
-        const provB = b.province || 'Unspecified Province';
-        const provComp = provA.localeCompare(provB, undefined, { numeric: true, sensitivity: 'base' });
-        if (provComp !== 0) return provComp;
+      // Sort region names using numerical-aware comparator
+      targetRegionNames.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
-        // 3. Category (Teenager first, then Teacher)
-        const catRankA = getCategoryRank(a.category);
-        const catRankB = getCategoryRank(b.category);
-        if (catRankA !== catRankB) return catRankA - catRankB;
-
-        // 4. Full Name (A to Z)
-        const nameA = (a.full_name || '').trim();
-        const nameB = (b.full_name || '').trim();
-        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
-      });
-
-      // Group records by Region
-      const regionGroups: Map<string, typeof exportData> = new Map();
-      for (const record of exportData) {
-        const regName = record.region || 'Unspecified Region';
-        if (!regionGroups.has(regName)) {
-          regionGroups.set(regName, []);
+      // Map records by region
+      const recordsByRegion: Map<string, Registration[]> = new Map();
+      for (const regName of targetRegionNames) {
+        recordsByRegion.set(regName, []);
+      }
+      for (const record of records) {
+        const rName = record.region || 'Unspecified Region';
+        if (!recordsByRegion.has(rName)) {
+          recordsByRegion.set(rName, []);
         }
-        regionGroups.get(regName)!.push(record);
+        recordsByRegion.get(rName)!.push(record);
       }
 
       const exportDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
       const PROVINCE_TARGET = 40; // Benchmark target per province
 
       // Generate HTML per Region
-      const regionSectionsHtml = Array.from(regionGroups.entries()).map(([regionName, records], regionIndex) => {
-        const totalRegionalDelegates = records.length;
-        
+      const regionSectionsHtml = Array.from(recordsByRegion.entries()).map(([regionName, regRecords], regionIndex) => {
+        // Sort delegates in this region: PROVINCE -> CATEGORY (Teenager first) -> FULL NAME
+        const sortedRegRecords = [...regRecords].sort((a, b) => {
+          // 1. Province (Numerical-aware)
+          const provA = a.province || 'Unspecified Province';
+          const provB = b.province || 'Unspecified Province';
+          const provComp = provA.localeCompare(provB, undefined, { numeric: true, sensitivity: 'base' });
+          if (provComp !== 0) return provComp;
+
+          // 2. Category (Teenager first, then Teacher)
+          const catRankA = getCategoryRank(a.category);
+          const catRankB = getCategoryRank(b.category);
+          if (catRankA !== catRankB) return catRankA - catRankB;
+
+          // 3. Full Name (A to Z)
+          const nameA = (a.full_name || '').trim();
+          const nameB = (b.full_name || '').trim();
+          return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+        });
+
+        const totalRegionalDelegates = sortedRegRecords.length;
+
         let teenagerCount = 0;
         let teacherCount = 0;
         let otherCategoryCount = 0;
-
         let clearedCount = 0;
-        let pendingCount = 0; // Cleared vs Pending only per specification
+        let pendingCount = 0;
 
-        // Group by province within region
-        const provinceMap: Map<string, { total: number; teenagers: number; teachers: number; cleared: number; pending: number }> = new Map();
-
-        for (const r of records) {
+        for (const r of sortedRegRecords) {
           const catRank = getCategoryRank(r.category);
           if (catRank === 1) teenagerCount++;
           else if (catRank === 2) teacherCount++;
           else otherCategoryCount++;
 
           const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
-          if (isCleared) {
-            clearedCount++;
-          } else {
-            pendingCount++;
-          }
+          if (isCleared) clearedCount++;
+          else pendingCount++;
+        }
 
+        // Determine all provinces for this region (predefined + actual)
+        const predefinedProvinces = REGIONS_AND_PROVINCES[regionName] || [];
+        const actualProvinces = sortedRegRecords.map(r => r.province).filter(Boolean);
+        const allProvincesForRegion = Array.from(new Set([...predefinedProvinces, ...actualProvinces]));
+        allProvincesForRegion.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+        // Map stats per province
+        const provinceStatsMap: Map<string, { total: number; teenagers: number; teachers: number; cleared: number; pending: number }> = new Map();
+        for (const prov of allProvincesForRegion) {
+          provinceStatsMap.set(prov, { total: 0, teenagers: 0, teachers: 0, cleared: 0, pending: 0 });
+        }
+
+        for (const r of sortedRegRecords) {
           const provName = r.province || 'Unspecified Province';
-          if (!provinceMap.has(provName)) {
-            provinceMap.set(provName, { total: 0, teenagers: 0, teachers: 0, cleared: 0, pending: 0 });
+          if (!provinceStatsMap.has(provName)) {
+            provinceStatsMap.set(provName, { total: 0, teenagers: 0, teachers: 0, cleared: 0, pending: 0 });
           }
-          const pData = provinceMap.get(provName)!;
+          const pData = provinceStatsMap.get(provName)!;
           pData.total++;
+          const catRank = getCategoryRank(r.category);
           if (catRank === 1) pData.teenagers++;
           else if (catRank === 2) pData.teachers++;
+          const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
           if (isCleared) pData.cleared++;
           else pData.pending++;
         }
 
-        const distinctProvincesCount = provinceMap.size;
+        const distinctProvincesCount = allProvincesForRegion.length;
         const regionalTarget = distinctProvincesCount * PROVINCE_TARGET;
         const regionalTargetPct = regionalTarget > 0 ? Math.round((totalRegionalDelegates / regionalTarget) * 100) : 0;
         const regionalGap = Math.max(0, regionalTarget - totalRegionalDelegates);
 
-        // Provincial Breakdown Rows
-        const provinceRowsHtml = Array.from(provinceMap.entries()).map(([provName, pData]) => {
+        // Provincial Breakdown Rows HTML
+        const provinceRowsHtml = Array.from(provinceStatsMap.entries()).map(([provName, pData]) => {
           const provPct = Math.round((pData.total / PROVINCE_TARGET) * 100);
           const provGap = Math.max(0, PROVINCE_TARGET - pData.total);
           const gapText = provGap > 0 ? `${provGap} short` : 'Target Met';
 
           return `
-            <tr>
-              <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; font-weight: 700; color: #0f172a;">${provName}</td>
-              <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: 800; color: #0f172a;">${pData.total}</td>
+            <tr style="${pData.total === 0 ? 'background-color: #fafafa;' : ''}">
+              <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; font-weight: 700; color: ${pData.total === 0 ? '#94a3b8' : '#0f172a'};">${provName}</td>
+              <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: 800; color: ${pData.total === 0 ? '#94a3b8' : '#0f172a'};">${pData.total}</td>
               <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #475569;">${pData.teenagers} / ${pData.teachers}</td>
               <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #64748b;">${PROVINCE_TARGET}</td>
               <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; text-align: center;">
@@ -651,27 +668,38 @@ export default function RegistrationTable() {
           `;
         }).join('');
 
-        // Delegate Rows for this Region
-        const delegateRowsHtml = records.map((r, idx) => {
-          const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
-          const statusClass = isCleared ? 'status-cleared' : 'status-pending';
-          const statusLabel = isCleared ? 'Cleared' : 'Pending';
+        // Delegate Rows HTML
+        let delegateRowsHtml = '';
+        if (sortedRegRecords.length > 0) {
+          delegateRowsHtml = sortedRegRecords.map((r, idx) => {
+            const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
+            const statusClass = isCleared ? 'status-cleared' : 'status-pending';
+            const statusLabel = isCleared ? 'Cleared' : 'Pending';
 
-          return `
+            return `
+              <tr>
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; color: #64748b; font-weight: 600; text-align: center;">${idx + 1}</td>
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; font-weight: 700; color: #0f172a;">${r.full_name || ''}</td>
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px;">
+                  <span class="category-badge ${r.category?.toLowerCase() === 'teenager' ? 'badge-teen' : 'badge-teacher'}">${r.category || ''}</span>
+                </td>
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; color: #334155; font-weight: 500;">${r.province || '-'}</td>
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px;">
+                  <span class="status-badge ${statusClass}">${statusLabel}</span>
+                </td>
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; color: #64748b; white-space: nowrap;">${new Date(r.created_at).toLocaleDateString()}</td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          delegateRowsHtml = `
             <tr>
-              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; color: #64748b; font-weight: 600; text-align: center;">${idx + 1}</td>
-              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; font-weight: 700; color: #0f172a;">${r.full_name || ''}</td>
-              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px;">
-                <span class="category-badge ${r.category?.toLowerCase() === 'teenager' ? 'badge-teen' : 'badge-teacher'}">${r.category || ''}</span>
+              <td colspan="6" style="text-align: center; padding: 18px; color: #94a3b8; font-style: italic; font-weight: 600; background-color: #fafafa; border-bottom: 1px solid #f1f5f9;">
+                No delegates registered yet for ${regionName}.
               </td>
-              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; color: #334155; font-weight: 500;">${r.province || '-'}</td>
-              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px;">
-                <span class="status-badge ${statusClass}">${statusLabel}</span>
-              </td>
-              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; color: #64748b; white-space: nowrap;">${new Date(r.created_at).toLocaleDateString()}</td>
             </tr>
           `;
-        }).join('');
+        }
 
         return `
           <div class="region-section ${regionIndex > 0 ? 'page-break' : ''}">
@@ -722,7 +750,7 @@ export default function RegistrationTable() {
 
             <!-- Provincial Performance Distribution Table -->
             <div style="margin-bottom: 16px;">
-              <div class="section-subtitle">Provincial Performance Distribution (Target: 40 per Province)</div>
+              <div class="section-subtitle">Provincial Performance Distribution (${distinctProvincesCount} Provinces | Target: 40 per Province)</div>
               <table class="prov-table">
                 <thead>
                   <tr>
