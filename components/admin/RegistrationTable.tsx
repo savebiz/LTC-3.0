@@ -554,13 +554,30 @@ export default function RegistrationTable() {
         return n.includes('other') || n.includes('outside lagos') || n.includes('unspecified');
       };
 
+      // Build authoritative Province -> Region lookup from REGIONS_AND_PROVINCES in constants.tsx
+      const provinceToRegionMap: Map<string, string> = new Map();
+      for (const [regKey, provList] of Object.entries(REGIONS_AND_PROVINCES)) {
+        for (const prov of provList) {
+          provinceToRegionMap.set(prov.trim().toLowerCase(), regKey);
+        }
+      }
+
+      // Helper function to resolve the true authoritative Region for a record based on constants.tsx
+      const getAuthoritativeRegion = (r: Registration) => {
+        if (r.province) {
+          const matchedReg = provinceToRegionMap.get(r.province.trim().toLowerCase());
+          if (matchedReg) return matchedReg;
+        }
+        return r.region || '';
+      };
+
       // Determine target regions to include in the executive report
       let targetRegionNames: string[] = [];
       if (selectedRegions.length > 0) {
         targetRegionNames = selectedRegions.filter(r => !isOtherRegion(r));
       } else {
         const predefinedRegions = Object.keys(REGIONS_AND_PROVINCES);
-        const actualRegions = records.map(r => r.region).filter(Boolean);
+        const actualRegions = records.map(r => getAuthoritativeRegion(r)).filter(Boolean);
         targetRegionNames = Array.from(new Set([...predefinedRegions, ...allRegions, ...actualRegions]))
           .filter(r => !isOtherRegion(r));
       }
@@ -568,13 +585,13 @@ export default function RegistrationTable() {
       // Sort region names using numerical-aware comparator
       targetRegionNames.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
-      // Map records by region (excluding non-regional 'Other' bucket)
+      // Map records by authoritative region (excluding non-regional 'Other' bucket)
       const recordsByRegion: Map<string, Registration[]> = new Map();
       for (const regName of targetRegionNames) {
         recordsByRegion.set(regName, []);
       }
       for (const record of records) {
-        const rName = record.region || '';
+        const rName = getAuthoritativeRegion(record);
         if (isOtherRegion(rName)) continue;
         if (!recordsByRegion.has(rName)) {
           recordsByRegion.set(rName, []);
@@ -625,10 +642,14 @@ export default function RegistrationTable() {
           else pendingCount++;
         }
 
-        // Determine all provinces for this region (predefined + actual)
+        // Determine all provinces strictly belonging to this region (predefined + actual)
         const predefinedProvinces = REGIONS_AND_PROVINCES[regionName] || [];
         const actualProvinces = sortedRegRecords.map(r => r.province).filter(Boolean);
-        const allProvincesForRegion = Array.from(new Set([...predefinedProvinces, ...actualProvinces]));
+        const allProvincesForRegion = Array.from(new Set([...predefinedProvinces, ...actualProvinces]))
+          .filter(prov => {
+            const matchedReg = provinceToRegionMap.get(prov.trim().toLowerCase());
+            return !matchedReg || matchedReg === regionName;
+          });
         allProvincesForRegion.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
         // Map stats per province
