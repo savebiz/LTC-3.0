@@ -548,26 +548,34 @@ export default function RegistrationTable() {
         return 3;
       };
 
-      // Determine target regions to include in the report
+      // Helper to identify non-regional bucket entries (e.g. 'Other (Outside Lagos/Ogun)')
+      const isOtherRegion = (name: string) => {
+        const n = (name || '').toLowerCase().trim();
+        return n.includes('other') || n.includes('outside lagos') || n.includes('unspecified');
+      };
+
+      // Determine target regions to include in the executive report
       let targetRegionNames: string[] = [];
       if (selectedRegions.length > 0) {
-        targetRegionNames = [...selectedRegions];
+        targetRegionNames = selectedRegions.filter(r => !isOtherRegion(r));
       } else {
         const predefinedRegions = Object.keys(REGIONS_AND_PROVINCES);
         const actualRegions = records.map(r => r.region).filter(Boolean);
-        targetRegionNames = Array.from(new Set([...predefinedRegions, ...allRegions, ...actualRegions]));
+        targetRegionNames = Array.from(new Set([...predefinedRegions, ...allRegions, ...actualRegions]))
+          .filter(r => !isOtherRegion(r));
       }
 
       // Sort region names using numerical-aware comparator
       targetRegionNames.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
-      // Map records by region
+      // Map records by region (excluding non-regional 'Other' bucket)
       const recordsByRegion: Map<string, Registration[]> = new Map();
       for (const regName of targetRegionNames) {
         recordsByRegion.set(regName, []);
       }
       for (const record of records) {
-        const rName = record.region || 'Unspecified Region';
+        const rName = record.region || '';
+        if (isOtherRegion(rName)) continue;
         if (!recordsByRegion.has(rName)) {
           recordsByRegion.set(rName, []);
         }
