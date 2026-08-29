@@ -535,234 +535,449 @@ export default function RegistrationTable() {
 
   async function exportPDF() {
     try {
-      const { data: exportData, error } = await getFilteredQuery().order('created_at', { ascending: false });
+      const { data: rawExportData, error } = await getFilteredQuery().order('created_at', { ascending: false });
       if (error) throw error;
-      if (!exportData || exportData.length === 0) {
+      if (!rawExportData || rawExportData.length === 0) {
         toast.error('No Data', 'No records match your filters to export.');
         return;
       }
 
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) return;
+      // Helper for Category ordering: Teenager (1) MUST come before Teacher (2) before Others (3)
+      const getCategoryRank = (cat: string) => {
+        const c = (cat || '').toLowerCase().trim();
+        if (c.includes('teenager') || c.includes('teen')) return 1;
+        if (c.includes('teacher')) return 2;
+        return 3;
+      };
 
-      const regionsText = selectedRegions.length > 0 ? selectedRegions.join(', ') : 'All Regions';
+      // 4-Level Data Hierarchy Sort: REGION -> PROVINCE -> CATEGORY (Teenager first) -> FULL NAME
+      const exportData = [...rawExportData].sort((a, b) => {
+        // 1. Region (Numerical-aware)
+        const regA = a.region || 'Unspecified Region';
+        const regB = b.region || 'Unspecified Region';
+        const regComp = regA.localeCompare(regB, undefined, { numeric: true, sensitivity: 'base' });
+        if (regComp !== 0) return regComp;
+
+        // 2. Province (Numerical-aware)
+        const provA = a.province || 'Unspecified Province';
+        const provB = b.province || 'Unspecified Province';
+        const provComp = provA.localeCompare(provB, undefined, { numeric: true, sensitivity: 'base' });
+        if (provComp !== 0) return provComp;
+
+        // 3. Category (Teenager first, then Teacher)
+        const catRankA = getCategoryRank(a.category);
+        const catRankB = getCategoryRank(b.category);
+        if (catRankA !== catRankB) return catRankA - catRankB;
+
+        // 4. Full Name (A to Z)
+        const nameA = (a.full_name || '').trim();
+        const nameB = (b.full_name || '').trim();
+        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+      });
+
+      // Group records by Region
+      const regionGroups: Map<string, typeof exportData> = new Map();
+      for (const record of exportData) {
+        const regName = record.region || 'Unspecified Region';
+        if (!regionGroups.has(regName)) {
+          regionGroups.set(regName, []);
+        }
+        regionGroups.get(regName)!.push(record);
+      }
+
       const exportDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-      const totalAmount = exportData.reduce((sum, r) => sum + (Number(r.amount_due) || 0), 0);
+      const PROVINCE_TARGET = 40; // Benchmark target per province
 
-      const rows = exportData.map(r => {
-        const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
-        const isPending = r.payment_status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'pending_payment' || r.status?.toLowerCase() === 'pending_verification';
-        const isArrival = r.payment_status?.toLowerCase() === 'pay_on_arrival' || r.status?.toLowerCase() === 'pay_on_arrival' || r.payment_method?.toLowerCase() === 'pay_on_arrival';
-        const isRejected = r.status?.toLowerCase() === 'rejected' || r.payment_status?.toLowerCase() === 'rejected';
+      // Generate HTML per Region
+      const regionSectionsHtml = Array.from(regionGroups.entries()).map(([regionName, records], regionIndex) => {
+        const totalRegionalDelegates = records.length;
         
-        let statusClass = 'status-pending';
-        let statusLabel = r.payment_status || r.status || 'Pending';
-        if (isCleared) {
-          statusClass = 'status-cleared';
-          statusLabel = 'Cleared';
-        } else if (isArrival) {
-          statusClass = 'status-arrival';
-          statusLabel = 'Pay on Arrival';
-        } else if (isRejected) {
-          statusClass = 'status-rejected';
-          statusLabel = 'Rejected';
-        } else if (isPending) {
-          statusClass = 'status-pending';
-          statusLabel = 'Pending';
+        let teenagerCount = 0;
+        let teacherCount = 0;
+        let otherCategoryCount = 0;
+
+        let clearedCount = 0;
+        let pendingCount = 0; // Cleared vs Pending only per specification
+
+        // Group by province within region
+        const provinceMap: Map<string, { total: number; teenagers: number; teachers: number; cleared: number; pending: number }> = new Map();
+
+        for (const r of records) {
+          const catRank = getCategoryRank(r.category);
+          if (catRank === 1) teenagerCount++;
+          else if (catRank === 2) teacherCount++;
+          else otherCategoryCount++;
+
+          const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
+          if (isCleared) {
+            clearedCount++;
+          } else {
+            pendingCount++;
+          }
+
+          const provName = r.province || 'Unspecified Province';
+          if (!provinceMap.has(provName)) {
+            provinceMap.set(provName, { total: 0, teenagers: 0, teachers: 0, cleared: 0, pending: 0 });
+          }
+          const pData = provinceMap.get(provName)!;
+          pData.total++;
+          if (catRank === 1) pData.teenagers++;
+          else if (catRank === 2) pData.teachers++;
+          if (isCleared) pData.cleared++;
+          else pData.pending++;
         }
 
+        const distinctProvincesCount = provinceMap.size;
+        const regionalTarget = distinctProvincesCount * PROVINCE_TARGET;
+        const regionalTargetPct = regionalTarget > 0 ? Math.round((totalRegionalDelegates / regionalTarget) * 100) : 0;
+        const regionalGap = Math.max(0, regionalTarget - totalRegionalDelegates);
+
+        // Provincial Breakdown Rows
+        const provinceRowsHtml = Array.from(provinceMap.entries()).map(([provName, pData]) => {
+          const provPct = Math.round((pData.total / PROVINCE_TARGET) * 100);
+          const provGap = Math.max(0, PROVINCE_TARGET - pData.total);
+          const gapText = provGap > 0 ? `${provGap} short` : 'Target Met';
+
+          return `
+            <tr>
+              <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; font-weight: 700; color: #0f172a;">${provName}</td>
+              <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: 800; color: #0f172a;">${pData.total}</td>
+              <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #475569;">${pData.teenagers} / ${pData.teachers}</td>
+              <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #64748b;">${PROVINCE_TARGET}</td>
+              <td style="padding: 7px 10px; border-bottom: 1px solid #f1f5f9; text-align: center;">
+                <span style="font-weight: 700; ${provGap > 0 ? 'color: #d97706;' : 'color: #059669;'}">${provPct}% (${gapText})</span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Delegate Rows for this Region
+        const delegateRowsHtml = records.map((r, idx) => {
+          const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
+          const statusClass = isCleared ? 'status-cleared' : 'status-pending';
+          const statusLabel = isCleared ? 'Cleared' : 'Pending';
+
+          return `
+            <tr>
+              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; color: #64748b; font-weight: 600; text-align: center;">${idx + 1}</td>
+              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; font-weight: 700; color: #0f172a;">${r.full_name || ''}</td>
+              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px;">
+                <span class="category-badge ${r.category?.toLowerCase() === 'teenager' ? 'badge-teen' : 'badge-teacher'}">${r.category || ''}</span>
+              </td>
+              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; color: #334155; font-weight: 500;">${r.province || '-'}</td>
+              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px;">
+                <span class="status-badge ${statusClass}">${statusLabel}</span>
+              </td>
+              <td style="border-bottom: 1px solid #f1f5f9; padding: 7px 8px; color: #64748b; white-space: nowrap;">${new Date(r.created_at).toLocaleDateString()}</td>
+            </tr>
+          `;
+        }).join('');
+
         return `
-          <tr>
-            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;"><span class="ref-code">${r.batch_reference || ''}</span></td>
-            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px; font-weight: bold; color: #0f172a;">${r.full_name || ''}</td>
-            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;"><span class="category-badge">${r.category || ''}</span></td>
-            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">${r.region || ''}</td>
-            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">${r.province || '-'}</td>
-            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px;">
-              <span class="status-badge ${statusClass}">${statusLabel}</span>
-            </td>
-            <td style="border-bottom: 1px solid #e2e8f0; padding: 10px 8px; color: #64748b;">${new Date(r.created_at).toLocaleDateString()}</td>
-          </tr>
+          <div class="region-section ${regionIndex > 0 ? 'page-break' : ''}">
+            <!-- Region Header -->
+            <div class="region-header">
+              <div>
+                <span class="org-subtitle">C3TC T.I.M.E '26 — Regional Executive Report</span>
+                <h1 class="region-name">${regionName}</h1>
+              </div>
+              <div class="header-meta">
+                <div class="meta-label">Export Date</div>
+                <div class="meta-value">${exportDate}</div>
+              </div>
+            </div>
+
+            <!-- Regional Summary Cards Grid -->
+            <div class="summary-cards-grid">
+              <div class="summary-card card-primary">
+                <div class="card-label">Total Delegates</div>
+                <div class="card-value">${totalRegionalDelegates}</div>
+              </div>
+              <div class="summary-card">
+                <div class="card-label">Category Breakdown</div>
+                <div class="card-value-sm">
+                  <span style="color: #ea580c; font-weight: 800;">${teenagerCount}</span> Teenagers
+                  <span style="color: #94a3b8; margin: 0 3px;">•</span>
+                  <span style="color: #2563eb; font-weight: 800;">${teacherCount}</span> Teachers
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="card-label">Status Breakdown</div>
+                <div class="card-value-sm">
+                  <span style="color: #059669; font-weight: 800;">${clearedCount}</span> Cleared
+                  <span style="color: #94a3b8; margin: 0 3px;">•</span>
+                  <span style="color: #d97706; font-weight: 800;">${pendingCount}</span> Pending
+                </div>
+              </div>
+              <div class="summary-card card-target">
+                <div class="card-label">Region Target vs Performance</div>
+                <div class="card-value-sm" style="font-size: 13px;">
+                  <strong>${totalRegionalDelegates}</strong> / <strong>${regionalTarget}</strong> (${regionalTargetPct}%)
+                </div>
+                <div class="card-subtext">
+                  ${regionalGap > 0 ? `<span style="color: #dc2626; font-weight: 700;">${regionalGap} delegates to target</span>` : '<span style="color: #059669; font-weight: 700;">Target Achieved!</span>'}
+                </div>
+              </div>
+            </div>
+
+            <!-- Provincial Performance Distribution Table -->
+            <div style="margin-bottom: 16px;">
+              <div class="section-subtitle">Provincial Performance Distribution (Target: 40 per Province)</div>
+              <table class="prov-table">
+                <thead>
+                  <tr>
+                    <th style="text-align: left;">Province Name</th>
+                    <th style="text-align: center;">Registered</th>
+                    <th style="text-align: center;">Teenagers / Teachers</th>
+                    <th style="text-align: center;">Target</th>
+                    <th style="text-align: center;">Performance vs Target</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${provinceRowsHtml}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Regional Delegate List Table -->
+            <div>
+              <div class="section-subtitle">REGIONAL DELEGATE LIST (${totalRegionalDelegates})</div>
+              <table class="delegate-table">
+                <thead>
+                  <tr>
+                    <th style="width: 32px; text-align: center;">#</th>
+                    <th>Full Name</th>
+                    <th>Category</th>
+                    <th>Province</th>
+                    <th>Payment Status</th>
+                    <th>Registration Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${delegateRowsHtml}
+                </tbody>
+              </table>
+            </div>
+          </div>
         `;
       }).join('');
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) return;
 
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
           <head>
-            <title>C3TC Registration List</title>
+            <title>C3TC Regional Registration Report</title>
             <style>
               @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
               
+              * {
+                box-sizing: border-box;
+              }
+
               body {
                 font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-                color: #1e293b;
-                padding: 40px;
+                color: #0f172a;
+                padding: 24px;
                 background-color: #ffffff;
                 margin: 0;
+                line-height: 1.35;
               }
-              
-              .header-container {
-                border-bottom: 2px solid #f1f5f9;
-                padding-bottom: 16px;
-                margin-bottom: 24px;
+
+              .page-break {
+                page-break-before: always;
+                break-before: page;
+                margin-top: 24px;
               }
-              
-              h1 {
+
+              .region-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                border-bottom: 3px solid #f97316;
+                padding-bottom: 10px;
+                margin-bottom: 16px;
+              }
+
+              .org-subtitle {
+                font-size: 9px;
+                font-weight: 800;
+                color: #ea580c;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+                display: block;
+                margin-bottom: 2px;
+              }
+
+              .region-name {
                 font-size: 22px;
                 font-weight: 800;
                 color: #0f172a;
-                margin: 0 0 6px 0;
+                margin: 0;
                 letter-spacing: -0.5px;
               }
-              
-              .meta-grid {
-                display: grid;
-                grid-template-columns: 3fr 1fr;
-                gap: 15px;
-                font-size: 12px;
-                color: #64748b;
+
+              .header-meta {
+                text-align: right;
               }
-              
+
               .meta-label {
+                font-size: 8.5px;
                 font-weight: 700;
                 color: #94a3b8;
                 text-transform: uppercase;
-                font-size: 9px;
                 letter-spacing: 0.5px;
               }
-              
+
               .meta-value {
-                font-weight: 600;
+                font-size: 11px;
+                font-weight: 700;
                 color: #334155;
+              }
+
+              .summary-cards-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+                margin-bottom: 16px;
+              }
+
+              .summary-card {
+                background-color: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 8px 12px;
+              }
+
+              .card-primary {
+                background-color: #fff7ed;
+                border-color: #ffedd5;
+              }
+
+              .card-target {
+                background-color: #f0fdf4;
+                border-color: #dcfce7;
+              }
+
+              .card-label {
+                font-size: 8.5px;
+                font-weight: 800;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 2px;
+              }
+
+              .card-value {
+                font-size: 18px;
+                font-weight: 800;
+                color: #0f172a;
+              }
+
+              .card-value-sm {
+                font-size: 12px;
+                font-weight: 700;
+                color: #1e293b;
                 margin-top: 2px;
               }
-              
+
+              .card-subtext {
+                font-size: 9.5px;
+                font-weight: 600;
+                color: #64748b;
+                margin-top: 1px;
+              }
+
+              .section-subtitle {
+                font-size: 10px;
+                font-weight: 800;
+                color: #334155;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 6px;
+              }
+
               table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-bottom: 30px;
-                font-size: 11px;
+                font-size: 9.5px;
                 text-align: left;
               }
-              
-              th {
+
+              .prov-table {
+                margin-bottom: 12px;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                overflow: hidden;
+              }
+
+              .prov-table th {
+                background-color: #f1f5f9;
+                color: #334155;
+                font-weight: 700;
+                padding: 6px 10px;
+                font-size: 8.5px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid #cbd5e1;
+              }
+
+              .delegate-table th {
                 background-color: #f8fafc;
                 color: #475569;
                 font-weight: 700;
-                border-bottom: 2px solid #e2e8f0;
-                padding: 10px 8px;
+                border-bottom: 2px solid #cbd5e1;
+                padding: 7px 8px;
                 text-transform: uppercase;
-                font-size: 9px;
+                font-size: 8.5px;
                 letter-spacing: 0.5px;
               }
-              
-              .ref-code {
-                font-family: monospace;
-                font-weight: 700;
-                color: #ea580c;
-                font-size: 12px;
-              }
-              
+
               .category-badge {
-                font-weight: 600;
+                font-size: 8.5px;
+                font-weight: 700;
+                padding: 2px 6px;
+                border-radius: 4px;
+                display: inline-block;
                 text-transform: capitalize;
               }
-              
+
+              .badge-teen {
+                background-color: #fff7ed;
+                color: #c2410c;
+                border: 1px solid #ffedd5;
+              }
+
+              .badge-teacher {
+                background-color: #eff6ff;
+                color: #1d4ed8;
+                border: 1px solid #dbeafe;
+              }
+
               .status-badge {
                 display: inline-block;
-                padding: 3px 8px;
-                border-radius: 6px;
-                font-size: 9px;
-                font-weight: 700;
-                text-transform: uppercase;
-                border: 1px solid transparent;
-              }
-              
-              .status-cleared { background-color: #ecfdf5; border-color: #d1fae5; color: #065f46; }
-              .status-pending { background-color: #fff7ed; border-color: #ffedd5; color: #9a3412; }
-              .status-arrival { background-color: #eff6ff; border-color: #dbeafe; color: #1e40af; }
-              .status-rejected { background-color: #fef2f2; border-color: #fee2e2; color: #991b1b; }
-              
-              .footer-container {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-top: 2px solid #f1f5f9;
-                padding-top: 20px;
-                margin-top: 20px;
-              }
-              
-              .footer-card {
-                background-color: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 12px;
-                padding: 12px 24px;
-                min-width: 150px;
-              }
-              
-              .footer-label {
-                font-size: 10px;
-                color: #64748b;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-              }
-              
-              .footer-value {
-                font-size: 22px;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 8px;
                 font-weight: 800;
-                color: #0f172a;
-                margin-top: 4px;
+                text-transform: uppercase;
               }
-              
+
+              .status-cleared { background-color: #d1fae5; color: #065f46; }
+              .status-pending { background-color: #fef3c7; color: #92400e; }
+
               @media print {
-                body { padding: 0; }
-                @page { size: A4 landscape; margin: 1.2cm; }
+                body { padding: 0.6cm; }
+                @page { size: A4 portrait; margin: 0.6cm; }
                 tr { page-break-inside: avoid; }
+                .page-break { page-break-before: always; break-before: page; }
               }
             </style>
           </head>
           <body>
-            <div class="header-container">
-              <h1>C3TC T.I.M.E '26 — Registration List</h1>
-              <div class="meta-grid">
-                <div>
-                  <div class="meta-label">Selected Region(s)</div>
-                  <div class="meta-value">${regionsText}</div>
-                </div>
-                <div style="text-align: right;">
-                  <div class="meta-label">Export Date</div>
-                  <div class="meta-value">${exportDate}</div>
-                </div>
-              </div>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Ref Code</th>
-                  <th>Full Name</th>
-                  <th>Category</th>
-                  <th>Region</th>
-                  <th>Province</th>
-                  <th>Payment Status</th>
-                  <th>Registration Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows}
-              </tbody>
-            </table>
-            <div class="footer-container">
-              <div class="footer-card">
-                <div class="footer-label">Total Delegates</div>
-                <div class="footer-value">${exportData.length}</div>
-              </div>
-              <div class="footer-card" style="text-align: right;">
-                <div class="footer-label">Total Amount Due</div>
-                <div class="footer-value" style="font-family: monospace;">₦${totalAmount.toLocaleString()}</div>
-              </div>
-            </div>
+            ${regionSectionsHtml}
             <script>
               window.onload = function() {
                 window.print();
