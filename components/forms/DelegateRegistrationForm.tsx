@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -22,7 +22,8 @@ import { TEEN_ROLES, EXEC_LEVELS, LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVI
 import { getJaroWinklerDistance, cleanNameForComparison, normalizePhone, normalizeEmail } from "@/lib/similarity"
 import { DuplicateWarningModal } from "../ui/DuplicateWarningModal"
 import imageCompression from 'browser-image-compression';
-import DPCardGenerator from "@/components/DPCardGenerator";
+
+const DPCardGenerator = lazy(() => import("@/components/DPCardGenerator"));
 import regionalBanksData from "@/regional_banks.json";
 
 const regionalBanks = regionalBanksData as Record<string, { accountName: string; accountNumber: string; bankName: string }>;
@@ -1016,7 +1017,14 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                 </div>
 
                 <div className="space-y-4 pt-4">
-                    <DPCardGenerator registrants={delegates.map(d => ({ full_name: d.fullName, category: d.category }))} darkMode={false} />
+                    <Suspense fallback={
+                        <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2">
+                            <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+                            <span className="text-xs font-semibold text-slate-500">Loading DP Generator...</span>
+                        </div>
+                    }>
+                        <DPCardGenerator registrants={delegates.map(d => ({ full_name: d.fullName, category: d.category }))} darkMode={false} />
+                    </Suspense>
                     
                     <div className="text-center pt-1.5">
                         <button

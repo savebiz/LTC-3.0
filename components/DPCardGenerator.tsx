@@ -4,8 +4,7 @@ import { Camera, Download, Share2, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import imageCompression from 'browser-image-compression';
 
-// Import Base64-encoded static template data URLs to bypass CDN/domain CORS and tainted canvas issues
-import { DP_BLUE_BASE64, DP_ORANGE_BASE64 } from './DPCardAssets';
+// Base64-encoded static template data URLs are dynamically imported on mount to isolate 2.2MB base64 data into an async chunk
 
 interface Registrant {
     full_name?: string;
@@ -114,28 +113,32 @@ export default function DPCardGenerator({ registrants, darkMode = false }: DPCar
 
         let active = true;
 
-        // Preload templates with CORS anonymous setting (crucial for Canvas drawImage export)
-        loadImage(DP_BLUE_BASE64)
-            .then((img) => {
-                if (active) {
-                    console.log("DPCardGenerator: Blue template preloaded successfully");
-                    setBlueTemplate(img);
-                }
-            })
-            .catch((err) => {
-                console.error("DPCardGenerator: Failed to preload Blue template", err);
-            });
+        // Dynamically import templates to keep base64 asset isolated in async chunk
+        import('./DPCardAssets').then(({ DP_BLUE_BASE64, DP_ORANGE_BASE64 }) => {
+            loadImage(DP_BLUE_BASE64)
+                .then((img) => {
+                    if (active) {
+                        console.log("DPCardGenerator: Blue template preloaded successfully");
+                        setBlueTemplate(img);
+                    }
+                })
+                .catch((err) => {
+                    console.error("DPCardGenerator: Failed to preload Blue template", err);
+                });
 
-        loadImage(DP_ORANGE_BASE64)
-            .then((img) => {
-                if (active) {
-                    console.log("DPCardGenerator: Orange template preloaded successfully");
-                    setOrangeTemplate(img);
-                }
-            })
-            .catch((err) => {
-                console.error("DPCardGenerator: Failed to preload Orange template", err);
-            });
+            loadImage(DP_ORANGE_BASE64)
+                .then((img) => {
+                    if (active) {
+                        console.log("DPCardGenerator: Orange template preloaded successfully");
+                        setOrangeTemplate(img);
+                    }
+                })
+                .catch((err) => {
+                    console.error("DPCardGenerator: Failed to preload Orange template", err);
+                });
+        }).catch((err) => {
+            console.error("DPCardGenerator: Failed to load DPCardAssets module", err);
+        });
 
         // Cleanup Object URL on unmount
         return () => {

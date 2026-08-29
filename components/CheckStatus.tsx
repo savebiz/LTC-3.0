@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { Loader2, Search, ArrowLeft } from 'lucide-react';
-import DPCardGenerator from './DPCardGenerator';
+
+const DPCardGenerator = lazy(() => import('./DPCardGenerator'));
 
 export default function CheckStatus() {
     const [referenceCode, setReferenceCode] = useState('');
@@ -236,7 +237,14 @@ export default function CheckStatus() {
 
                             {/* DP Card Generator section (only if cleared) */}
                             {result && result.length > 0 && ['cleared', 'confirmed'].includes(paymentStatus?.toLowerCase()) && (
-                                <DPCardGenerator registrants={result} darkMode={true} />
+                                <Suspense fallback={
+                                    <div className="p-6 text-center bg-zinc-900/40 border border-zinc-800 rounded-xl flex items-center justify-center gap-2 text-zinc-400">
+                                        <Loader2 className="h-5 w-5 animate-spin text-orange-500" />
+                                        <span className="text-xs font-medium">Loading DP Generator...</span>
+                                    </div>
+                                }>
+                                    <DPCardGenerator registrants={result} darkMode={true} />
+                                </Suspense>
                             )}
 
                             {/* Payment Method & Summary */}
