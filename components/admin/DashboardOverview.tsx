@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllSupabaseRows } from '@/lib/supabase';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     LineChart, Line
@@ -10,6 +10,36 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+
+interface Registration {
+  id: string;
+  created_at: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  region: string;
+  province: string;
+  category: string;
+  amount_due: number;
+  payment_method: string;
+  payment_reference?: string;
+  payment_status?: string;
+  status: string;
+  checked_in: boolean;
+  checked_in_at?: string;
+}
+
+interface Volunteer {
+  id: string;
+  created_at: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  region: string;
+  province: string;
+  department: string;
+  status: string;
+}
 
 export default function DashboardOverview() {
     const navigate = useNavigate();

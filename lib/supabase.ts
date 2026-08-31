@@ -16,40 +16,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient((supabaseUrl || '').trim(), (supabaseAnonKey || '').trim());
 
 /**
- * Helper to fetch all rows from a Supabase query, automatically paginating
- * in batches of 1,000 rows to bypass PostgREST's default 1,000-row limit.
+ * Helper to fetch all rows from a Supabase query, setting range(0, maxLimit)
+ * to bypass PostgREST's default 1,000-row limit in a single atomic request.
  */
 export async function fetchAllSupabaseRows<T = any>(
     queryBuilderFn: () => any,
-    batchSize = 1000
+    maxLimit = 9999
 ): Promise<T[]> {
-    let allRows: T[] = [];
-    let page = 0;
-    let hasMore = true;
-
     try {
-        while (hasMore) {
-            const from = page * batchSize;
-            const to = from + batchSize - 1;
-            const { data, error } = await queryBuilderFn().range(from, to);
-            if (error) {
-                console.error(`[fetchAllSupabaseRows] Error fetching page ${page}:`, error);
-                break;
-            }
-            if (data && data.length > 0) {
-                allRows = allRows.concat(data);
-                if (data.length < batchSize) {
-                    hasMore = false;
-                } else {
-                    page++;
-                }
-            } else {
-                hasMore = false;
-            }
+        const { data, error } = await queryBuilderFn().range(0, maxLimit);
+        if (error) {
+            console.error('[fetchAllSupabaseRows] Error fetching rows:', error);
+            return [];
         }
+        return (data as T[]) || [];
     } catch (err) {
-        console.error('[fetchAllSupabaseRows] Unexpected error during pagination:', err);
+        console.error('[fetchAllSupabaseRows] Unexpected error:', err);
+        return [];
     }
-
-    return allRows;
 }
