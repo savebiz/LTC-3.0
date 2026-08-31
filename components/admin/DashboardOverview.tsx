@@ -56,16 +56,25 @@ export default function DashboardOverview() {
         async function loadData(showSpinner = true) {
             if (showSpinner) setLoading(true);
             try {
-                const rData = await fetchAllSupabaseRows<Registration>(() =>
-                    supabase.from('registrations').select('*').order('created_at', { ascending: false })
-                );
-                const vData = await fetchAllSupabaseRows<Volunteer>(() =>
-                    supabase.from('volunteers').select('*').order('created_at', { ascending: false })
-                );
-                if (rData) setRegs(rData);
-                if (vData) setVols(vData);
-            } catch (err) {
-                console.error('Error fetching dashboard overview data:', err);
+                // Fetch registrations independently
+                try {
+                    const rData = await fetchAllSupabaseRows<Registration>(() =>
+                        supabase.from('registrations').select('*').order('created_at', { ascending: false })
+                    );
+                    if (rData) setRegs(rData);
+                } catch (rErr) {
+                    console.error('Error fetching registrations in overview:', rErr);
+                }
+
+                // Fetch volunteers independently
+                try {
+                    const vData = await fetchAllSupabaseRows<Volunteer>(() =>
+                        supabase.from('volunteers').select('*').order('created_at', { ascending: false })
+                    );
+                    if (vData) setVols(vData);
+                } catch (vErr) {
+                    console.error('Error fetching volunteers in overview:', vErr);
+                }
             } finally {
                 if (showSpinner) setLoading(false);
             }

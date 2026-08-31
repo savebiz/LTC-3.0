@@ -27,21 +27,28 @@ export async function fetchAllSupabaseRows<T = any>(
     let page = 0;
     let hasMore = true;
 
-    while (hasMore) {
-        const from = page * batchSize;
-        const to = from + batchSize - 1;
-        const { data, error } = await queryBuilderFn().range(from, to);
-        if (error) throw error;
-        if (data && data.length > 0) {
-            allRows = allRows.concat(data);
-            if (data.length < batchSize) {
-                hasMore = false;
-            } else {
-                page++;
+    try {
+        while (hasMore) {
+            const from = page * batchSize;
+            const to = from + batchSize - 1;
+            const { data, error } = await queryBuilderFn().range(from, to);
+            if (error) {
+                console.error(`[fetchAllSupabaseRows] Error fetching page ${page}:`, error);
+                break;
             }
-        } else {
-            hasMore = false;
+            if (data && data.length > 0) {
+                allRows = allRows.concat(data);
+                if (data.length < batchSize) {
+                    hasMore = false;
+                } else {
+                    page++;
+                }
+            } else {
+                hasMore = false;
+            }
         }
+    } catch (err) {
+        console.error('[fetchAllSupabaseRows] Unexpected error during pagination:', err);
     }
 
     return allRows;
