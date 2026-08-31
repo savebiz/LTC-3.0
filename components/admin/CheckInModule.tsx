@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllSupabaseRows } from '@/lib/supabase';
 import { useDialog } from '../ui/DialogProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -150,8 +150,8 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
     async function cacheRegistrations() {
         if (!navigator.onLine) return;
         try {
-            const { data, error } = await supabase.from('registrations').select('*');
-            if (!error && data) {
+            const data = await fetchAllSupabaseRows(() => supabase.from('registrations').select('*'));
+            if (data) {
                 localStorage.setItem('c3tc_registrations_cache', JSON.stringify(data));
                 localStorage.setItem('c3tc_cache_timestamp', Date.now().toString());
             }

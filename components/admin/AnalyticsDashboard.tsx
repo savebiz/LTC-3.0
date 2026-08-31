@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllSupabaseRows } from '@/lib/supabase';
 import {
     LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
     Legend, ResponsiveContainer, Cell
@@ -38,12 +38,13 @@ export default function AnalyticsDashboard() {
     async function loadData(showSpinner = true) {
         if (showSpinner) setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('registrations')
-                .select('*')
-                .order('created_at', { ascending: false });
+            const data = await fetchAllSupabaseRows<Registration>(() =>
+                supabase
+                    .from('registrations')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+            );
 
-            if (error) throw error;
             if (data) {
                 setRegs(data);
                 setLastUpdated(new Date());

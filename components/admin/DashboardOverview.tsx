@@ -56,14 +56,12 @@ export default function DashboardOverview() {
         async function loadData(showSpinner = true) {
             if (showSpinner) setLoading(true);
             try {
-                const { data: rData } = await supabase
-                    .from('registrations')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                const { data: vData } = await supabase
-                    .from('volunteers')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                const rData = await fetchAllSupabaseRows<Registration>(() =>
+                    supabase.from('registrations').select('*').order('created_at', { ascending: false })
+                );
+                const vData = await fetchAllSupabaseRows<Volunteer>(() =>
+                    supabase.from('volunteers').select('*').order('created_at', { ascending: false })
+                );
                 if (rData) setRegs(rData);
                 if (vData) setVols(vData);
             } catch (err) {

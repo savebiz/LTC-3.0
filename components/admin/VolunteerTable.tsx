@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllSupabaseRows } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Download, Search, Loader2, Users, CheckCircle2, Clock, XCircle, Mail } from 'lucide-react';
@@ -24,15 +24,21 @@ export default function VolunteerTable() {
 
     async function fetchVolunteers() {
         setLoading(true);
-        const { data: vols, error } = await supabase
-            .from('volunteers')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (!error && vols) {
-            setData(vols);
+        try {
+            const vols = await fetchAllSupabaseRows(() =>
+                supabase
+                    .from('volunteers')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+            );
+            if (vols) {
+                setData(vols);
+            }
+        } catch (err) {
+            console.error('Error fetching volunteers:', err);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }
 
     async function handleApprove(id: string) {

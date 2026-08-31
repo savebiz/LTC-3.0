@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllSupabaseRows } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -228,10 +228,12 @@ export default function RegistrationTable() {
 
   async function fetchStats() {
     try {
-      const { data: statsData, error } = await supabase
-        .from('registrations')
-        .select('status, payment_status, payment_method, amount_due');
-      if (!error && statsData) {
+      const statsData = await fetchAllSupabaseRows(() =>
+        supabase
+          .from('registrations')
+          .select('status, payment_status, payment_method, amount_due')
+      );
+      if (statsData) {
         setStats(statsData as StatsData[]);
       }
     } catch (err) {
@@ -493,8 +495,9 @@ export default function RegistrationTable() {
 
   async function exportCSV() {
     try {
-      const { data: exportData, error } = await getFilteredQuery().order('created_at', { ascending: false });
-      if (error) throw error;
+      const exportData = await fetchAllSupabaseRows(() =>
+        getFilteredQuery().order('created_at', { ascending: false })
+      );
       if (!exportData || exportData.length === 0) {
         toast.error('No Data', 'No records match your filters to export.');
         return;
@@ -535,8 +538,9 @@ export default function RegistrationTable() {
 
   async function exportPDF() {
     try {
-      const { data: rawExportData, error } = await getFilteredQuery().order('created_at', { ascending: false });
-      if (error) throw error;
+      const rawExportData = await fetchAllSupabaseRows<Registration>(() =>
+        getFilteredQuery().order('created_at', { ascending: false })
+      );
       
       const records = rawExportData || [];
 

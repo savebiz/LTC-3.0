@@ -14,3 +14,35 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient((supabaseUrl || '').trim(), (supabaseAnonKey || '').trim());
+
+/**
+ * Helper to fetch all rows from a Supabase query, automatically paginating
+ * in batches of 1,000 rows to bypass PostgREST's default 1,000-row limit.
+ */
+export async function fetchAllSupabaseRows<T = any>(
+    queryBuilderFn: () => any,
+    batchSize = 1000
+): Promise<T[]> {
+    let allRows: T[] = [];
+    let page = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+        const from = page * batchSize;
+        const to = from + batchSize - 1;
+        const { data, error } = await queryBuilderFn().range(from, to);
+        if (error) throw error;
+        if (data && data.length > 0) {
+            allRows = allRows.concat(data);
+            if (data.length < batchSize) {
+                hasMore = false;
+            } else {
+                page++;
+            }
+        } else {
+            hasMore = false;
+        }
+    }
+
+    return allRows;
+}
