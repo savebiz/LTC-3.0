@@ -73,13 +73,10 @@ export default function CountdownTimer() {
             className="w-full max-w-lg mx-auto px-2 sm:px-4"
         >
             <div className="bg-black/60 border border-orange-500/30 hover:border-orange-500/50 transition-colors backdrop-blur-2xl shadow-[0_0_35px_rgba(249,115,22,0.12)] rounded-2xl sm:rounded-3xl px-4 py-4 sm:px-8 sm:py-5">
-                {/* Header with pulsing indicator */}
-                <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                    <p className="text-[10px] sm:text-xs tracking-[0.15em] sm:tracking-[0.2em] text-zinc-300 font-mono uppercase text-center font-medium">
-                        Registration closes Sept 13 • 11:59 PM
-                    </p>
-                </div>
+                {/* Header */}
+                <p className="text-[10px] sm:text-xs tracking-[0.15em] sm:tracking-[0.2em] text-zinc-300 font-mono uppercase text-center font-medium mb-3 sm:mb-4">
+                    Registration closes Sept 13 • 11:59 PM
+                </p>
 
                 {/* 4-Unit Timer Digits (Days : Hours : Mins : Secs) */}
                 <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-5">
