@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
+import CountdownTimer from '@/components/CountdownTimer';
 
 interface HeroProps {
     onRegisterClick: () => void;
@@ -88,6 +89,8 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                 >
                     The Incredible Me Emerging
                 </motion.p>
+
+                <CountdownTimer />
 
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
