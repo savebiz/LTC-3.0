@@ -37,21 +37,21 @@ export default function CountdownTimer() {
 
     const pad = (n: number) => String(n).padStart(2, '0');
 
-    // Expired state
+    // Expired state (after Sept 13, 11:59 PM)
     if (!timeLeft) {
         return (
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.8 }}
-                className="w-full max-w-lg mx-auto px-4"
+                className="w-full max-w-lg mx-auto px-2 sm:px-4"
             >
-                <div className="bg-black/60 border border-orange-500/30 backdrop-blur-2xl shadow-[0_0_35px_rgba(249,115,22,0.12)] rounded-2xl sm:rounded-3xl px-6 py-4 text-center">
-                    <p className="text-xs tracking-[0.2em] text-zinc-400 font-mono uppercase">
-                        Delegate Registration
+                <div className="bg-black/60 border border-orange-500/30 backdrop-blur-2xl shadow-[0_0_35px_rgba(249,115,22,0.12)] rounded-2xl sm:rounded-3xl px-6 py-5 text-center">
+                    <p className="text-[10px] sm:text-xs tracking-[0.18em] text-orange-400 font-mono uppercase font-bold">
+                        ONLINE REGISTRATION CLOSED
                     </p>
-                    <p className="text-lg sm:text-xl font-bold text-orange-400 mt-2 tracking-wide">
-                        CLOSED
+                    <p className="text-xs sm:text-sm text-zinc-300 mt-2 max-w-md mx-auto leading-relaxed">
+                        Missed the online deadline? Onsite registration will be available at the conference venue on <span className="text-white font-semibold">Saturday, September 19, 2026</span>.
                     </p>
                 </div>
             </motion.div>
@@ -72,10 +72,10 @@ export default function CountdownTimer() {
             transition={{ duration: 0.6, delay: 0.8 }}
             className="w-full max-w-lg mx-auto px-2 sm:px-4"
         >
-            <div className="bg-black/60 border border-orange-500/30 hover:border-orange-500/50 transition-colors backdrop-blur-2xl shadow-[0_0_35px_rgba(249,115,22,0.12)] rounded-2xl sm:rounded-3xl px-4 py-4 sm:px-8 sm:py-5">
-                {/* Header */}
-                <p className="text-[9px] sm:text-xs tracking-[0.06em] sm:tracking-[0.18em] text-zinc-300 font-mono uppercase text-center font-medium mb-3 sm:mb-4 whitespace-nowrap">
-                    Registration closes Sept 13 • 11:59 PM
+            <div className="bg-black/60 border border-orange-500/30 hover:border-orange-500/50 transition-colors backdrop-blur-2xl shadow-[0_0_35px_rgba(249,115,22,0.12)] rounded-2xl sm:rounded-3xl px-3 py-4 sm:px-8 sm:py-5">
+                {/* Header: Online Registration Deadline */}
+                <p className="text-[8.5px] xs:text-[9.5px] sm:text-xs tracking-[0.04em] sm:tracking-[0.15em] text-zinc-300 font-mono uppercase text-center font-medium mb-3 sm:mb-4 whitespace-nowrap">
+                    ONLINE REGISTRATION CLOSES SEPT 13 • 11:59 PM
                 </p>
 
                 {/* 4-Unit Timer Digits (Days : Hours : Mins : Secs) */}
@@ -97,6 +97,14 @@ export default function CountdownTimer() {
                             )}
                         </div>
                     ))}
+                </div>
+
+                {/* Footnote: Onsite Registration Notice */}
+                <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-white/5 flex items-center justify-center gap-1.5">
+                    <span className="w-1 h-1 rounded-full bg-orange-400/80" />
+                    <p className="text-[8px] sm:text-[10px] tracking-[0.06em] sm:tracking-[0.1em] text-zinc-400 font-mono uppercase text-center font-medium whitespace-nowrap">
+                        Onsite registration opens Sept 19 at venue
+                    </p>
                 </div>
             </div>
         </motion.div>

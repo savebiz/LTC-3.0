@@ -51,7 +51,7 @@ export default function RegisterModal({ open, onOpenChange, defaultTab = "delega
                 <DialogHeader>
                     <DialogTitle>Secure Your Spot</DialogTitle>
                     <DialogDescription>
-                        Join us for {EVENT_DETAILS.fullTheme}. Register as a delegate.
+                        Join us for {EVENT_DETAILS.fullTheme}. Online registration closes Sept 13 (onsite registration opens Sept 19 at the venue).
                     </DialogDescription>
                 </DialogHeader>
                 <Tabs defaultValue="delegate" value={activeTab} onValueChange={() => {/* Prevent tab switching */}} className="w-full">
