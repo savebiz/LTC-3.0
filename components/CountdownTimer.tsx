@@ -7,6 +7,7 @@ interface TimeLeft {
     days: number;
     hours: number;
     minutes: number;
+    seconds: number;
 }
 
 function getTimeLeft(): TimeLeft | null {
@@ -19,6 +20,7 @@ function getTimeLeft(): TimeLeft | null {
         days: Math.floor(diff / (1000 * 60 * 60 * 24)),
         hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
         minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
     };
 }
 
@@ -28,10 +30,7 @@ export default function CountdownTimer() {
     useEffect(() => {
         const timer = setInterval(() => {
             setTimeLeft(getTimeLeft());
-        }, 60_000); // Update every minute (no seconds display)
-
-        // Also run once on mount to catch exact minute boundaries
-        setTimeLeft(getTimeLeft());
+        }, 1000); // Live ticking every second
 
         return () => clearInterval(timer);
     }, []);
@@ -45,9 +44,9 @@ export default function CountdownTimer() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.8 }}
-                className="w-full max-w-md mx-auto"
+                className="w-full max-w-lg mx-auto px-4"
             >
-                <div className="bg-white/[0.04] border border-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl px-6 py-4 text-center">
+                <div className="bg-black/60 border border-orange-500/30 backdrop-blur-2xl shadow-[0_0_35px_rgba(249,115,22,0.12)] rounded-2xl sm:rounded-3xl px-6 py-4 text-center">
                     <p className="text-xs tracking-[0.2em] text-zinc-400 font-mono uppercase">
                         Delegate Registration
                     </p>
@@ -63,6 +62,7 @@ export default function CountdownTimer() {
         { value: pad(timeLeft.days), label: 'Days' },
         { value: pad(timeLeft.hours), label: 'Hours' },
         { value: pad(timeLeft.minutes), label: 'Mins' },
+        { value: pad(timeLeft.seconds), label: 'Secs' },
     ];
 
     return (
@@ -70,28 +70,31 @@ export default function CountdownTimer() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.8 }}
-            className="w-full max-w-md mx-auto"
+            className="w-full max-w-lg mx-auto px-2 sm:px-4"
         >
-            <div className="bg-white/[0.04] border border-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl px-5 py-4 sm:px-8 sm:py-5">
-                {/* Header */}
-                <p className="text-[10px] sm:text-xs tracking-[0.15em] sm:tracking-[0.2em] text-zinc-400 font-mono uppercase text-center mb-3 sm:mb-4">
-                    Registration closes Sept 13 • 11:59 PM
-                </p>
+            <div className="bg-black/60 border border-orange-500/30 hover:border-orange-500/50 transition-colors backdrop-blur-2xl shadow-[0_0_35px_rgba(249,115,22,0.12)] rounded-2xl sm:rounded-3xl px-4 py-4 sm:px-8 sm:py-5">
+                {/* Header with pulsing indicator */}
+                <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                    <p className="text-[10px] sm:text-xs tracking-[0.15em] sm:tracking-[0.2em] text-zinc-300 font-mono uppercase text-center font-medium">
+                        Registration closes Sept 13 • 11:59 PM
+                    </p>
+                </div>
 
-                {/* Timer Digits */}
-                <div className="flex items-center justify-center gap-3 sm:gap-5">
+                {/* 4-Unit Timer Digits (Days : Hours : Mins : Secs) */}
+                <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-5">
                     {segments.map((seg, i) => (
-                        <div key={seg.label} className="flex items-center gap-3 sm:gap-5">
-                            <div className="flex flex-col items-center">
-                                <span className="text-2xl sm:text-4xl font-extrabold text-white font-mono leading-none tabular-nums">
+                        <div key={seg.label} className="flex items-center gap-2 sm:gap-4 md:gap-5">
+                            <div className="flex flex-col items-center min-w-[48px] sm:min-w-[64px]">
+                                <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white font-mono leading-none tabular-nums drop-shadow-sm">
                                     {seg.value}
                                 </span>
-                                <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] text-zinc-500 mt-1.5 font-medium">
+                                <span className="text-[8px] sm:text-[10px] uppercase tracking-[0.15em] text-zinc-400 mt-1.5 font-medium">
                                     {seg.label}
                                 </span>
                             </div>
                             {i < segments.length - 1 && (
-                                <span className="text-xl sm:text-2xl font-light text-zinc-600 -mt-3 select-none">
+                                <span className="text-base sm:text-2xl font-light text-zinc-500 -mt-2.5 select-none">
                                     :
                                 </span>
                             )}
