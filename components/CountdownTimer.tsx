@@ -74,7 +74,7 @@ export default function CountdownTimer() {
         >
             <div className="bg-black/60 border border-orange-500/30 hover:border-orange-500/50 transition-colors backdrop-blur-2xl shadow-[0_0_35px_rgba(249,115,22,0.12)] rounded-2xl sm:rounded-3xl px-4 py-4 sm:px-8 sm:py-5">
                 {/* Header */}
-                <p className="text-[10px] sm:text-xs tracking-[0.15em] sm:tracking-[0.2em] text-zinc-300 font-mono uppercase text-center font-medium mb-3 sm:mb-4">
+                <p className="text-[9px] sm:text-xs tracking-[0.06em] sm:tracking-[0.18em] text-zinc-300 font-mono uppercase text-center font-medium mb-3 sm:mb-4 whitespace-nowrap">
                     Registration closes Sept 13 • 11:59 PM
                 </p>
 
