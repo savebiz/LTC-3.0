@@ -98,14 +98,6 @@ export default function CountdownTimer() {
                         </div>
                     ))}
                 </div>
-
-                {/* Footnote: Onsite Registration Notice */}
-                <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-white/5 flex items-center justify-center gap-1.5">
-                    <span className="w-1 h-1 rounded-full bg-orange-400/80" />
-                    <p className="text-[8px] sm:text-[10px] tracking-[0.06em] sm:tracking-[0.1em] text-zinc-400 font-mono uppercase text-center font-medium whitespace-nowrap">
-                        Onsite registration opens Sept 19 at venue
-                    </p>
-                </div>
             </div>
         </motion.div>
     );
