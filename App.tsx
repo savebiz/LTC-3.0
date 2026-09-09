@@ -35,10 +35,8 @@ const AppContent: React.FC = () => {
   };
 
   const openVolunteer = () => {
-    toast.info(
-      'Volunteer Registration Closed',
-      'Thank you for your interest in serving at C3TC T.I.M.E \'26! Volunteer registration is officially closed. We look forward to having you join us as a delegate!'
-    );
+    setRegisterTab("volunteer");
+    setIsRegisterOpen(true);
   };
 
   return (

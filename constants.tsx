@@ -6,7 +6,7 @@ export const EVENT_DETAILS = {
   fullTheme: "T.I.M.E: The Incredible Me Emerging",
   scripture: "Romans 12:2",
   shortName: "T.I.M.E '26",
-  date: "Saturday, 19th September, 2026",
+  date: "Saturday, 17th October, 2026",
   venue: "Glory Arena, Redemption City of God",
   address: "Ogun State, Nigeria",
   lat: 6.8041,

@@ -164,7 +164,7 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
                             </tr>
                             <tr>
                                 <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Date:</td>
-                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">Saturday, 19th September, 2026</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">Saturday, 17th October, 2026</td>
                             </tr>
                             <tr>
                                 <td style="padding: 6px 0; color: #71717a; font-weight: 500; vertical-align: top;">Venue:</td>

@@ -906,7 +906,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
         const batchRef = registrationData && registrationData.length > 0 ? registrationData[0].batch_reference : 'C3TC-CONFIRMED';
         const qrCodeHash = registrationData && registrationData.length > 0 ? registrationData[0].qr_code_hash : '';
         
-        const shareText = "I just registered for the Continent 3 Teens Conference — T.I.M.E '26! 🎉 Join me at Glory Arena, Redemption City of God, Ogun State on Saturday, 19th September 2026. Register at continent3teens.cc";
+        const shareText = "I just registered for the Continent 3 Teens Conference — T.I.M.E '26! 🎉 Join me at Glory Arena, Redemption City of God, Ogun State on Saturday, 17th October 2026. Register at continent3teens.cc";
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
         return (
@@ -965,7 +965,7 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
                         </div>
                         <div>
                             <p className="text-[10px] text-gray-500 uppercase font-bold">Date</p>
-                            <p className="font-semibold text-white">Saturday, 19th September, 2026</p>
+                            <p className="font-semibold text-white">Saturday, 17th October, 2026</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4 pt-1">
                             <div>
