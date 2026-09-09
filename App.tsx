@@ -14,6 +14,7 @@ import Info from '@/components/sections/Info';
 import Gallery from '@/components/sections/Gallery';
 import Legacy from '@/components/sections/Legacy';
 import Footer from '@/components/sections/Footer';
+import AnnouncementModal from '@/components/AnnouncementModal';
 
 import { DialogProvider, useDialog } from './components/ui/DialogProvider';
 
@@ -61,6 +62,8 @@ const AppContent: React.FC = () => {
                 onOpenChange={setIsRegisterOpen}
                 defaultTab={registerTab}
               />
+
+              <AnnouncementModal />
             </div>
           } />
           <Route path="/registration-success" element={<RegistrationSuccessPage />} />
