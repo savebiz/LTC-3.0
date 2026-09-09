@@ -173,7 +173,27 @@ async function sendApprovalEmail(record: any, host: string): Promise<boolean> {
                         </table>
                     </div>
 
-                    <p style="margin: 24px 0 0 0;">Our team will be in touch with further details about your volunteer duties and reporting time. Please save this email for reference.</p>
+                    <!-- Important Instructions Callout Box -->
+                    <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 10px; padding: 18px 20px; margin-bottom: 24px;">
+                        <p style="font-weight: 800; color: #9a3412; margin: 0 0 10px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ⚠️ Important Instructions for All Volunteers
+                        </p>
+                        <ul style="margin: 0; padding-left: 18px; color: #374151; font-size: 14px; line-height: 1.6;">
+                            <li style="margin-bottom: 10px;">
+                                <strong>Delegate Registration is Mandatory:</strong> Volunteers are still required to register as delegates. If you have not done so, please register immediately at <a href="https://continent3teens.cc" target="_blank" style="color: #ea580c; font-weight: bold; text-decoration: underline;">www.continent3teens.cc</a> before online registration closes. <strong>Do not wait to be contacted before registering as a delegate.</strong>
+                            </li>
+                            <li>
+                                <strong>Role & Reporting Instructions:</strong> Look out for official communication from the planning committee in your email inbox or on WhatsApp. Your department team lead will reach out with further details regarding your specific role assignments and reporting time.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 28px 0 16px 0;">
+                        <a href="https://continent3teens.cc" target="_blank" style="display: block; background-color: #f97316; color: #ffffff !important; font-weight: bold; font-size: 15px; text-decoration: none; padding: 14px 24px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2); text-align: center;">Register as Delegate at continent3teens.cc →</a>
+                    </div>
+
+                    <p style="margin: 20px 0 0 0; font-size: 13px; color: #71717a; text-align: center;">Please save this email for your reference.</p>
                 </td>
             </tr>
 
