@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-const DEADLINE = new Date('2026-10-04T23:59:59+01:00'); // October 4, 2026 11:59:59 PM WAT (UTC+1)
+const DEADLINE = new Date('2026-10-10T23:59:59+01:00'); // October 10, 2026 11:59:59 PM WAT (UTC+1)
 
 interface TimeLeft {
     days: number;
@@ -37,7 +37,7 @@ export default function CountdownTimer() {
 
     const pad = (n: number) => String(n).padStart(2, '0');
 
-    // Expired state (after Oct 4, 11:59 PM)
+    // Expired state (after Oct 10, 11:59 PM)
     if (!timeLeft) {
         return (
             <motion.div
@@ -75,7 +75,7 @@ export default function CountdownTimer() {
             <div className="bg-black/60 border border-orange-500/30 hover:border-orange-500/50 transition-colors backdrop-blur-2xl shadow-[0_0_35px_rgba(249,115,22,0.12)] rounded-2xl sm:rounded-3xl px-3 py-4 sm:px-8 sm:py-5">
                 {/* Header: Online Registration Deadline */}
                 <p className="text-[8.5px] xs:text-[9.5px] sm:text-xs tracking-[0.04em] sm:tracking-[0.15em] text-zinc-300 font-mono uppercase text-center font-medium mb-3 sm:mb-4 whitespace-nowrap">
-                    ONLINE REGISTRATION CLOSES OCT 4 • 11:59 PM
+                    ONLINE REGISTRATION CLOSES OCT 10 • 11:59 PM
                 </p>
 
                 {/* 4-Unit Timer Digits (Days : Hours : Mins : Secs) */}
