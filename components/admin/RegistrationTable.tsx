@@ -606,6 +606,224 @@ export default function RegistrationTable() {
       const exportDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
       const PROVINCE_TARGET = 40; // Benchmark target per province
 
+      // ══════════════════════════════════════════════════════════════════════
+      // PAGE 1: Executive Summary Dashboard — Grand Totals & Regional Matrix
+      // ══════════════════════════════════════════════════════════════════════
+      let grandTotalDelegates = 0;
+      let grandTeenagerCount = 0;
+      let grandTeacherCount = 0;
+      let grandClearedCount = 0;
+      let grandPendingCount = 0;
+      let grandTotalProvinces = 0;
+      let grandTargetTotal = 0;
+
+      // Per-region stats for dashboard table
+      interface DashboardRegionRow {
+        name: string;
+        delegates: number;
+        teenagers: number;
+        teachers: number;
+        cleared: number;
+        pending: number;
+        provinces: number;
+        target: number;
+        pct: number;
+        gap: number;
+      }
+      const dashboardRows: DashboardRegionRow[] = [];
+
+      for (const [regionName, regRecords] of recordsByRegion.entries()) {
+        let rTeens = 0, rTeachers = 0, rCleared = 0, rPending = 0;
+        for (const r of regRecords) {
+          const catRank = getCategoryRank(r.category);
+          if (catRank === 1) rTeens++;
+          else if (catRank === 2) rTeachers++;
+          const isCleared = r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed';
+          if (isCleared) rCleared++;
+          else rPending++;
+        }
+
+        // Province count for this region
+        const predefinedProvs = REGIONS_AND_PROVINCES[regionName] || [];
+        const actualProvs = regRecords.map(r => r.province).filter(Boolean);
+        const allProvs = Array.from(new Set([...predefinedProvs, ...actualProvs]))
+          .filter(prov => {
+            const matchedReg = provinceToRegionMap.get(prov.trim().toLowerCase());
+            return !matchedReg || matchedReg === regionName;
+          });
+        const provCount = allProvs.length;
+        const rTarget = provCount * PROVINCE_TARGET;
+        const rPct = rTarget > 0 ? Math.round((regRecords.length / rTarget) * 100) : 0;
+        const rGap = Math.max(0, rTarget - regRecords.length);
+
+        grandTotalDelegates += regRecords.length;
+        grandTeenagerCount += rTeens;
+        grandTeacherCount += rTeachers;
+        grandClearedCount += rCleared;
+        grandPendingCount += rPending;
+        grandTotalProvinces += provCount;
+        grandTargetTotal += rTarget;
+
+        dashboardRows.push({
+          name: regionName,
+          delegates: regRecords.length,
+          teenagers: rTeens,
+          teachers: rTeachers,
+          cleared: rCleared,
+          pending: rPending,
+          provinces: provCount,
+          target: rTarget,
+          pct: rPct,
+          gap: rGap,
+        });
+      }
+
+      const grandTargetPct = grandTargetTotal > 0 ? Math.round((grandTotalDelegates / grandTargetTotal) * 100) : 0;
+      const grandGap = Math.max(0, grandTargetTotal - grandTotalDelegates);
+      const grandClearedPct = grandTotalDelegates > 0 ? Math.round((grandClearedCount / grandTotalDelegates) * 100) : 0;
+      const teenPct = grandTotalDelegates > 0 ? Math.round((grandTeenagerCount / grandTotalDelegates) * 100) : 0;
+      const teacherPct = grandTotalDelegates > 0 ? Math.round((grandTeacherCount / grandTotalDelegates) * 100) : 0;
+
+      // Sort dashboard rows by delegates descending for ranking
+      const rankedRows = [...dashboardRows].sort((a, b) => b.delegates - a.delegates);
+
+      // Analytical callouts
+      const topPerformers = dashboardRows.filter(r => r.pct >= 100).sort((a, b) => b.pct - a.pct);
+      const priorityFocus = dashboardRows.filter(r => r.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, 5);
+
+      // Dashboard regional matrix rows
+      const dashboardTableRowsHtml = rankedRows.map((row, idx) => {
+        const statusColor = row.pct >= 100 ? '#059669' : row.pct >= 70 ? '#d97706' : '#dc2626';
+        const statusLabel = row.pct >= 100 ? 'On Track' : row.pct >= 70 ? 'Moderate' : 'Critical';
+        const bgColor = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+        return `
+          <tr style="background-color: ${bgColor};">
+            <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: 700; color: #64748b; font-size: 9px;">${idx + 1}</td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; font-weight: 800; color: #0f172a;">${row.name}</td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #475569;">${row.provinces}</td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: 800; color: #0f172a;">${row.delegates}</td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #475569;">${row.teenagers} / ${row.teachers}</td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: center;"><span style="color: #059669; font-weight: 700;">${row.cleared}</span> / <span style="color: #d97706; font-weight: 700;">${row.pending}</span></td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #64748b;">${row.target}</td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: center;">
+              <span style="display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 8px; font-weight: 800; text-transform: uppercase; background-color: ${statusColor}15; color: ${statusColor}; border: 1px solid ${statusColor}30;">${row.pct}% — ${statusLabel}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Totals footer row for dashboard table
+      const dashboardTotalsRow = `
+        <tr style="background-color: #f1f5f9; font-weight: 800;">
+          <td style="padding: 7px 8px; border-top: 2px solid #cbd5e1;"></td>
+          <td style="padding: 7px 8px; border-top: 2px solid #cbd5e1; color: #0f172a; text-transform: uppercase; font-size: 9px; letter-spacing: 0.5px;">Grand Total</td>
+          <td style="padding: 7px 8px; border-top: 2px solid #cbd5e1; text-align: center; color: #475569;">${grandTotalProvinces}</td>
+          <td style="padding: 7px 8px; border-top: 2px solid #cbd5e1; text-align: center; color: #0f172a; font-size: 12px;">${grandTotalDelegates}</td>
+          <td style="padding: 7px 8px; border-top: 2px solid #cbd5e1; text-align: center; color: #475569;">${grandTeenagerCount} / ${grandTeacherCount}</td>
+          <td style="padding: 7px 8px; border-top: 2px solid #cbd5e1; text-align: center;"><span style="color: #059669;">${grandClearedCount}</span> / <span style="color: #d97706;">${grandPendingCount}</span></td>
+          <td style="padding: 7px 8px; border-top: 2px solid #cbd5e1; text-align: center; color: #475569;">${grandTargetTotal}</td>
+          <td style="padding: 7px 8px; border-top: 2px solid #cbd5e1; text-align: center;">
+            <span style="font-weight: 800; color: ${grandTargetPct >= 100 ? '#059669' : '#dc2626'};">${grandTargetPct}%</span>
+          </td>
+        </tr>
+      `;
+
+      // Analytical callout strips
+      const topPerformersHtml = topPerformers.length > 0
+        ? topPerformers.map(r => `<span style="display: inline-block; padding: 2px 8px; margin: 2px 3px; border-radius: 4px; font-size: 8.5px; font-weight: 700; background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">${r.name} (${r.pct}%)</span>`).join('')
+        : '<span style="color: #94a3b8; font-style: italic; font-size: 9px;">No regions have met target yet</span>';
+
+      const priorityFocusHtml = priorityFocus.length > 0
+        ? priorityFocus.map(r => `<span style="display: inline-block; padding: 2px 8px; margin: 2px 3px; border-radius: 4px; font-size: 8.5px; font-weight: 700; background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a;">${r.name} (${r.gap} to go)</span>`).join('')
+        : '<span style="color: #059669; font-style: italic; font-size: 9px;">All regions on track!</span>';
+
+      // ═══ Build Page 1 Dashboard HTML ═══
+      const dashboardPageHtml = `
+        <div class="dashboard-page">
+          <!-- Dashboard Header -->
+          <div class="region-header">
+            <div>
+              <span class="org-subtitle">C3TC T.I.M.E '26 — Regional Executive Summary Dashboard</span>
+              <h1 class="region-name" style="font-size: 20px;">Executive Regional Performance Overview</h1>
+            </div>
+            <div class="header-meta">
+              <div class="meta-label">Report Date</div>
+              <div class="meta-value">${exportDate}</div>
+              <div class="meta-label" style="margin-top: 4px;">Total Regions</div>
+              <div class="meta-value">${targetRegionNames.length}</div>
+            </div>
+          </div>
+
+          <!-- Macro KPI Cards -->
+          <div class="summary-cards-grid">
+            <div class="summary-card card-primary">
+              <div class="card-label">Total Delegates</div>
+              <div class="card-value">${grandTotalDelegates}</div>
+              <div class="card-subtext">Across ${targetRegionNames.length} regions</div>
+            </div>
+            <div class="summary-card card-target">
+              <div class="card-label">Target Achievement</div>
+              <div class="card-value" style="font-size: 16px; color: ${grandTargetPct >= 100 ? '#059669' : '#dc2626'};">${grandTargetPct}%</div>
+              <div class="card-subtext">${grandTotalDelegates} / ${grandTargetTotal}${grandGap > 0 ? ` — <span style="color: #dc2626; font-weight: 700;">${grandGap} to target</span>` : ' — <span style="color: #059669; font-weight: 700;">Target Achieved!</span>'}</div>
+            </div>
+            <div class="summary-card">
+              <div class="card-label">Demographic Ratio</div>
+              <div class="card-value-sm" style="margin-top: 4px;">
+                <span style="color: #ea580c; font-weight: 800;">${grandTeenagerCount}</span> Teenagers (${teenPct}%)
+                <br/>
+                <span style="color: #2563eb; font-weight: 800;">${grandTeacherCount}</span> Teachers (${teacherPct}%)
+              </div>
+            </div>
+            <div class="summary-card">
+              <div class="card-label">Payment Clearance</div>
+              <div class="card-value-sm" style="margin-top: 4px;">
+                <span style="color: #059669; font-weight: 800;">${grandClearedCount}</span> Cleared (${grandClearedPct}%)
+                <br/>
+                <span style="color: #d97706; font-weight: 800;">${grandPendingCount}</span> Pending (${100 - grandClearedPct}%)
+              </div>
+            </div>
+          </div>
+
+          <!-- Regional Comparative Performance Matrix -->
+          <div style="margin-bottom: 12px;">
+            <div class="section-subtitle">REGIONAL COMPARATIVE PERFORMANCE MATRIX (${targetRegionNames.length} Regions | ${grandTotalProvinces} Provinces)</div>
+            <table class="prov-table">
+              <thead>
+                <tr>
+                  <th style="text-align: center; width: 28px;">#</th>
+                  <th style="text-align: left;">Region</th>
+                  <th style="text-align: center;">Provinces</th>
+                  <th style="text-align: center;">Delegates</th>
+                  <th style="text-align: center;">Teens / Teachers</th>
+                  <th style="text-align: center;">Cleared / Pending</th>
+                  <th style="text-align: center;">Target</th>
+                  <th style="text-align: center;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${dashboardTableRowsHtml}
+                ${dashboardTotalsRow}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Analytical Executive Callouts -->
+          <div class="db-callouts-grid">
+            <div class="db-callout db-callout-success">
+              <div class="db-callout-title">✅ Target Achieved</div>
+              <div class="db-callout-body">${topPerformersHtml}</div>
+            </div>
+            <div class="db-callout db-callout-warning">
+              <div class="db-callout-title">⚠️ Priority Focus (Highest Gap)</div>
+              <div class="db-callout-body">${priorityFocusHtml}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Force page break after dashboard -->
+        <div class="page-break"></div>
+      `;
+
       // Generate HTML per Region
       const regionSectionsHtml = Array.from(recordsByRegion.entries()).map(([regionName, regRecords], regionIndex) => {
         // Sort delegates in this region: PROVINCE -> CATEGORY (Teenager first) -> FULL NAME
@@ -1029,6 +1247,46 @@ export default function RegistrationTable() {
               .status-cleared { background-color: #d1fae5; color: #065f46; }
               .status-pending { background-color: #fef3c7; color: #92400e; }
 
+              /* Dashboard Page 1 Styles */
+              .dashboard-page {
+                padding-bottom: 10px;
+              }
+
+              .db-callouts-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-top: 10px;
+              }
+
+              .db-callout {
+                border-radius: 8px;
+                padding: 8px 12px;
+              }
+
+              .db-callout-success {
+                background-color: #f0fdf4;
+                border: 1px solid #bbf7d0;
+              }
+
+              .db-callout-warning {
+                background-color: #fffbeb;
+                border: 1px solid #fde68a;
+              }
+
+              .db-callout-title {
+                font-size: 9px;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #334155;
+                margin-bottom: 5px;
+              }
+
+              .db-callout-body {
+                line-height: 1.6;
+              }
+
               @media print {
                 body { padding: 0.6cm; }
                 @page { size: A4 portrait; margin: 0.6cm; }
@@ -1038,6 +1296,7 @@ export default function RegistrationTable() {
             </style>
           </head>
           <body>
+            ${dashboardPageHtml}
             ${regionSectionsHtml}
             <script>
               window.onload = function() {
