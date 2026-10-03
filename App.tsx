@@ -1,12 +1,13 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
-const RegisterModal = lazy(() => import('./components/RegisterModal'));
-const RegistrationSuccessPage = lazy(() => import('./components/RegistrationSuccessPage'));
-const AdminPage = lazy(() => import('./AdminPage'));
-const DebugPage = lazy(() => import('./components/DebugPage'));
-const CheckStatus = lazy(() => import('./components/CheckStatus'));
+const RegisterModal = lazyWithRetry(() => import('./components/RegisterModal'));
+const RegistrationSuccessPage = lazyWithRetry(() => import('./components/RegistrationSuccessPage'));
+const AdminPage = lazyWithRetry(() => import('./AdminPage'));
+const DebugPage = lazyWithRetry(() => import('./components/DebugPage'));
+const CheckStatus = lazyWithRetry(() => import('./components/CheckStatus'));
 
 // Sections
 import Hero from '@/components/sections/Hero';

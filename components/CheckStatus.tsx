@@ -1,11 +1,12 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { Loader2, Search, ArrowLeft } from 'lucide-react';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
-const DPCardGenerator = lazy(() => import('./DPCardGenerator'));
+const DPCardGenerator = lazyWithRetry(() => import('./DPCardGenerator'));
 
 export default function CheckStatus() {
     const [referenceCode, setReferenceCode] = useState('');

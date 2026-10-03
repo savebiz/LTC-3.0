@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -22,8 +22,9 @@ import { TEEN_ROLES, EXEC_LEVELS, LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVI
 import { getJaroWinklerDistance, cleanNameForComparison, normalizePhone, normalizeEmail } from "@/lib/similarity"
 import { DuplicateWarningModal } from "../ui/DuplicateWarningModal"
 import imageCompression from 'browser-image-compression';
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 
-const DPCardGenerator = lazy(() => import("@/components/DPCardGenerator"));
+const DPCardGenerator = lazyWithRetry(() => import("@/components/DPCardGenerator"));
 import regionalBanksData from "@/regional_banks.json";
 
 const regionalBanks = regionalBanksData as Record<string, { accountName: string; accountNumber: string; bankName: string }>;
