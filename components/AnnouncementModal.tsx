@@ -94,12 +94,12 @@ export default function AnnouncementModal() {
                             </div>
 
                             <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                                <div className="w-7 h-7 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center shrink-0">
                                     <Users className="w-3.5 h-3.5" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-medium">Volunteer Registration</p>
-                                    <p className="text-xs sm:text-sm font-semibold text-white truncate">Reopened (Active till Sept 30)</p>
+                                    <p className="text-xs sm:text-sm font-semibold text-white truncate">Closed (All volunteers must register as Delegates)</p>
                                 </div>
                             </div>
                         </div>

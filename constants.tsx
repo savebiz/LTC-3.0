@@ -1,6 +1,8 @@
 
 import { Speaker, GalleryItem } from './types';
 
+export const IS_VOLUNTEER_REGISTRATION_CLOSED = true;
+
 export const EVENT_DETAILS = {
   name: "C3TC 3.0",
   fullTheme: "T.I.M.E: The Incredible Me Emerging",

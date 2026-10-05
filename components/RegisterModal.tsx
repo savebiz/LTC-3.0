@@ -9,7 +9,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DelegateRegistrationForm } from "./forms/DelegateRegistrationForm";
 import { VolunteerRegistrationForm } from "./forms/VolunteerRegistrationForm";
-import { EVENT_DETAILS } from "@/constants";
+import { EVENT_DETAILS, IS_VOLUNTEER_REGISTRATION_CLOSED } from "@/constants";
 
 interface RegisterModalProps {
     open: boolean;
@@ -59,7 +59,7 @@ export default function RegisterModal({ open, onOpenChange, defaultTab = "delega
                             disabled={isLocked && activeTab !== "volunteer"}
                             className="w-full h-full rounded-full transition-all duration-150 ease-in-out flex items-center justify-center text-slate-500 font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:shadow-[0_1px_3px_rgba(0,0,0,0.1)] md:w-auto md:h-auto md:rounded-md md:px-3 md:py-1 md:text-sm md:font-medium md:text-muted-foreground md:data-[state=active]:bg-background md:data-[state=active]:text-foreground md:data-[state=active]:shadow"
                         >
-                            Volunteer
+                            Volunteer {IS_VOLUNTEER_REGISTRATION_CLOSED && <span className="ml-1 text-[10px] opacity-75 font-normal">(Closed)</span>}
                         </TabsTrigger>
                     </TabsList>
                     <TabsContent value="delegate" className="py-4">
@@ -69,7 +69,10 @@ export default function RegisterModal({ open, onOpenChange, defaultTab = "delega
                         />
                     </TabsContent>
                     <TabsContent value="volunteer" className="py-4">
-                        <VolunteerRegistrationForm onSuccess={reset} />
+                        <VolunteerRegistrationForm 
+                            onSuccess={reset} 
+                            onSwitchToDelegate={() => setActiveTab("delegate")}
+                        />
                     </TabsContent>
                 </Tabs>
             </DialogContent>

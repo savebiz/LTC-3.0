@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { supabase } from "@/lib/supabase";
-import { VOLUNTEER_DEPARTMENTS, REGIONS_AND_PROVINCES, LAGOS_REGIONS, OGUN_REGIONS } from "@/constants"
+import { VOLUNTEER_DEPARTMENTS, REGIONS_AND_PROVINCES, LAGOS_REGIONS, OGUN_REGIONS, IS_VOLUNTEER_REGISTRATION_CLOSED } from "@/constants"
 import { getJaroWinklerDistance, cleanNameForComparison, normalizePhone, normalizeEmail } from "@/lib/similarity"
 import { DuplicateWarningModal } from "../ui/DuplicateWarningModal"
 
@@ -74,7 +74,41 @@ const volunteerSchema = z.object({
     }
 });
 
-export function VolunteerRegistrationForm({ onSuccess }: { onSuccess: () => void }) {
+export function VolunteerRegistrationForm({ onSuccess, onSwitchToDelegate }: { onSuccess: () => void; onSwitchToDelegate?: () => void }) {
+    if (IS_VOLUNTEER_REGISTRATION_CLOSED) {
+        return (
+            <div className="py-6 px-4 text-center space-y-5 bg-gradient-to-b from-orange-500/10 via-amber-500/5 to-transparent border border-orange-500/20 rounded-2xl my-2">
+                <div className="w-12 h-12 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-600 flex items-center justify-center mx-auto text-xl">
+                    🔒
+                </div>
+                <div className="space-y-2">
+                    <h3 className="text-xl font-bold font-heading text-slate-900">
+                        Volunteer Registration Closed
+                    </h3>
+                    <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                        Thank you for your overwhelming interest in serving at <strong>C3TC 3.0 (T.I.M.E '26)</strong>! Online volunteer applications are now officially closed.
+                    </p>
+                </div>
+
+                <div className="p-4 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-xl text-left text-xs text-slate-700 space-y-1.5 shadow-sm">
+                    <p className="font-bold text-orange-600 uppercase tracking-wider text-[11px]">⚠️ Mandatory Delegate Registration:</p>
+                    <p className="leading-snug">
+                        All approved and prospective volunteers are still required to complete online <strong>Delegate Registration</strong> before <strong>October 10, 2026</strong>.
+                    </p>
+                </div>
+
+                {onSwitchToDelegate && (
+                    <Button 
+                        onClick={onSwitchToDelegate} 
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl shadow-md transition-all uppercase tracking-wide text-xs md:text-sm"
+                    >
+                        Register as a Delegate Instead
+                    </Button>
+                )}
+            </div>
+        );
+    }
+
     const [isSubmitting, setIsSubmitting] = useState(false)
     const { toast } = useDialog()
 
