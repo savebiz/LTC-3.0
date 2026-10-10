@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { supabase } from "@/lib/supabase";
-import { TEEN_ROLES, EXEC_LEVELS, LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVINCES } from "@/constants"
+import { TEEN_ROLES, EXEC_LEVELS, LAGOS_REGIONS, OGUN_REGIONS, REGIONS_AND_PROVINCES, isRegistrationClosed } from "@/constants"
 import { getJaroWinklerDistance, cleanNameForComparison, normalizePhone, normalizeEmail } from "@/lib/similarity"
 import { DuplicateWarningModal } from "../ui/DuplicateWarningModal"
 import imageCompression from 'browser-image-compression';
@@ -394,6 +394,11 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     }
 
     async function performSubmit() {
+        if (isRegistrationClosed()) {
+            toast.error("Registration Closed", "Online registration has closed as of October 11, 11:59 PM. Please register onsite at the venue.");
+            return;
+        }
+
         if (delegates.length === 0) {
             toast.error("Registration failed. Please try again.", "Please add at least one delegate.");
             return;
@@ -620,6 +625,11 @@ export function DelegateRegistrationForm({ onSuccess, onStepChange }: {
     }
 
     async function addDelegateToList() {
+        if (isRegistrationClosed()) {
+            toast.error("Registration Closed", "Online registration has closed as of October 11, 11:59 PM. Please register onsite at the venue.");
+            return;
+        }
+
         const fieldsToValidate = getFieldsToValidate();
         const isValid = await form.trigger(fieldsToValidate);
         

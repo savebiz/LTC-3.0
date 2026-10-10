@@ -3,6 +3,13 @@ import { Speaker, GalleryItem } from './types';
 
 export const IS_VOLUNTEER_REGISTRATION_CLOSED = true;
 
+// Registration Deadline: Sunday, October 11, 2026 at 11:59:59 PM WAT (UTC+1)
+export const REGISTRATION_DEADLINE = new Date('2026-10-11T23:59:59+01:00');
+
+export const isRegistrationClosed = (): boolean => {
+  return new Date().getTime() >= REGISTRATION_DEADLINE.getTime();
+};
+
 export const EVENT_DETAILS = {
   name: "C3TC 3.0",
   fullTheme: "T.I.M.E: The Incredible Me Emerging",

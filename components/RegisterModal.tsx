@@ -9,7 +9,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DelegateRegistrationForm } from "./forms/DelegateRegistrationForm";
 import { VolunteerRegistrationForm } from "./forms/VolunteerRegistrationForm";
-import { EVENT_DETAILS, IS_VOLUNTEER_REGISTRATION_CLOSED } from "@/constants";
+import { EVENT_DETAILS, IS_VOLUNTEER_REGISTRATION_CLOSED, isRegistrationClosed } from "@/constants";
 
 interface RegisterModalProps {
     open: boolean;
@@ -33,6 +33,51 @@ export default function RegisterModal({ open, onOpenChange, defaultTab = "delega
         onOpenChange(false);
     }
 
+    // Automated shutdown after deadline passes (Sunday, Oct 11, 11:59 PM WAT)
+    if (isRegistrationClosed()) {
+        return (
+            <Dialog open={open} onOpenChange={(open) => {
+                if (!open) reset();
+            }}>
+                <DialogContent className="sm:max-w-[540px] text-center py-8 px-6 space-y-6">
+                    <div className="w-16 h-16 rounded-full bg-orange-500/10 border-2 border-orange-500/20 text-orange-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
+                        🔒
+                    </div>
+                    <div className="space-y-2">
+                        <DialogTitle className="text-2xl font-bold font-heading text-slate-900">
+                            Online Registration Closed
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
+                            Online registration for <strong>{EVENT_DETAILS.name} ({EVENT_DETAILS.shortName})</strong> closed on <strong>Sunday, October 11, 2026 at 11:59 PM WAT</strong>.
+                        </DialogDescription>
+                    </div>
+
+                    <div className="p-4 bg-orange-50 border border-orange-200/60 rounded-2xl text-left text-xs text-slate-700 space-y-1.5 shadow-sm">
+                        <p className="font-bold text-orange-600 uppercase tracking-wider text-[11px]">🏟️ Onsite Registration Available:</p>
+                        <p className="leading-relaxed">
+                            If you missed online registration, onsite registration will open on <strong>Saturday, October 17, 2026</strong> at <strong>Glory Arena, Redemption City</strong>.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                        <a 
+                            href="/check-status" 
+                            className="flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider bg-slate-900 hover:bg-slate-800 text-white transition-colors text-center shadow-md flex items-center justify-center"
+                        >
+                            Check Registration Status
+                        </a>
+                        <button 
+                            onClick={() => reset()} 
+                            className="py-3 px-5 rounded-xl font-bold text-xs uppercase tracking-wider border border-slate-300 hover:bg-slate-100 text-slate-700 transition-colors"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
     return (
         <Dialog open={open} onOpenChange={(open) => {
             if (!open) reset();
@@ -42,7 +87,7 @@ export default function RegisterModal({ open, onOpenChange, defaultTab = "delega
                 <DialogHeader>
                     <DialogTitle>Secure Your Spot</DialogTitle>
                     <DialogDescription>
-                        Join us for {EVENT_DETAILS.fullTheme}. Online registration closes Oct 10 (onsite registration opens Oct 17 at the venue).
+                        Join us for {EVENT_DETAILS.fullTheme}. Online registration closes Oct 11 (onsite registration opens Oct 17 at the venue).
                     </DialogDescription>
                 </DialogHeader>
                 <Tabs defaultValue="delegate" value={activeTab} onValueChange={(val) => setActiveTab(val as "delegate" | "volunteer")} className="w-full">

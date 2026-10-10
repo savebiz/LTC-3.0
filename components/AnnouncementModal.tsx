@@ -89,7 +89,7 @@ export default function AnnouncementModal() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-medium">Online Registration</p>
-                                    <p className="text-xs sm:text-sm font-semibold text-white truncate">Closes Saturday, Oct 10 • 11:59 PM</p>
+                                    <p className="text-xs sm:text-sm font-semibold text-white truncate">Closes Sunday, Oct 11 • 11:59 PM</p>
                                 </div>
                             </div>
 

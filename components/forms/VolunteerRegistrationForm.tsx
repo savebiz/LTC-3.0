@@ -93,7 +93,7 @@ export function VolunteerRegistrationForm({ onSuccess, onSwitchToDelegate }: { o
                 <div className="p-4 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-xl text-left text-xs text-slate-700 space-y-1.5 shadow-sm">
                     <p className="font-bold text-orange-600 uppercase tracking-wider text-[11px]">⚠️ Mandatory Delegate Registration:</p>
                     <p className="leading-snug">
-                        All approved and prospective volunteers are still required to complete online <strong>Delegate Registration</strong> before <strong>October 10, 2026</strong>.
+                        All approved and prospective volunteers are still required to complete online <strong>Delegate Registration</strong> before <strong>October 11, 2026</strong>.
                     </p>
                 </div>
 
