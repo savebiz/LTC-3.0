@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllSupabaseRows } from '@/lib/supabase';
 import { useDialog } from '../ui/DialogProvider';
 import { 
     Search, Download, Loader2, ChevronRight, ChevronDown, 
@@ -45,11 +45,14 @@ export default function AuditLogTable() {
     // Fetch unique operator list for dropdown filter
     async function fetchOperators() {
         try {
-            const { data, error } = await supabase
-                .from('audit_log')
-                .select('performed_by');
-            if (!error && data) {
-                const unique = Array.from(new Set(data.map(d => d.performed_by)))
+            const data = await fetchAllSupabaseRows(() =>
+                supabase
+                    .from('audit_log')
+                    .select('performed_by')
+                    .order('performed_by', { ascending: true })
+            );
+            if (data) {
+                const unique = Array.from(new Set(data.map((d: any) => d.performed_by)))
                     .filter(Boolean)
                     .sort();
                 setOperators(unique);
@@ -184,40 +187,41 @@ export default function AuditLogTable() {
     // Export Filtered Logs to CSV
     async function handleExportCSV() {
         try {
-            let query = supabase
-                .from('audit_log')
-                .select('*')
-                .order('created_at', { ascending: false });
+            const data = await fetchAllSupabaseRows(() => {
+                let query = supabase
+                    .from('audit_log')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-            if (searchTerm.trim()) {
-                const term = searchTerm.trim();
-                query = query.or(`registrant_name.ilike.%${term}%,batch_reference.ilike.%${term}%`);
-            }
-            if (actionFilter === 'check-ins') {
-                query = query.eq('action', 'check_in_success');
-            } else if (actionFilter === 'payments') {
-                query = query.in('action', ['payment_cleared', 'payment_rejected']);
-            } else if (actionFilter === 'registrations') {
-                query = query.eq('action', 'registration_created');
-            } else if (actionFilter === 'express_registration') {
-                query = query.eq('action', 'express_registration');
-            } else if (actionFilter === 'blocked') {
-                query = query.in('action', ['check_in_blocked_pending', 'check_in_blocked_rejected', 'check_in_duplicate']);
-            } else if (actionFilter === 'system') {
-                query = query.eq('action', 'db_update');
-            }
-            if (performedByFilter) {
-                query = query.eq('performed_by', performedByFilter);
-            }
-            if (startDate) {
-                query = query.gte('created_at', `${startDate}T00:00:00.000Z`);
-            }
-            if (endDate) {
-                query = query.lte('created_at', `${endDate}T23:59:59.999Z`);
-            }
+                if (searchTerm.trim()) {
+                    const term = searchTerm.trim();
+                    query = query.or(`registrant_name.ilike.%${term}%,batch_reference.ilike.%${term}%`);
+                }
+                if (actionFilter === 'check-ins') {
+                    query = query.eq('action', 'check_in_success');
+                } else if (actionFilter === 'payments') {
+                    query = query.in('action', ['payment_cleared', 'payment_rejected']);
+                } else if (actionFilter === 'registrations') {
+                    query = query.eq('action', 'registration_created');
+                } else if (actionFilter === 'express_registration') {
+                    query = query.eq('action', 'express_registration');
+                } else if (actionFilter === 'blocked') {
+                    query = query.in('action', ['check_in_blocked_pending', 'check_in_blocked_rejected', 'check_in_duplicate']);
+                } else if (actionFilter === 'system') {
+                    query = query.eq('action', 'db_update');
+                }
+                if (performedByFilter) {
+                    query = query.eq('performed_by', performedByFilter);
+                }
+                if (startDate) {
+                    query = query.gte('created_at', `${startDate}T00:00:00.000Z`);
+                }
+                if (endDate) {
+                    query = query.lte('created_at', `${endDate}T23:59:59.999Z`);
+                }
+                return query;
+            });
 
-            const { data, error } = await query;
-            if (error) throw error;
             if (!data || data.length === 0) {
                 toast.error('No Data', 'No records match your filters to export.');
                 return;

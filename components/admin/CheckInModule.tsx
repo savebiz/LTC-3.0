@@ -129,13 +129,40 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
     // Fetch Stats
     async function fetchStats() {
         try {
-            const { data: regs, error } = await supabase.from('registrations').select('checked_in');
-            if (!error && regs) {
-                const total = regs.length;
-                const checkedIn = regs.filter(r => r.checked_in).length;
-                const remaining = total - checkedIn;
-                const rate = total > 0 ? Math.round((checkedIn / total) * 100) : 0;
-                setStats({ total, checkedIn, remaining, rate });
+            // First attempt: fast exact count queries without downloading full payload
+            const [totalRes, checkedInRes] = await Promise.all([
+                supabase.from('registrations').select('*', { count: 'exact', head: true }),
+                supabase.from('registrations').select('*', { count: 'exact', head: true }).eq('checked_in', true)
+            ]);
+
+            let total = totalRes.count;
+            let checkedIn = checkedInRes.count;
+
+            // Fallback to iterative chunked pagination (fetchAllSupabaseRows) if count is unavailable
+            if (total === null || total === undefined) {
+                const regs = await fetchAllSupabaseRows<{ checked_in: boolean }>(() =>
+                    supabase.from('registrations').select('checked_in').order('id', { ascending: true })
+                );
+                total = regs.length;
+                checkedIn = regs.filter(r => r.checked_in).length;
+            }
+
+            // Fallback to offline cache if offline
+            if ((total === null || total === undefined || total === 0) && !navigator.onLine && typeof window !== 'undefined') {
+                try {
+                    const cache = JSON.parse(localStorage.getItem('c3tc_registrations_cache') || '[]');
+                    if (cache.length > 0) {
+                        total = cache.length;
+                        checkedIn = cache.filter((r: any) => r.checked_in).length;
+                    }
+                } catch {}
+            }
+
+            if (total !== null && total !== undefined) {
+                const finalCheckedIn = checkedIn || 0;
+                const remaining = Math.max(0, total - finalCheckedIn);
+                const rate = total > 0 ? Math.round((finalCheckedIn / total) * 100) : 0;
+                setStats({ total, checkedIn: finalCheckedIn, remaining, rate });
 
                 // Synchronize offline count if any
                 const queue = JSON.parse(localStorage.getItem('c3tc_pending_sync') || '[]');
@@ -150,10 +177,19 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
     async function cacheRegistrations() {
         if (!navigator.onLine) return;
         try {
-            const data = await fetchAllSupabaseRows(() => supabase.from('registrations').select('*'));
-            if (data) {
-                localStorage.setItem('c3tc_registrations_cache', JSON.stringify(data));
-                localStorage.setItem('c3tc_cache_timestamp', Date.now().toString());
+            const data = await fetchAllSupabaseRows(() =>
+                supabase
+                    .from('registrations')
+                    .select('id, full_name, batch_reference, category, region, province, amount_due, payment_method, payment_status, status, checked_in, checked_in_at, qr_code_hash, phone')
+                    .order('created_at', { ascending: false })
+            );
+            if (data && data.length > 0) {
+                try {
+                    localStorage.setItem('c3tc_registrations_cache', JSON.stringify(data));
+                    localStorage.setItem('c3tc_cache_timestamp', Date.now().toString());
+                } catch (storageErr) {
+                    console.warn('LocalStorage quota exceeded while caching registrations:', storageErr);
+                }
             }
         } catch (err) {
             console.error('Error caching registrations locally:', err);
@@ -192,23 +228,25 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
             midnight.setHours(0, 0, 0, 0);
             const midnightISO = midnight.toISOString();
 
-            const { data, error } = await supabase
-                .from('audit_log')
-                .select(`
-                    id,
-                    created_at,
-                    registrant_name,
-                    action,
-                    registration_id,
-                    registrations (
-                        category
-                    )
-                `)
-                .eq('action', 'check_in_success')
-                .gte('created_at', midnightISO)
-                .order('created_at', { ascending: false });
+            const data = await fetchAllSupabaseRows(() =>
+                supabase
+                    .from('audit_log')
+                    .select(`
+                        id,
+                        created_at,
+                        registrant_name,
+                        action,
+                        registration_id,
+                        registrations (
+                            category
+                        )
+                    `)
+                    .eq('action', 'check_in_success')
+                    .gte('created_at', midnightISO)
+                    .order('created_at', { ascending: false })
+            );
 
-            if (!error && data) {
+            if (data) {
                 const mapped: ActivityLogItem[] = data.map((log: any) => {
                     const reg = log.registrations;
                     return {

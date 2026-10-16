@@ -23,9 +23,9 @@ export const EVENT_DETAILS = {
 };
 
 export const BANK_DETAILS = {
-  bankName: "GTBank",
-  accountNumber: "0000000000",
-  accountName: "Continent 3 Teens Conference"
+  bankName: "Access Bank",
+  accountNumber: "1494000251",
+  accountName: "RCCG Region 2 Junior Church (Lagos Family)"
 };
 
 export const LINKS = [
