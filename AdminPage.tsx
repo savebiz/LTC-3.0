@@ -10,6 +10,8 @@ import AuditLogTable from './components/admin/AuditLogTable';
 import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
 import ExpressRegister from './components/admin/ExpressRegister';
 import StageDirector from './components/admin/StageDirector';
+import CheckOutModule from './components/admin/CheckOutModule';
+import BatchPrintCards from './components/admin/BatchPrintCards';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +46,8 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
 
     const getPageFromPath = () => {
         if (location.pathname === '/admin/checkin') return 'checkin';
+        if (location.pathname === '/admin/checkout') return 'checkout';
+        if (location.pathname === '/admin/batch-cards') return 'batch-cards';
         if (location.pathname === '/admin/express-register') return 'express-register';
         if (location.pathname === '/admin/stage') return 'stage';
         return initialPage;
@@ -55,12 +59,16 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
     useEffect(() => {
         if (location.pathname === '/admin/checkin') {
             setActivePage('checkin');
+        } else if (location.pathname === '/admin/checkout') {
+            setActivePage('checkout');
+        } else if (location.pathname === '/admin/batch-cards') {
+            setActivePage('batch-cards');
         } else if (location.pathname === '/admin/express-register') {
             setActivePage('express-register');
         } else if (location.pathname === '/admin/stage') {
             setActivePage('stage');
         } else if (location.pathname === '/admin') {
-            if (activePage === 'checkin' || activePage === 'express-register' || activePage === 'stage') {
+            if (activePage === 'checkin' || activePage === 'checkout' || activePage === 'batch-cards' || activePage === 'express-register' || activePage === 'stage') {
                 setActivePage('overview');
             }
         }
@@ -354,6 +362,8 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
 
             {activePage === 'registrations' && <RegistrationTable />}
 
+            {activePage === 'batch-cards' && <BatchPrintCards />}
+
             {activePage === 'express-register' && <ExpressRegister />}
 
             {activePage === 'volunteers' && <VolunteerTable />}
@@ -361,6 +371,8 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
             {activePage === 'stage' && <StageDirector />}
 
             {activePage === 'checkin' && <CheckInModule isSidebarOpen={isSidebarOpen} />}
+
+            {activePage === 'checkout' && <CheckOutModule isSidebarOpen={isSidebarOpen} />}
 
             {activePage === 'auditlog' && <AuditLogTable />}
 

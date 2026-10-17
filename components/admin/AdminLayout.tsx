@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import {
     LayoutDashboard, Users, BarChart3, QrCode,
-    Settings, LogOut, Menu, X, ClipboardList, Zap, Radio
+    Settings, LogOut, Menu, X, ClipboardList, Zap, Radio,
+    DoorOpen, Scissors
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,10 +10,10 @@ import { cn } from '@/lib/utils';
 export type UserRole = 'Super Admin' | 'Access Admin' | 'Volunteer' | 'Supervisor';
 
 export const ROLE_ACCESS: Record<UserRole, string[]> = {
-    'Super Admin': ['overview', 'registrations', 'express-register', 'volunteers', 'stage', 'analytics', 'auditlog', 'checkin', 'settings'],
-    'Access Admin': ['overview', 'registrations', 'express-register', 'volunteers', 'stage', 'analytics', 'checkin'],
-    'Volunteer': ['overview', 'checkin'],
-    'Supervisor': ['overview', 'stage', 'analytics']
+    'Super Admin': ['overview', 'registrations', 'batch-cards', 'express-register', 'volunteers', 'stage', 'analytics', 'auditlog', 'checkin', 'checkout', 'settings'],
+    'Access Admin': ['overview', 'registrations', 'batch-cards', 'express-register', 'volunteers', 'stage', 'analytics', 'checkin', 'checkout'],
+    'Volunteer': ['overview', 'checkin', 'checkout'],
+    'Supervisor': ['overview', 'stage', 'analytics', 'checkout', 'batch-cards']
 };
 
 interface AdminLayoutProps {
@@ -50,12 +51,14 @@ export default function AdminLayout({
     const NAV_ITEMS = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'registrations', label: 'Registrations', icon: Users },
+        { id: 'batch-cards', label: 'Print A4 Badges', icon: Scissors, isSpecial: true },
         { id: 'express-register', label: 'Express Register', icon: Zap, isSpecial: true },
         { id: 'volunteers', label: 'Volunteers', icon: Users },
         { id: 'stage', label: 'Stage Director', icon: Radio, isSpecial: true },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
         { id: 'auditlog', label: 'Audit Log', icon: ClipboardList },
-        { id: 'checkin', label: 'Check-in', icon: QrCode },
+        { id: 'checkin', label: 'Check-in (Gate 1)', icon: QrCode },
+        { id: 'checkout', label: 'Restroom Pass', icon: DoorOpen, isSpecial: true },
         { id: 'settings', label: 'Settings', icon: Settings },
     ];
 

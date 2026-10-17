@@ -70,6 +70,8 @@ const AppContent: React.FC = () => {
           <Route path="/schedule" element={<ProgramPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/checkin" element={<AdminPage initialPage="checkin" />} />
+          <Route path="/admin/checkout" element={<AdminPage initialPage="checkout" />} />
+          <Route path="/admin/batch-cards" element={<AdminPage initialPage="batch-cards" />} />
           <Route path="/admin/express-register" element={<AdminPage initialPage="express-register" />} />
           <Route path="/admin/stage" element={<AdminPage initialPage="stage" />} />
           <Route path="/debug-env" element={<DebugPage />} />
