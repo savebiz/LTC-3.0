@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Html5Qrcode } from 'html5-qrcode';
+import CoordinatorBatchCheckIn from './CoordinatorBatchCheckIn';
 import { 
     Camera, Search, Users, CheckCircle2, AlertTriangle, 
     XCircle, HelpCircle, RotateCw, Lightbulb, Smartphone, 
@@ -39,8 +40,22 @@ interface ActivityLogItem {
 
 export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen?: boolean }) {
     const { confirm, toast } = useDialog();
-    const [activeTab, setActiveTab] = useState<'qr' | 'manual'>('qr');
+    const [activeTab, setActiveTab] = useState<'qr' | 'manual' | 'batch'>('qr');
     const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? navigator.onLine : true);
+
+    const volunteerName = typeof window !== 'undefined' 
+        ? sessionStorage.getItem('c3tc_admin_volunteer') || 'Gate Usher' 
+        : 'Gate Usher';
+
+    const handleBatchSuccess = (result: { count: number; coordinatorName: string; province: string; timestamp: string }) => {
+        fetchStats();
+        addActivityLog({
+            id: 'batch-' + Date.now(),
+            full_name: `[BATCH] ${result.coordinatorName} (${result.province}) - ${result.count} Delegates`,
+            category: 'Batch Check-In',
+            checked_in_at: new Date().toISOString()
+        });
+    };
     
     // Live Stats
     const [stats, setStats] = useState({
@@ -909,28 +924,39 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
             </div>
 
             {/* Mode Tab Switcher */}
-            <div className="flex bg-slate-100 rounded-xl p-1 shadow-inner max-w-sm mx-auto">
+            <div className="flex bg-slate-100 rounded-xl p-1 shadow-inner max-w-md mx-auto">
                 <button
                     onClick={() => setActiveTab('qr')}
-                    className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                         activeTab === 'qr' 
                             ? 'bg-white text-slate-800 shadow-md font-extrabold scale-100' 
                             : 'text-slate-500 hover:text-slate-800'
                     }`}
                 >
                     <Camera size={14} />
-                    Scan QR Code
+                    <span>Single QR</span>
                 </button>
                 <button
                     onClick={() => setActiveTab('manual')}
-                    className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                         activeTab === 'manual' 
                             ? 'bg-white text-slate-800 shadow-md font-extrabold scale-100' 
                             : 'text-slate-500 hover:text-slate-800'
                     }`}
                 >
                     <Search size={14} />
-                    Manual Search
+                    <span>Manual Search</span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('batch')}
+                    className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                        activeTab === 'batch' 
+                            ? 'bg-white text-slate-800 shadow-md font-extrabold scale-100' 
+                            : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                >
+                    <Users size={14} />
+                    <span>Batch Headcount</span>
                 </button>
             </div>
 
@@ -1195,6 +1221,14 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
                         )}
                     </div>
                 </div>
+            )}
+
+            {/* TAB 3: COORDINATOR & PROVINCE BATCH HEADCOUNT CHECK-IN */}
+            {activeTab === 'batch' && (
+                <CoordinatorBatchCheckIn
+                    onBatchSuccess={handleBatchSuccess}
+                    volunteerName={volunteerName}
+                />
             )}
 
             {/* Today's Activity Log */}
