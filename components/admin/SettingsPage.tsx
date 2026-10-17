@@ -286,6 +286,7 @@ export default function SettingsPage() {
                                     <option value="Access Admin">Access Admin</option>
                                     <option value="Volunteer">Volunteer</option>
                                     <option value="Supervisor">Supervisor</option>
+                                    <option value="Registration Officer">Registration Officer</option>
                                 </select>
                             </div>
 

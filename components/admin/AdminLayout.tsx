@@ -7,13 +7,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-export type UserRole = 'Super Admin' | 'Access Admin' | 'Volunteer' | 'Supervisor';
+export type UserRole = 'Super Admin' | 'Access Admin' | 'Volunteer' | 'Supervisor' | 'Registration Officer';
 
 export const ROLE_ACCESS: Record<UserRole, string[]> = {
     'Super Admin': ['overview', 'registrations', 'batch-cards', 'express-register', 'volunteers', 'stage', 'analytics', 'auditlog', 'checkin', 'checkout', 'settings'],
     'Access Admin': ['overview', 'registrations', 'batch-cards', 'express-register', 'volunteers', 'stage', 'analytics', 'checkin', 'checkout'],
-    'Volunteer': ['overview', 'checkin', 'checkout'],
-    'Supervisor': ['overview', 'stage', 'analytics', 'checkout', 'batch-cards']
+    'Volunteer': ['checkin', 'checkout'],
+    'Supervisor': ['overview', 'analytics'],
+    'Registration Officer': ['express-register']
 };
 
 interface AdminLayoutProps {

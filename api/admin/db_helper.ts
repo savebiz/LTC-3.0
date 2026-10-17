@@ -16,7 +16,7 @@ export function getSupabaseAdmin(): any {
 export interface AdminUser {
     id: string;
     full_name: string;
-    role: 'Super Admin' | 'Access Admin' | 'Volunteer' | 'Supervisor';
+    role: 'Super Admin' | 'Access Admin' | 'Volunteer' | 'Supervisor' | 'Registration Officer';
     password_hash: string;
     is_active: boolean;
     created_at: string;

@@ -68,7 +68,15 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
         } else if (location.pathname === '/admin/stage') {
             setActivePage('stage');
         } else if (location.pathname === '/admin') {
-            if (activePage === 'checkin' || activePage === 'checkout' || activePage === 'batch-cards' || activePage === 'express-register' || activePage === 'stage') {
+            const role = (sessionStorage.getItem('c3tc_admin_role') || 'Super Admin') as UserRole;
+            const allowed = ROLE_ACCESS[role] || ROLE_ACCESS['Super Admin'];
+            if (!allowed.includes('overview') && allowed.length > 0) {
+                const target = allowed[0];
+                setActivePage(target);
+                if (target === 'checkin') navigate('/admin/checkin');
+                else if (target === 'checkout') navigate('/admin/checkout');
+                else if (target === 'express-register') navigate('/admin/express-register');
+            } else if (activePage === 'checkin' || activePage === 'checkout' || activePage === 'batch-cards' || activePage === 'express-register' || activePage === 'stage') {
                 setActivePage('overview');
             }
         }
@@ -116,8 +124,17 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
             if (targetPage === 'finances') targetPage = 'analytics';
 
             if (!allowed.includes(targetPage)) {
-                setActivePage('overview');
-                navigate('/admin');
+                const fallbackPage = allowed[0] || 'overview';
+                setActivePage(fallbackPage);
+                if (fallbackPage === 'checkin') {
+                    navigate('/admin/checkin');
+                } else if (fallbackPage === 'checkout') {
+                    navigate('/admin/checkout');
+                } else if (fallbackPage === 'express-register') {
+                    navigate('/admin/express-register');
+                } else if (fallbackPage === 'overview') {
+                    navigate('/admin');
+                }
                 toast.error("Access Denied", "You don't have permission to access that page.");
             }
         }
@@ -165,8 +182,13 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
                 const allowed = ROLE_ACCESS[role as UserRole] || ROLE_ACCESS['Super Admin'];
                 if (allowed.includes('overview')) {
                     setActivePage('overview');
+                    navigate('/admin');
                 } else if (allowed.length > 0) {
-                    setActivePage(allowed[0]);
+                    const firstAllowed = allowed[0];
+                    setActivePage(firstAllowed);
+                    if (firstAllowed === 'checkin') navigate('/admin/checkin');
+                    else if (firstAllowed === 'checkout') navigate('/admin/checkout');
+                    else if (firstAllowed === 'express-register') navigate('/admin/express-register');
                 }
                 toast.success('Login Successful', `Welcome back, ${full_name}`);
             } else {
