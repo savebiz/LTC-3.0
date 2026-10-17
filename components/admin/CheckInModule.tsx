@@ -44,6 +44,7 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
     
     // Live Stats
     const [stats, setStats] = useState({
+        cleared: 0,
         total: 0,
         checkedIn: 0,
         remaining: 0,
@@ -129,40 +130,48 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
     // Fetch Stats
     async function fetchStats() {
         try {
-            // First attempt: fast exact count queries without downloading full payload
-            const [totalRes, checkedInRes] = await Promise.all([
-                supabase.from('registrations').select('*', { count: 'exact', head: true }),
-                supabase.from('registrations').select('*', { count: 'exact', head: true }).eq('checked_in', true)
+            // Fast exact count queries for cleared and checked-in registrations
+            const [clearedRes, checkedInRes] = await Promise.all([
+                supabase
+                    .from('registrations')
+                    .select('*', { count: 'exact', head: true })
+                    .or('payment_status.eq.cleared,status.eq.confirmed'),
+                supabase
+                    .from('registrations')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('checked_in', true)
             ]);
 
-            let total = totalRes.count;
+            let cleared = clearedRes.count;
             let checkedIn = checkedInRes.count;
 
             // Fallback to iterative chunked pagination (fetchAllSupabaseRows) if count is unavailable
-            if (total === null || total === undefined) {
-                const regs = await fetchAllSupabaseRows<{ checked_in: boolean }>(() =>
-                    supabase.from('registrations').select('checked_in').order('id', { ascending: true })
+            if (cleared === null || cleared === undefined) {
+                const regs = await fetchAllSupabaseRows<{ payment_status?: string; status?: string; checked_in?: boolean }>(() =>
+                    supabase.from('registrations').select('payment_status, status, checked_in').order('id', { ascending: true })
                 );
-                total = regs.length;
-                checkedIn = regs.filter(r => r.checked_in).length;
+                const clearedRegs = regs.filter(r => r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed');
+                cleared = clearedRegs.length;
+                checkedIn = clearedRegs.filter(r => r.checked_in).length;
             }
 
             // Fallback to offline cache if offline
-            if ((total === null || total === undefined || total === 0) && !navigator.onLine && typeof window !== 'undefined') {
+            if ((cleared === null || cleared === undefined || cleared === 0) && !navigator.onLine && typeof window !== 'undefined') {
                 try {
                     const cache = JSON.parse(localStorage.getItem('c3tc_registrations_cache') || '[]');
                     if (cache.length > 0) {
-                        total = cache.length;
-                        checkedIn = cache.filter((r: any) => r.checked_in).length;
+                        const clearedCache = cache.filter((r: any) => r.payment_status?.toLowerCase() === 'cleared' || r.status?.toLowerCase() === 'confirmed');
+                        cleared = clearedCache.length;
+                        checkedIn = clearedCache.filter((r: any) => r.checked_in).length;
                     }
                 } catch {}
             }
 
-            if (total !== null && total !== undefined) {
+            if (cleared !== null && cleared !== undefined) {
                 const finalCheckedIn = checkedIn || 0;
-                const remaining = Math.max(0, total - finalCheckedIn);
-                const rate = total > 0 ? Math.round((finalCheckedIn / total) * 100) : 0;
-                setStats({ total, checkedIn: finalCheckedIn, remaining, rate });
+                const remaining = Math.max(0, cleared - finalCheckedIn);
+                const rate = cleared > 0 ? Math.round((finalCheckedIn / cleared) * 100) : 0;
+                setStats({ cleared, total: cleared, checkedIn: finalCheckedIn, remaining, rate });
 
                 // Synchronize offline count if any
                 const queue = JSON.parse(localStorage.getItem('c3tc_pending_sync') || '[]');
@@ -601,12 +610,16 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
             });
 
             // 4. Update Stats Locally
-            setStats(prev => ({
-                ...prev,
-                checkedIn: prev.checkedIn + 1,
-                remaining: Math.max(0, prev.remaining - 1),
-                rate: prev.total > 0 ? Math.round(((prev.checkedIn + 1) / prev.total) * 100) : 0
-            }));
+            setStats(prev => {
+                const base = prev.cleared || prev.total || 0;
+                const newCheckedIn = prev.checkedIn + 1;
+                return {
+                    ...prev,
+                    checkedIn: newCheckedIn,
+                    remaining: Math.max(0, base - newCheckedIn),
+                    rate: base > 0 ? Math.round((newCheckedIn / base) * 100) : 0
+                };
+            });
 
             // 5. Add to activity log
             addActivityLog({
@@ -878,8 +891,8 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
             {/* Live Stats Header Bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
                 <div className="p-3 text-center md:text-left border-r border-slate-100 last:border-0">
-                    <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block">Registered</span>
-                    <span className="text-xl sm:text-2xl font-black text-slate-800 mt-1 block">{stats.total.toLocaleString()}</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block">Cleared</span>
+                    <span className="text-xl sm:text-2xl font-black text-slate-800 mt-1 block">{(stats.cleared || stats.total).toLocaleString()}</span>
                 </div>
                 <div className="p-3 text-center md:text-left md:border-r border-slate-100 last:border-0">
                     <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block">Checked In</span>
