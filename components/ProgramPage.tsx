@@ -344,7 +344,7 @@ export default function ProgramPage() {
                             <p className={`text-[11px] font-mono mt-1 ${
                                 theme === 'dark' ? 'text-zinc-400' : 'text-slate-500'
                             }`}>
-                                Rom. 12:2 • 2 Cor. 3:18 • Saturday, October 17, 2026
+                                Saturday, October 17, 2026
                             </p>
                         </div>
 
