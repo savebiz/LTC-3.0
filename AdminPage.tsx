@@ -9,6 +9,7 @@ import SettingsPage from './components/admin/SettingsPage';
 import AuditLogTable from './components/admin/AuditLogTable';
 import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
 import ExpressRegister from './components/admin/ExpressRegister';
+import StageDirector from './components/admin/StageDirector';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
     const getPageFromPath = () => {
         if (location.pathname === '/admin/checkin') return 'checkin';
         if (location.pathname === '/admin/express-register') return 'express-register';
+        if (location.pathname === '/admin/stage') return 'stage';
         return initialPage;
     };
 
@@ -55,8 +57,10 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
             setActivePage('checkin');
         } else if (location.pathname === '/admin/express-register') {
             setActivePage('express-register');
+        } else if (location.pathname === '/admin/stage') {
+            setActivePage('stage');
         } else if (location.pathname === '/admin') {
-            if (activePage === 'checkin' || activePage === 'express-register') {
+            if (activePage === 'checkin' || activePage === 'express-register' || activePage === 'stage') {
                 setActivePage('overview');
             }
         }
@@ -353,6 +357,8 @@ export default function AdminPage({ initialPage = 'overview' }: { initialPage?: 
             {activePage === 'express-register' && <ExpressRegister />}
 
             {activePage === 'volunteers' && <VolunteerTable />}
+
+            {activePage === 'stage' && <StageDirector />}
 
             {activePage === 'checkin' && <CheckInModule isSidebarOpen={isSidebarOpen} />}
 

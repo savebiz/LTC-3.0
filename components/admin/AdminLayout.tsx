@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
     LayoutDashboard, Users, BarChart3, QrCode,
-    Settings, LogOut, Menu, X, ClipboardList, Zap
+    Settings, LogOut, Menu, X, ClipboardList, Zap, Radio
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,10 +9,10 @@ import { cn } from '@/lib/utils';
 export type UserRole = 'Super Admin' | 'Access Admin' | 'Volunteer' | 'Supervisor';
 
 export const ROLE_ACCESS: Record<UserRole, string[]> = {
-    'Super Admin': ['overview', 'registrations', 'express-register', 'volunteers', 'analytics', 'auditlog', 'checkin', 'settings'],
-    'Access Admin': ['overview', 'registrations', 'express-register', 'volunteers', 'analytics', 'checkin'],
+    'Super Admin': ['overview', 'registrations', 'express-register', 'volunteers', 'stage', 'analytics', 'auditlog', 'checkin', 'settings'],
+    'Access Admin': ['overview', 'registrations', 'express-register', 'volunteers', 'stage', 'analytics', 'checkin'],
     'Volunteer': ['overview', 'checkin'],
-    'Supervisor': ['overview', 'analytics']
+    'Supervisor': ['overview', 'stage', 'analytics']
 };
 
 interface AdminLayoutProps {
@@ -52,6 +52,7 @@ export default function AdminLayout({
         { id: 'registrations', label: 'Registrations', icon: Users },
         { id: 'express-register', label: 'Express Register', icon: Zap, isSpecial: true },
         { id: 'volunteers', label: 'Volunteers', icon: Users },
+        { id: 'stage', label: 'Stage Director', icon: Radio, isSpecial: true },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
         { id: 'auditlog', label: 'Audit Log', icon: ClipboardList },
         { id: 'checkin', label: 'Check-in', icon: QrCode },

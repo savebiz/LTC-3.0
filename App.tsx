@@ -8,6 +8,7 @@ const RegistrationSuccessPage = lazyWithRetry(() => import('./components/Registr
 const AdminPage = lazyWithRetry(() => import('./AdminPage'));
 const DebugPage = lazyWithRetry(() => import('./components/DebugPage'));
 const CheckStatus = lazyWithRetry(() => import('./components/CheckStatus'));
+const ProgramPage = lazyWithRetry(() => import('./components/ProgramPage'));
 
 // Sections
 import Hero from '@/components/sections/Hero';
@@ -65,9 +66,12 @@ const AppContent: React.FC = () => {
             </div>
           } />
           <Route path="/registration-success" element={<RegistrationSuccessPage />} />
+          <Route path="/program" element={<ProgramPage />} />
+          <Route path="/schedule" element={<ProgramPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/checkin" element={<AdminPage initialPage="checkin" />} />
           <Route path="/admin/express-register" element={<AdminPage initialPage="express-register" />} />
+          <Route path="/admin/stage" element={<AdminPage initialPage="stage" />} />
           <Route path="/debug-env" element={<DebugPage />} />
           <Route path="/check-status" element={<CheckStatus />} />
         </Routes>
