@@ -376,6 +376,19 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
         setSelectedDelegateIds(new Set());
     };
 
+    const selectAllRemaining = () => {
+        if (!loadedGroup) return;
+        const eligible = loadedGroup.delegates.filter(d => {
+            const isCleared = d.payment_status?.toLowerCase() === 'cleared' || d.status?.toLowerCase() === 'confirmed';
+            const isRejected = d.status?.toLowerCase() === 'rejected' || d.payment_status?.toLowerCase() === 'rejected';
+            return isCleared && !isRejected && !d.checked_in;
+        });
+
+        setHeadcountInput(eligible.length);
+        const autoSelected = new Set(eligible.map(d => d.id));
+        setSelectedDelegateIds(autoSelected);
+    };
+
     // Toggle individual checkbox
     const toggleDelegate = (id: string) => {
         const next = new Set(selectedDelegateIds);
