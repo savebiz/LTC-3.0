@@ -154,21 +154,19 @@ export default function BatchPrintCards() {
 
     return (
         <div className="space-y-6">
-            {/* SCREEN-ONLY TOOLBAR & CONTROLS */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden print:hidden">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-
+            {/* SCREEN-ONLY TOOLBAR & CONTROLS (Clean Light Theme) */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden print:hidden">
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <span className="p-1.5 rounded-lg bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                            <span className="p-1.5 rounded-xl bg-orange-100 text-orange-600 border border-orange-200">
                                 <Scissors className="w-5 h-5" />
                             </span>
-                            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight font-heading">
+                            <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight font-heading">
                                 A4 Batch QR Card Printer (10 Cards / Sheet)
                             </h1>
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-400">
+                        <p className="text-xs sm:text-sm text-slate-500">
                             Printable delegate pass backup arranged per Region & Province with dashed scissor cut guides.
                         </p>
                     </div>
@@ -177,7 +175,7 @@ export default function BatchPrintCards() {
                         <Button
                             onClick={handlePrint}
                             disabled={loading || a4Sheets.length === 0}
-                            className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs h-11 px-5 rounded-xl flex items-center gap-2 shadow-lg shadow-orange-500/20 active:scale-[0.98]"
+                            className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs h-11 px-5 rounded-xl flex items-center gap-2 shadow-sm active:scale-[0.98] transition-all"
                         >
                             <Printer className="w-4 h-4" />
                             <span>Print All ({a4Sheets.length} A4 Pages)</span>
@@ -186,16 +184,16 @@ export default function BatchPrintCards() {
                         <button
                             onClick={loadClearedDelegates}
                             disabled={loading}
-                            className="h-11 w-11 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 flex items-center justify-center transition-colors disabled:opacity-50"
+                            className="h-11 w-11 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center transition-colors shadow-sm disabled:opacity-50"
                             title="Refresh data"
                         >
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-orange-400' : ''}`} />
+                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-orange-500' : ''}`} />
                         </button>
                     </div>
                 </div>
 
                 {/* FILTER CONTROLS */}
-                <div className="mt-5 pt-4 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-4 gap-3">
                     {/* Region Filter */}
                     <div>
                         <label className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
@@ -207,7 +205,7 @@ export default function BatchPrintCards() {
                                 setSelectedRegion(e.target.value);
                                 setSelectedProvince('all');
                             }}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500 font-medium"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-orange-500 focus:bg-white font-medium"
                         >
                             <option value="all">All Regions ({availableRegions.length})</option>
                             {availableRegions.map(r => (
@@ -224,7 +222,7 @@ export default function BatchPrintCards() {
                         <select
                             value={selectedProvince}
                             onChange={(e) => setSelectedProvince(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500 font-medium"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-orange-500 focus:bg-white font-medium"
                         >
                             <option value="all">All Provinces ({availableProvinces.length})</option>
                             {availableProvinces.map(p => (
@@ -242,24 +240,24 @@ export default function BatchPrintCards() {
                             placeholder="Type to filter..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-slate-950 border-slate-800 text-xs text-white h-9.5"
+                            className="bg-slate-50 border-slate-200 text-xs text-slate-800 h-9.5 rounded-xl focus:bg-white"
                         />
                     </div>
 
                     {/* Stats Pill */}
-                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between self-end h-9.5">
-                        <span className="text-xs text-slate-400 font-medium">Ready to Print:</span>
-                        <span className="text-xs font-mono font-bold text-orange-400">
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between self-end h-9.5">
+                        <span className="text-xs text-slate-500 font-medium">Ready to Print:</span>
+                        <span className="text-xs font-mono font-bold text-orange-600">
                             {filteredDelegates.length} Cards • {a4Sheets.length} Sheets
                         </span>
                     </div>
                 </div>
 
                 {/* PRINT INSTRUCTIONS NOTICE */}
-                <div className="mt-4 p-3 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs text-slate-300 flex items-start gap-2.5">
-                    <Info className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
-                    <div className="space-y-0.5 text-[11px] leading-relaxed text-slate-400">
-                        <strong className="text-slate-200">Printer Settings:</strong> Paper size: <span className="text-orange-400 font-mono">A4 Portrait</span>. Margins: <span className="text-orange-400 font-mono">None / Minimum</span>. Scale: <span className="text-orange-400 font-mono">100% (Do not fit to page)</span>. Each A4 sheet fits exactly 10 cards (2 columns × 5 rows) with dotted scissor lines.
+                <div className="mt-4 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-900 flex items-start gap-2.5">
+                    <Info className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5 text-[11px] leading-relaxed text-slate-600">
+                        <strong className="text-slate-800">Printer Settings:</strong> Paper size: <span className="text-orange-600 font-mono font-bold">A4 Portrait</span>. Margins: <span className="text-orange-600 font-mono font-bold">None / Minimum</span>. Scale: <span className="text-orange-600 font-mono font-bold">100% (Do not fit to page)</span>. Each A4 sheet fits exactly 10 cards (2 columns × 5 rows) with dotted scissor lines.
                     </div>
                 </div>
             </div>
@@ -267,12 +265,12 @@ export default function BatchPrintCards() {
             {/* A4 PRINT CONTAINER (Visible on Screen Preview and in Print) */}
             <div className="batch-cards-print-container space-y-8 print:space-y-0">
                 {loading ? (
-                    <div className="text-center py-20 bg-slate-900 border border-slate-800 rounded-3xl text-slate-400 space-y-3 print:hidden">
+                    <div className="text-center py-20 bg-white border border-slate-200 rounded-2xl text-slate-500 space-y-3 shadow-sm print:hidden">
                         <RefreshCw className="w-8 h-8 animate-spin mx-auto text-orange-500" />
                         <p className="text-sm font-medium">Loading and grouping cleared delegates...</p>
                     </div>
                 ) : a4Sheets.length === 0 ? (
-                    <div className="text-center py-20 bg-slate-900 border border-slate-800 rounded-3xl text-slate-400 text-sm font-medium print:hidden">
+                    <div className="text-center py-20 bg-white border border-slate-200 rounded-2xl text-slate-500 text-sm font-medium shadow-sm print:hidden">
                         No cleared delegates match the selected filters.
                     </div>
                 ) : (
