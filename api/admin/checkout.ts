@@ -127,22 +127,69 @@ export default async function handler(req: any, res: any) {
         }
 
         if (!record.checked_in) {
-            // Anti-Fraud Defense: Tried to exit or re-enter without ever going through Gate 1
-            await logAuditEvent({
-                action: 'checkout_rejected_never_checked_in',
-                registration_id: record.id,
-                batch_reference: record.batch_reference,
-                registrant_name: record.full_name,
-                performed_by: volunteerName,
-                device_info: req.headers['user-agent'] || 'Restroom Gate Scanner',
-                notes: 'Delegate attempted to use restroom pass without primary Gate 1 Check-In'
-            });
+            // Auto-Healing Rule for Staggered Batch Delegations:
+            // If the delegate is cleared and their province/batch has already started checking in,
+            // auto-heal their check-in so they are not blocked at the restroom scanner.
+            let canAutoHeal = false;
+            const targetProvince = record.province;
+            const targetBatch = record.batch_reference;
 
-            return res.status(400).json({
-                error: 'Not Checked In',
-                message: 'This delegate was never checked in at Gate 1. They must proceed to the main entrance first.',
-                record
-            });
+            if (targetProvince || (targetBatch && targetBatch !== 'DEFAULT' && targetBatch !== '-')) {
+                let batchQuery = getSupabaseAdmin()
+                    .from('registrations')
+                    .select('id')
+                    .eq('checked_in', true)
+                    .limit(1);
+
+                if (targetProvince) {
+                    batchQuery = batchQuery.eq('province', targetProvince);
+                } else if (targetBatch) {
+                    batchQuery = batchQuery.eq('batch_reference', targetBatch);
+                }
+
+                const { data: activeContingent } = await batchQuery;
+                if (activeContingent && activeContingent.length > 0) {
+                    canAutoHeal = true;
+                }
+            }
+
+            if (canAutoHeal) {
+                const nowISO = new Date().toISOString();
+                await getSupabaseAdmin()
+                    .from('registrations')
+                    .update({ checked_in: true, checked_in_at: nowISO })
+                    .eq('id', record.id);
+
+                await logAuditEvent({
+                    action: 'batch_auto_heal_checkin',
+                    registration_id: record.id,
+                    batch_reference: record.batch_reference,
+                    registrant_name: record.full_name,
+                    performed_by: volunteerName,
+                    device_info: req.headers['user-agent'] || 'Restroom Scanner Auto-Heal',
+                    notes: `Auto-healed gate check-in at restroom pass because contingent "${record.province || record.batch_reference}" has active batch admission.`
+                });
+
+                record.checked_in = true;
+                record.checked_in_at = nowISO;
+            } else {
+                // Anti-Fraud Defense: Tried to exit or re-enter without ever going through Gate 1
+                await logAuditEvent({
+                    action: 'checkout_rejected_never_checked_in',
+                    registration_id: record.id,
+                    batch_reference: record.batch_reference,
+                    registrant_name: record.full_name,
+                    performed_by: volunteerName,
+                    device_info: req.headers['user-agent'] || 'Restroom Gate Scanner',
+                    notes: 'Delegate attempted to use restroom pass without primary Gate 1 Check-In'
+                });
+
+                return res.status(400).json({
+                    error: 'Not Checked In',
+                    message: 'This delegate was never checked in at Gate 1. They must proceed to the main entrance first.',
+                    record
+                });
+            }
         }
 
         // 5. Determine Current Inside vs Restroom State via Audit Log

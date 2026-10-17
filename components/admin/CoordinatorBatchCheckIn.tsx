@@ -8,7 +8,8 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { 
     Users, Search, CheckCircle2, UserCheck, AlertTriangle, 
     XCircle, Camera, RotateCw, Lightbulb, Loader2, Sparkles,
-    ChevronDown, Filter, CheckSquare, Square, Plus, Minus, ArrowRight
+    ChevronDown, ChevronUp, Filter, CheckSquare, Square, Plus, Minus, ArrowRight,
+    Bus, Layers, Check
 } from 'lucide-react';
 import { REGIONS_AND_PROVINCES } from '@/constants';
 
@@ -65,9 +66,12 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
         delegates: Registrant[];
     } | null>(null);
 
-    // Headcount and Selection state
+    // Headcount, Staggered Batch, and Selection state
     const [selectedDelegateIds, setSelectedDelegateIds] = useState<Set<string>>(new Set());
     const [headcountInput, setHeadcountInput] = useState<number>(0);
+    const [batchTag, setBatchTag] = useState<string>('Bus 1');
+    const [customTag, setCustomTag] = useState<string>('');
+    const [showDelegateList, setShowDelegateList] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [filterQuery, setFilterQuery] = useState('');
 
@@ -77,6 +81,8 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
         coordinatorName: string;
         province: string;
         headcount: number;
+        batchTag: string;
+        remainingAfter: number;
     } | null>(null);
 
     // List of available provinces for selected region
@@ -337,6 +343,39 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
         setSelectedDelegateIds(autoSelected);
     };
 
+    const addPresetHeadcount = (amount: number) => {
+        if (!loadedGroup) return;
+        const eligible = loadedGroup.delegates.filter(d => {
+            const isCleared = d.payment_status?.toLowerCase() === 'cleared' || d.status?.toLowerCase() === 'confirmed';
+            const isRejected = d.status?.toLowerCase() === 'rejected' || d.payment_status?.toLowerCase() === 'rejected';
+            return isCleared && !isRejected && !d.checked_in;
+        });
+
+        const newCount = Math.max(0, Math.min(eligible.length, headcountInput + amount));
+        setHeadcountInput(newCount);
+        const autoSelected = new Set(eligible.slice(0, newCount).map(d => d.id));
+        setSelectedDelegateIds(autoSelected);
+    };
+
+    const setExactHeadcount = (count: number) => {
+        if (!loadedGroup) return;
+        const eligible = loadedGroup.delegates.filter(d => {
+            const isCleared = d.payment_status?.toLowerCase() === 'cleared' || d.status?.toLowerCase() === 'confirmed';
+            const isRejected = d.status?.toLowerCase() === 'rejected' || d.payment_status?.toLowerCase() === 'rejected';
+            return isCleared && !isRejected && !d.checked_in;
+        });
+
+        const valid = Math.max(0, Math.min(eligible.length, count));
+        setHeadcountInput(valid);
+        const autoSelected = new Set(eligible.slice(0, valid).map(d => d.id));
+        setSelectedDelegateIds(autoSelected);
+    };
+
+    const resetHeadcount = () => {
+        setHeadcountInput(0);
+        setSelectedDelegateIds(new Set());
+    };
+
     // Toggle individual checkbox
     const toggleDelegate = (id: string) => {
         const next = new Set(selectedDelegateIds);
@@ -373,11 +412,19 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
         if (!loadedGroup || selectedDelegateIds.size === 0) return;
 
         const count = selectedDelegateIds.size;
+        const targetTag = batchTag === 'Custom' ? (customTag.trim() || 'Custom Batch') : batchTag;
+        const pendingBefore = loadedGroup.delegates.filter(d => {
+            const isCleared = d.payment_status?.toLowerCase() === 'cleared' || d.status?.toLowerCase() === 'confirmed';
+            const isRejected = d.status?.toLowerCase() === 'rejected' || d.payment_status?.toLowerCase() === 'rejected';
+            return isCleared && !isRejected && !d.checked_in;
+        }).length;
+        const remainingOutside = Math.max(0, pendingBefore - count);
+
         const confirmed = await confirm({
             type: 'success',
-            title: `Confirm Batch Check-In: ${count} Delegates`,
-            body: `Are you sure you want to check in ${count} delegates from ${loadedGroup.province} under Coordinator ${loadedGroup.coordinatorName}? Physical verified headcount is ${headcountInput}.`,
-            confirmText: `Check In All ${count} Delegates`
+            title: `Confirm Headcount: ${count} Delegates (${targetTag})`,
+            body: `Are you sure you want to admit ${count} delegates from ${loadedGroup.province} in this batch [${targetTag}]? ${remainingOutside} delegates will remain outside for subsequent arrivals.`,
+            confirmText: `Check In ${count} Delegates Now`
         });
 
         if (!confirmed) return;
@@ -394,6 +441,7 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
                     region: loadedGroup.region,
                     batch_reference: loadedGroup.batchReference,
                     headcount_verified: headcountInput,
+                    batch_label: targetTag,
                     performed_by: volunteerName
                 })
             });
@@ -418,14 +466,21 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
                 setSelectedDelegateIds(new Set());
                 setHeadcountInput(0);
 
+                // Auto-advance next bus label
+                if (batchTag === 'Bus 1') setBatchTag('Bus 2');
+                else if (batchTag === 'Bus 2') setBatchTag('Bus 3');
+                else if (batchTag === 'Batch 1') setBatchTag('Batch 2');
+
                 setLastBatchResult({
                     count: data.checked_in_count,
                     coordinatorName: loadedGroup.coordinatorName,
                     province: loadedGroup.province,
-                    headcount: headcountInput
+                    headcount: count,
+                    batchTag: targetTag,
+                    remainingAfter: remainingOutside
                 });
 
-                toast.success('Batch Check-In Complete!', `Successfully checked in ${data.checked_in_count} delegates.`);
+                toast.success('Batch Check-In Complete!', `Successfully checked in ${data.checked_in_count} delegates for ${targetTag}.`);
 
                 if (onBatchSuccess) {
                     onBatchSuccess({
@@ -456,6 +511,19 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
         const pending = Math.max(0, cleared - checkedIn);
         return { total, cleared, checkedIn, pending };
     }, [loadedGroup]);
+
+    // Compute visual arrival progress percentages
+    const arrivalPercentages = useMemo(() => {
+        if (!loadedGroup || rosterStats.cleared === 0) {
+            return { admittedPct: 0, currentBatchPct: 0, remainingAfter: 0, remainingPct: 0 };
+        }
+        const totalCleared = rosterStats.cleared;
+        const admittedPct = Math.round((rosterStats.checkedIn / totalCleared) * 100);
+        const currentBatchPct = Math.round((headcountInput / totalCleared) * 100);
+        const remainingAfter = Math.max(0, rosterStats.pending - headcountInput);
+        const remainingPct = Math.max(0, 100 - admittedPct - currentBatchPct);
+        return { admittedPct, currentBatchPct, remainingAfter, remainingPct };
+    }, [loadedGroup, rosterStats, headcountInput]);
 
     // Filter delegates by search term
     const visibleDelegates = useMemo(() => {
@@ -607,17 +675,29 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
 
             {/* SUCCESS BANNER NOTIFICATION */}
             {lastBatchResult && (
-                <div className="bg-emerald-500 text-white p-5 rounded-2xl shadow-lg flex items-center justify-between animate-in fade-in slide-in-from-top-3 duration-300">
+                <div className="bg-emerald-500 text-white p-5 rounded-2xl shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-3 duration-300">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <CheckCircle2 size={24} />
                         </div>
                         <div>
-                            <h4 className="font-black text-base">
-                                ✓ {lastBatchResult.count} Delegates Checked In Successfully!
+                            <h4 className="font-black text-base flex items-center gap-2">
+                                <span>✓ {lastBatchResult.count} Delegates Admitted!</span>
+                                <span className="bg-white/20 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                                    {lastBatchResult.batchTag}
+                                </span>
                             </h4>
-                            <p className="text-xs text-emerald-100">
-                                Coordinator: <strong>{lastBatchResult.coordinatorName}</strong> • {lastBatchResult.province} (Headcount: {lastBatchResult.headcount})
+                            <p className="text-xs text-emerald-100 mt-0.5">
+                                {lastBatchResult.province} • Coordinator: <strong>{lastBatchResult.coordinatorName}</strong>
+                                {lastBatchResult.remainingAfter > 0 ? (
+                                    <span className="block sm:inline sm:ml-2 font-bold text-amber-200">
+                                        • {lastBatchResult.remainingAfter} delegates remaining for subsequent buses
+                                    </span>
+                                ) : (
+                                    <span className="block sm:inline sm:ml-2 font-bold text-white">
+                                        • All delegates in contingent fully admitted!
+                                    </span>
+                                )}
                             </p>
                         </div>
                     </div>
@@ -625,7 +705,7 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
                         size="sm"
                         variant="secondary"
                         onClick={() => setLastBatchResult(null)}
-                        className="bg-white text-emerald-800 hover:bg-emerald-50 font-bold text-xs h-9 px-3 rounded-xl shrink-0"
+                        className="bg-white text-emerald-800 hover:bg-emerald-50 font-bold text-xs h-9 px-4 rounded-xl shrink-0 self-end sm:self-auto cursor-pointer"
                     >
                         Dismiss
                     </Button>
@@ -661,187 +741,341 @@ export default function CoordinatorBatchCheckIn({ onBatchSuccess, volunteerName 
                                     <span className="text-sm font-black text-blue-600 block">{rosterStats.cleared}</span>
                                 </div>
                                 <div className="bg-emerald-50 border border-emerald-100 p-2 rounded-xl">
-                                    <span className="text-[9px] font-bold text-emerald-600 block uppercase">Checked In</span>
+                                    <span className="text-[9px] font-bold text-emerald-600 block uppercase">Admitted</span>
                                     <span className="text-sm font-black text-emerald-700 block">{rosterStats.checkedIn}</span>
                                 </div>
                                 <div className="bg-amber-50 border border-amber-100 p-2 rounded-xl">
-                                    <span className="text-[9px] font-bold text-amber-600 block uppercase">Pending</span>
+                                    <span className="text-[9px] font-bold text-amber-600 block uppercase">Outside</span>
                                     <span className="text-sm font-black text-amber-700 block">{rosterStats.pending}</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* PHYSICAL HEADCOUNT STEPPER TOOL */}
-                        <div className="bg-orange-50/60 border-2 border-orange-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                    <UserCheck className="w-5 h-5 text-orange-600" />
-                                    <h4 className="text-sm font-bold text-slate-900">
-                                        Verified Physical Headcount
-                                    </h4>
-                                </div>
-                                <p className="text-xs text-slate-600 leading-relaxed max-w-md">
-                                    Count the number of teenagers physically on the bus or at the gate. Adjusting this automatically checks the first N cleared delegates below.
-                                </p>
-                            </div>
-
-                            <div className="flex items-center gap-3 self-center sm:self-auto shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => adjustHeadcount(-1)}
-                                    disabled={headcountInput <= 0}
-                                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition-colors shadow-sm disabled:opacity-40"
-                                >
-                                    <Minus size={18} />
-                                </button>
-
-                                <div className="relative">
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        max={rosterStats.pending}
-                                        value={headcountInput}
-                                        onChange={(e) => handleManualHeadcountChange(parseInt(e.target.value, 10) || 0)}
-                                        className="w-20 h-11 text-center font-black text-xl text-slate-800 bg-white border-2 border-orange-400 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-orange-500"
-                                    />
-                                    <span className="text-[9px] font-mono text-slate-400 block text-center mt-0.5 font-bold">
-                                        OF {rosterStats.pending} MAX
+                        {/* VISUAL STACKED PROGRESS BAR */}
+                        <div className="space-y-1.5">
+                            <div className="flex justify-between items-center text-[10px] font-mono font-bold text-slate-500">
+                                <span className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                                    Admitted: {rosterStats.checkedIn} ({arrivalPercentages.admittedPct}%)
+                                </span>
+                                {headcountInput > 0 && (
+                                    <span className="flex items-center gap-1.5 text-orange-600">
+                                        <span className="w-2 h-2 rounded-full bg-orange-500 inline-block animate-pulse" />
+                                        This Batch: +{headcountInput} ({arrivalPercentages.currentBatchPct}%)
                                     </span>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => adjustHeadcount(1)}
-                                    disabled={headcountInput >= rosterStats.pending}
-                                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition-colors shadow-sm disabled:opacity-40"
-                                >
-                                    <Plus size={18} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* ROSTER TABLE TOOLBAR */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={toggleSelectAll}
-                                    disabled={rosterStats.pending === 0}
-                                    className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
-                                >
-                                    {selectedDelegateIds.size === rosterStats.pending && rosterStats.pending > 0 ? (
-                                        <CheckSquare className="w-4 h-4 text-orange-500" />
-                                    ) : (
-                                        <Square className="w-4 h-4 text-slate-400" />
-                                    )}
-                                    <span>Select All Pending ({rosterStats.pending})</span>
-                                </button>
-
-                                <span className="text-xs font-mono text-slate-400">•</span>
-
-                                <span className="text-xs font-bold text-orange-600">
-                                    {selectedDelegateIds.size} Selected for Check-In
+                                )}
+                                <span className="flex items-center gap-1.5 text-slate-400">
+                                    Remaining Outside: {arrivalPercentages.remainingAfter} ({arrivalPercentages.remainingPct}%)
                                 </span>
                             </div>
-
-                            <div className="relative w-full sm:w-64">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                <Input
-                                    placeholder="Filter by name..."
-                                    value={filterQuery}
-                                    onChange={e => setFilterQuery(e.target.value)}
-                                    className="pl-8 h-9 text-xs bg-slate-50 border-slate-200 rounded-xl"
+                            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+                                <div 
+                                    style={{ width: `${arrivalPercentages.admittedPct}%` }} 
+                                    className="bg-emerald-500 h-full transition-all duration-300" 
+                                    title={`Admitted: ${rosterStats.checkedIn}`}
+                                />
+                                <div 
+                                    style={{ width: `${arrivalPercentages.currentBatchPct}%` }} 
+                                    className="bg-orange-500 h-full transition-all duration-300" 
+                                    title={`This Batch: ${headcountInput}`}
+                                />
+                                <div 
+                                    style={{ width: `${arrivalPercentages.remainingPct}%` }} 
+                                    className="bg-slate-200 h-full transition-all duration-300" 
+                                    title={`Remaining Outside: ${arrivalPercentages.remainingAfter}`}
                                 />
                             </div>
                         </div>
 
-                        {/* DELEGATE ROSTER LIST */}
-                        <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[380px] overflow-y-auto divide-y divide-slate-100">
-                            {visibleDelegates.map((delegate) => {
-                                const isCheckedIn = delegate.checked_in;
-                                const isCleared = delegate.payment_status?.toLowerCase() === 'cleared' || delegate.status?.toLowerCase() === 'confirmed';
-                                const isRejected = delegate.status?.toLowerCase() === 'rejected' || delegate.payment_status?.toLowerCase() === 'rejected';
-                                const isEligible = isCleared && !isRejected && !isCheckedIn;
-                                const isSelected = selectedDelegateIds.has(delegate.id);
+                        {/* STAGGERED BATCH & HEADCOUNT CONTROLLER */}
+                        <div className="bg-orange-50/70 border-2 border-orange-200 rounded-2xl p-4 sm:p-5 space-y-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <Bus className="w-5 h-5 text-orange-600" />
+                                        <h4 className="text-sm font-bold text-slate-900">
+                                            Admit by Headcount (Staggered Bus / Batch Arrival)
+                                        </h4>
+                                    </div>
+                                    <p className="text-xs text-slate-600 mt-0.5">
+                                        Enter the number of teens arriving on this bus or in this contingent. No need to look up individual names.
+                                    </p>
+                                </div>
 
-                                return (
-                                    <div
-                                        key={delegate.id}
-                                        onClick={() => {
-                                            if (isEligible) toggleDelegate(delegate.id);
-                                        }}
-                                        className={`p-3 text-xs flex items-center justify-between gap-3 transition-colors ${
-                                            isCheckedIn 
-                                                ? 'bg-emerald-50/40 text-slate-400' 
-                                                : isSelected 
-                                                    ? 'bg-orange-50/70 border-l-4 border-orange-500 font-semibold' 
-                                                    : 'hover:bg-slate-50 cursor-pointer'
-                                        }`}
+                                {/* Bus / Batch Tag Selector */}
+                                <div className="flex items-center flex-wrap gap-1.5">
+                                    {['Bus 1', 'Bus 2', 'Bus 3', 'Batch 1', 'Custom'].map(tag => (
+                                        <button
+                                            key={tag}
+                                            type="button"
+                                            onClick={() => setBatchTag(tag)}
+                                            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                                                batchTag === tag 
+                                                    ? 'bg-orange-500 text-white border-orange-600 shadow-sm' 
+                                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            {tag}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Custom Label Input if 'Custom' is selected */}
+                            {batchTag === 'Custom' && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-slate-600">Batch Label:</span>
+                                    <Input
+                                        placeholder="e.g. Coaster Bus A, Ikeja Parish..."
+                                        value={customTag}
+                                        onChange={e => setCustomTag(e.target.value)}
+                                        className="h-9 text-xs bg-white border-slate-200 rounded-xl max-w-xs"
+                                    />
+                                </div>
+                            )}
+
+                            {/* STEPPER & NUMERIC INPUT + QUICK PRESETS */}
+                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-1">
+                                {/* Stepper Row */}
+                                <div className="flex items-center gap-3 self-center lg:self-auto">
+                                    <button
+                                        type="button"
+                                        onClick={() => adjustHeadcount(-1)}
+                                        disabled={headcountInput <= 0}
+                                        className="w-11 h-11 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition-colors shadow-sm disabled:opacity-40 cursor-pointer"
                                     >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            {isEligible ? (
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => toggleDelegate(delegate.id)}
-                                                    className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500 cursor-pointer"
-                                                />
-                                            ) : isCheckedIn ? (
-                                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                            ) : (
-                                                <XCircle className="w-4 h-4 text-slate-300 shrink-0" />
-                                            )}
+                                        <Minus size={20} />
+                                    </button>
 
-                                            <div className="min-w-0">
-                                                <p className={`font-bold truncate ${isCheckedIn ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
-                                                    {delegate.full_name}
-                                                </p>
-                                                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5 font-medium">
-                                                    <span className="font-mono">{delegate.batch_reference || 'REF'}</span>
-                                                    <span>•</span>
-                                                    <span>{delegate.category}</span>
-                                                </div>
-                                            </div>
+                                    <div className="relative text-center">
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={rosterStats.pending}
+                                            value={headcountInput}
+                                            onChange={(e) => handleManualHeadcountChange(parseInt(e.target.value, 10) || 0)}
+                                            className="w-24 h-12 text-center font-black text-2xl text-slate-800 bg-white border-2 border-orange-400 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                        />
+                                        <span className="text-[9px] font-mono text-slate-400 block text-center mt-0.5 font-bold">
+                                            OF {rosterStats.pending} OUTSIDE
+                                        </span>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => adjustHeadcount(1)}
+                                        disabled={headcountInput >= rosterStats.pending}
+                                        className="w-11 h-11 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition-colors shadow-sm disabled:opacity-40 cursor-pointer"
+                                    >
+                                        <Plus size={20} />
+                                    </button>
+                                </div>
+
+                                {/* Quick Add Preset Chips */}
+                                <div className="flex items-center flex-wrap gap-1.5 justify-center lg:justify-end">
+                                    {[5, 10, 20, 30, 50].map(n => (
+                                        <button
+                                            key={n}
+                                            type="button"
+                                            onClick={() => addPresetHeadcount(n)}
+                                            disabled={headcountInput + n > rosterStats.pending}
+                                            className="text-xs font-bold px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-orange-300 hover:bg-orange-50/50 text-slate-700 transition-all shadow-2xs disabled:opacity-30 cursor-pointer"
+                                        >
+                                            +{n}
+                                        </button>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={selectAllRemaining}
+                                        disabled={rosterStats.pending === 0}
+                                        className="text-xs font-bold px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-sm disabled:opacity-40 cursor-pointer"
+                                    >
+                                        All Remaining ({rosterStats.pending})
+                                    </button>
+                                    {headcountInput > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={resetHeadcount}
+                                            className="text-xs font-bold px-2.5 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 transition-all cursor-pointer"
+                                        >
+                                            Reset
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 3-COLUMN CALCULATION IMPACT CARDS */}
+                            <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-orange-200/60">
+                                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-100">
+                                    <span className="text-[10px] font-bold text-slate-400 block uppercase">1. Already Inside</span>
+                                    <span className="text-base font-black text-emerald-700 block mt-0.5">{rosterStats.checkedIn}</span>
+                                    <span className="text-[9px] text-slate-500 font-mono">({arrivalPercentages.admittedPct}%)</span>
+                                </div>
+                                <div className="bg-white p-2.5 rounded-xl border-2 border-orange-300 shadow-2xs">
+                                    <span className="text-[10px] font-bold text-orange-600 block uppercase">2. Admitting This Batch</span>
+                                    <span className="text-base font-black text-orange-600 block mt-0.5">+{headcountInput}</span>
+                                    <span className="text-[9px] text-orange-500 font-mono font-bold">[{batchTag === 'Custom' ? (customTag || 'Custom') : batchTag}]</span>
+                                </div>
+                                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-100">
+                                    <span className="text-[10px] font-bold text-slate-400 block uppercase">3. Next Bus Remaining</span>
+                                    <span className="text-base font-black text-amber-700 block mt-0.5">{arrivalPercentages.remainingAfter}</span>
+                                    <span className="text-[9px] text-slate-500 font-mono">({arrivalPercentages.remainingPct}%)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* COLLAPSIBLE DELEGATE NAMES REVIEW (OPTIONAL) */}
+                        <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                            <button
+                                type="button"
+                                onClick={() => setShowDelegateList(!showDelegateList)}
+                                className="w-full p-3.5 bg-slate-50 hover:bg-slate-100/80 flex items-center justify-between text-left transition-colors cursor-pointer"
+                            >
+                                <div className="flex items-center gap-2">
+                                    {showDelegateList ? (
+                                        <ChevronUp className="w-4 h-4 text-slate-500" />
+                                    ) : (
+                                        <ChevronDown className="w-4 h-4 text-slate-500" />
+                                    )}
+                                    <span className="text-xs font-bold text-slate-700">
+                                        {showDelegateList ? 'Hide' : 'Review'} Individual Delegate Names ({loadedGroup.delegates.length} delegates)
+                                    </span>
+                                    <span className="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-mono font-bold">
+                                        Optional
+                                    </span>
+                                </div>
+                                <span className="text-xs text-slate-400 font-medium">
+                                    {showDelegateList ? 'Click to collapse' : 'Click to inspect or uncheck specific names'}
+                                </span>
+                            </button>
+
+                            {showDelegateList && (
+                                <div className="p-4 space-y-3 bg-white border-t border-slate-200">
+                                    {/* ROSTER TABLE TOOLBAR */}
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={toggleSelectAll}
+                                                disabled={rosterStats.pending === 0}
+                                                className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                                            >
+                                                {selectedDelegateIds.size === rosterStats.pending && rosterStats.pending > 0 ? (
+                                                    <CheckSquare className="w-4 h-4 text-orange-500" />
+                                                ) : (
+                                                    <Square className="w-4 h-4 text-slate-400" />
+                                                )}
+                                                <span>Select All Pending ({rosterStats.pending})</span>
+                                            </button>
+
+                                            <span className="text-xs font-mono text-slate-400">•</span>
+
+                                            <span className="text-xs font-bold text-orange-600">
+                                                {selectedDelegateIds.size} Selected for Check-In
+                                            </span>
                                         </div>
 
-                                        <div className="shrink-0 flex items-center gap-2">
-                                            {isCheckedIn ? (
-                                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                                    In Hall ✓
-                                                </span>
-                                            ) : isCleared ? (
-                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                                                    isSelected ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-slate-100 text-slate-600 border-slate-200'
-                                                }`}>
-                                                    {isSelected ? 'Ready' : 'Cleared'}
-                                                </span>
-                                            ) : (
-                                                <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-                                                    Payment Pending
-                                                </span>
-                                            )}
+                                        <div className="relative w-full sm:w-64">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                            <Input
+                                                placeholder="Filter by name..."
+                                                value={filterQuery}
+                                                onChange={e => setFilterQuery(e.target.value)}
+                                                className="pl-8 h-9 text-xs bg-slate-50 border-slate-200 rounded-xl"
+                                            />
                                         </div>
                                     </div>
-                                );
-                            })}
+
+                                    {/* DELEGATE ROSTER LIST */}
+                                    <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[320px] overflow-y-auto divide-y divide-slate-100">
+                                        {visibleDelegates.map((delegate) => {
+                                            const isCheckedIn = delegate.checked_in;
+                                            const isCleared = delegate.payment_status?.toLowerCase() === 'cleared' || delegate.status?.toLowerCase() === 'confirmed';
+                                            const isRejected = delegate.status?.toLowerCase() === 'rejected' || delegate.payment_status?.toLowerCase() === 'rejected';
+                                            const isEligible = isCleared && !isRejected && !isCheckedIn;
+                                            const isSelected = selectedDelegateIds.has(delegate.id);
+
+                                            return (
+                                                <div
+                                                    key={delegate.id}
+                                                    onClick={() => {
+                                                        if (isEligible) toggleDelegate(delegate.id);
+                                                    }}
+                                                    className={`p-3 text-xs flex items-center justify-between gap-3 transition-colors ${
+                                                        isCheckedIn 
+                                                            ? 'bg-emerald-50/40 text-slate-400' 
+                                                            : isSelected 
+                                                                ? 'bg-orange-50/70 border-l-4 border-orange-500 font-semibold' 
+                                                                : 'hover:bg-slate-50 cursor-pointer'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        {isEligible ? (
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isSelected}
+                                                                onChange={() => toggleDelegate(delegate.id)}
+                                                                className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500 cursor-pointer"
+                                                            />
+                                                        ) : isCheckedIn ? (
+                                                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                                        ) : (
+                                                            <XCircle className="w-4 h-4 text-slate-300 shrink-0" />
+                                                        )}
+
+                                                        <div className="min-w-0">
+                                                            <p className={`font-bold truncate ${isCheckedIn ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
+                                                                {delegate.full_name}
+                                                            </p>
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5 font-medium">
+                                                                <span className="font-mono">{delegate.batch_reference || 'REF'}</span>
+                                                                <span>•</span>
+                                                                <span>{delegate.category}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="shrink-0 flex items-center gap-2">
+                                                        {isCheckedIn ? (
+                                                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                                                In Hall ✓
+                                                            </span>
+                                                        ) : isCleared ? (
+                                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                                                isSelected ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-slate-100 text-slate-600 border-slate-200'
+                                                            }`}>
+                                                                {isSelected ? 'Ready' : 'Cleared'}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+                                                                Payment Pending
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* BOTTOM ACTION BUTTON */}
                         <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <span className="text-xs text-slate-500">
-                                Checking in <strong>{selectedDelegateIds.size} delegates</strong> from <strong>{loadedGroup.province}</strong>.
+                            <span className="text-xs text-slate-500 font-medium">
+                                Admitting <strong>{selectedDelegateIds.size} delegates</strong> for <strong>{loadedGroup.province}</strong> ({batchTag === 'Custom' ? (customTag || 'Custom') : batchTag}).
                             </span>
 
                             <Button
                                 onClick={handleBatchSubmit}
                                 disabled={isSubmitting || selectedDelegateIds.size === 0}
-                                className="bg-orange-500 hover:bg-orange-600 text-white font-black text-sm h-12 px-8 rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                                className="bg-orange-500 hover:bg-orange-600 text-white font-black text-sm h-12 px-8 rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer disabled:opacity-40"
                             >
                                 {isSubmitting ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
                                     <CheckCircle2 className="w-4 h-4" />
                                 )}
-                                <span>Check In {selectedDelegateIds.size} Delegates (Batch)</span>
+                                <span>Check In {selectedDelegateIds.size} Delegates ({batchTag === 'Custom' ? (customTag || 'Custom') : batchTag}) Now</span>
                             </Button>
                         </div>
                     </div>

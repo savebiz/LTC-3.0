@@ -49,20 +49,59 @@ export default async function handler(req: any, res: any) {
             province, 
             region, 
             batch_reference, 
-            headcount_verified 
+            headcount_verified,
+            batch_label
         } = req.body;
 
-        if (!Array.isArray(registration_ids) || registration_ids.length === 0) {
-            return res.status(400).json({ error: 'No delegate registration IDs provided for batch check-in' });
-        }
-
         const supabase = getSupabaseAdmin();
+        let targetIds: string[] = Array.isArray(registration_ids) ? registration_ids : [];
+
+        // If no explicit IDs provided, dynamically resolve the first N eligible delegates by province/batch
+        if (targetIds.length === 0) {
+            const requestedCount = parseInt(headcount_verified, 10) || 0;
+            if (requestedCount <= 0) {
+                return res.status(400).json({ error: 'Please provide either registration IDs or a positive headcount number.' });
+            }
+
+            let poolQuery = supabase
+                .from('registrations')
+                .select('id, status, payment_status, checked_in')
+                .eq('checked_in', false);
+
+            if (batch_reference && batch_reference !== 'DEFAULT' && batch_reference !== '-') {
+                poolQuery = poolQuery.eq('batch_reference', batch_reference);
+            } else if (province) {
+                poolQuery = poolQuery.eq('province', province);
+            } else {
+                return res.status(400).json({ error: 'Province or Batch Reference is required for headcount check-in.' });
+            }
+
+            const { data: poolRows, error: poolErr } = await poolQuery.order('full_name', { ascending: true });
+            if (poolErr) return res.status(500).json({ error: poolErr.message });
+
+            const eligiblePool = (poolRows || []).filter((d: any) => {
+                const st = d.status?.toLowerCase();
+                const ps = d.payment_status?.toLowerCase();
+                const isCleared = ps === 'cleared' || st === 'confirmed';
+                const isRejected = st === 'rejected' || ps === 'rejected';
+                return isCleared && !isRejected;
+            });
+
+            if (eligiblePool.length === 0) {
+                return res.status(400).json({ 
+                    error: 'No Eligible Delegates', 
+                    message: 'No remaining cleared delegates found for this province/batch.' 
+                });
+            }
+
+            targetIds = eligiblePool.slice(0, requestedCount).map((d: any) => d.id);
+        }
 
         // 2. Fetch the target registrations to confirm they exist and check clearance
         const { data: delegates, error: fetchErr } = await supabase
             .from('registrations')
             .select('id, full_name, category, status, payment_status, checked_in, batch_reference, region, province')
-            .in('id', registration_ids);
+            .in('id', targetIds);
 
         if (fetchErr) {
             console.error('Batch fetch error:', fetchErr);
@@ -119,6 +158,7 @@ export default async function handler(req: any, res: any) {
         const targetProvince = province || eligibleDelegates[0]?.province || 'General';
         const targetRegion = region || eligibleDelegates[0]?.region || 'General';
         const targetCoordinator = coordinator_name || 'Group Coordinator';
+        const targetLabel = batch_label ? ` [${batch_label}]` : '';
 
         await supabase.from('audit_log').insert({
             action: 'batch_coordinator_checkin',
@@ -130,18 +170,20 @@ export default async function handler(req: any, res: any) {
             new_value: {
                 batch_count: eligibleIds.length,
                 headcount_verified: headcount_verified || eligibleIds.length,
+                batch_label: batch_label || null,
                 province: targetProvince,
                 region: targetRegion,
                 checked_in_at: checkInTimestamp
             },
-            notes: `Batch Check-In: ${eligibleIds.length} delegates checked in under Coordinator "${targetCoordinator}" (${targetProvince}, ${targetRegion}). Verified headcount: ${headcount_verified || eligibleIds.length}.`
+            notes: `Batch Check-In${targetLabel}: ${eligibleIds.length} delegates checked in for "${targetCoordinator}" (${targetProvince}, ${targetRegion}). Verified headcount: ${headcount_verified || eligibleIds.length}.`
         });
 
         return res.status(200).json({
             success: true,
-            message: `Batch Check-In Successful! Checked in ${eligibleIds.length} delegates.`,
+            message: `Batch Check-In Successful! Checked in ${eligibleIds.length} delegates${targetLabel}.`,
             checked_in_count: eligibleIds.length,
             headcount_verified: headcount_verified || eligibleIds.length,
+            batch_label: batch_label || null,
             coordinator_name: targetCoordinator,
             province: targetProvince,
             region: targetRegion,
