@@ -938,10 +938,10 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
                             Total Registrations
                         </span>
                         <span className="text-lg sm:text-xl font-black text-white block mt-0.5">
-                            4,787
+                            4,620
                         </span>
                         <span className="text-[10px] text-slate-400 block mt-0.5">
-                            4,583 Online • 204 Onsite/LP87
+                            4,583 Base (incl. 204 Onsite) + 37 LP87
                         </span>
                     </div>
 
@@ -950,10 +950,10 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
                             Cleared for Entry
                         </span>
                         <span className="text-lg sm:text-xl font-black text-blue-400 block mt-0.5">
-                            4,426
+                            4,463
                         </span>
                         <span className="text-[10px] text-slate-400 block mt-0.5">
-                            92.5% Clearance Rate
+                            4,426 Base (incl. 204 Onsite) + 37 LP87 (96.6%)
                         </span>
                     </div>
 
@@ -962,10 +962,10 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
                             Total Attendance
                         </span>
                         <span className="text-lg sm:text-xl font-black text-emerald-400 block mt-0.5">
-                            3,508
+                            3,361
                         </span>
                         <span className="text-[10px] text-emerald-300/80 block mt-0.5">
-                            83.1% Cleared Attendance Rate
+                            75.3% Cleared Attendance Rate (3,352 DB + 9 Surge)
                         </span>
                     </div>
 
@@ -992,7 +992,10 @@ export default function CheckInModule({ isSidebarOpen = false }: { isSidebarOpen
                         📋 Concourse Manual Surge: <strong className="text-white">746</strong>
                     </span>
                     <span className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
-                        💳 Table D POS Onsite: <strong className="text-white">184</strong>
+                        🏛️ Lagos Province 87 (Region 2): <strong className="text-white">37</strong>
+                    </span>
+                    <span className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
+                        💳 Onsite Captured in Base: <strong className="text-white">204</strong>
                     </span>
                     <span className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
                         👥 Secretariat Volunteers: <strong className="text-white">20 (Deactivated)</strong>
