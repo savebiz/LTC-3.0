@@ -19,6 +19,10 @@ const Gallery: React.FC = () => {
                             Core <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-300">Memories</span>
                         </h2>
                         <p className="text-base md:text-xl text-gray-400 max-w-md font-light">Fragments of time from our last convergence.</p>
+                        <div className="inline-flex items-center gap-2 mt-4 bg-orange-500/10 border border-orange-500/30 text-orange-400 px-3.5 py-1.5 rounded-full text-xs font-mono">
+                            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shrink-0" />
+                            <span>C3TC '26 Official Media Reel in Post-Production • Photos Dropping Soon!</span>
+                        </div>
                     </motion.div>
                     <a
                         href="https://www.instagram.com/rccg.c3tc/"

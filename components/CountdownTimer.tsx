@@ -47,10 +47,10 @@ export default function CountdownTimer() {
             >
                 <div className="bg-black/60 border border-orange-500/30 backdrop-blur-2xl shadow-[0_0_35px_rgba(249,115,22,0.12)] rounded-2xl sm:rounded-3xl px-6 py-5 text-center">
                     <p className="text-[10px] sm:text-xs tracking-[0.18em] text-orange-400 font-mono uppercase font-bold">
-                        ONLINE REGISTRATION CLOSED
+                        CONFERENCE CONCLUDED • THANK YOU FOR ATTENDING!
                     </p>
                     <p className="text-xs sm:text-sm text-zinc-300 mt-2 max-w-md mx-auto leading-relaxed">
-                        Missed the online deadline? Onsite registration will be available at the conference venue on <span className="text-white font-semibold">Saturday, October 17, 2026</span>.
+                        C3TC '26 was historic! Over <span className="text-white font-semibold">5,000 teenagers, coordinators, and teachers</span> gathered across Continent 3. The Incredible You is Evolving.
                     </p>
                 </div>
             </motion.div>

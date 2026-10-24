@@ -77,7 +77,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                     transition={{ duration: 0.8, delay: 0.6 }}
                     className="text-base md:text-4xl font-light text-gray-300 tracking-[0.2em] md:tracking-[0.3em] uppercase font-sans mix-blend-plus-lighter px-4"
                 >
-                    The Incredible Me Emerging
+                    The Incredible Me Evolving
                 </motion.p>
 
                 <CountdownTimer />
@@ -88,21 +88,23 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                     transition={{ duration: 0.8, delay: 1 }}
                     className="pt-8 md:pt-12 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 w-full max-w-sm md:max-w-none mx-auto"
                 >
-                    <Button
-                        size="lg"
-                        className="w-full md:w-auto h-auto bg-white text-black hover:bg-gray-100 px-8 py-4 md:px-12 md:py-6 text-lg md:text-xl rounded-full font-bold tracking-wide transition-all transform hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)]"
-                        onClick={onRegisterClick}
-                    >
-                        SECURE YOUR SEAT
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="lg"
-                        className="w-full md:w-auto h-auto border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white active:text-white px-8 py-4 md:px-12 md:py-6 text-lg md:text-xl rounded-full font-bold tracking-wide backdrop-blur-sm transition-all hover:border-white/50"
-                        onClick={onVolunteerClick}
-                    >
-                        BECOME A VOLUNTEER
-                    </Button>
+                    <a href="/program" className="w-full md:w-auto">
+                        <Button
+                            size="lg"
+                            className="w-full md:w-auto h-auto bg-gradient-to-r from-orange-500 to-amber-500 text-black hover:from-orange-400 hover:to-amber-400 px-8 py-4 md:px-10 md:py-5 text-base md:text-lg rounded-full font-bold tracking-wide transition-all transform hover:scale-105 shadow-[0_0_30px_rgba(249,115,22,0.3)] cursor-pointer"
+                        >
+                            EXPLORE PROGRAM SOUVENIR
+                        </Button>
+                    </a>
+                    <a href="/check-status" className="w-full md:w-auto">
+                        <Button
+                            variant="outline"
+                            size="lg"
+                            className="w-full md:w-auto h-auto border-white/20 text-white bg-white/5 hover:bg-white/10 hover:text-white px-8 py-4 md:px-10 md:py-5 text-base md:text-lg rounded-full font-bold tracking-wide backdrop-blur-sm transition-all hover:border-white/50 cursor-pointer"
+                        >
+                            CHECK ATTENDANCE STATUS
+                        </Button>
+                    </a>
                 </motion.div>
             </div>
         </section>
