@@ -667,10 +667,10 @@ export default function AnalyticsDashboard() {
                             Total Attendance
                         </span>
                         <span className="text-lg sm:text-xl font-black text-emerald-400 block mt-0.5">
-                            3,361
+                            3,378
                         </span>
                         <span className="text-[10px] text-emerald-300/80 block mt-0.5">
-                            75.3% Cleared Attendance Rate (3,352 DB + 9 Surge)
+                            75.7% Cleared Attendance Rate (3,369 DB + 9 Surge)
                         </span>
                     </div>
 
@@ -698,6 +698,9 @@ export default function AnalyticsDashboard() {
                     </span>
                     <span className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
                         🏛️ Lagos Province 87 (Region 2): <strong className="text-white">37</strong>
+                    </span>
+                    <span className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
+                        👑 Continental 3 HQ: <strong className="text-emerald-400">32 (100% In)</strong>
                     </span>
                     <span className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
                         💳 Onsite Captured in Base: <strong className="text-white">204</strong>
