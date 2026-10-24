@@ -306,6 +306,103 @@ export default function DashboardOverview() {
                 </Button>
             </div>
 
+            {/* POST-CONFERENCE AUDITED RECONCILIATION SUMMARY */}
+            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl p-5 shadow-md border border-slate-700/60 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/50 pb-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400">
+                            <Award className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-sm sm:text-base font-black tracking-tight text-white">
+                                    C3TC '26 Official Post-Conference Reconciled Audit
+                                </h3>
+                                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                    Audited & Final
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-300 mt-0.5">
+                                Consolidated report for the Conference Chairman & Continental Leadership (Reporting Date: 24 Oct 2026).
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <span className="text-xs font-mono font-bold text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700">
+                            Net Surplus: <strong className="text-emerald-400">+₦1,598,500</strong>
+                        </span>
+                    </div>
+                </div>
+
+                {/* 4 Multi-Channel Reconciled Pillars */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-3">
+                        <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+                            Total Registrations
+                        </span>
+                        <span className="text-lg sm:text-xl font-black text-white block mt-0.5">
+                            4,787
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                            4,583 Online • 204 Onsite/LP87
+                        </span>
+                    </div>
+
+                    <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-3">
+                        <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+                            Cleared for Entry
+                        </span>
+                        <span className="text-lg sm:text-xl font-black text-blue-400 block mt-0.5">
+                            4,426
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                            92.5% Clearance Rate
+                        </span>
+                    </div>
+
+                    <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-3">
+                        <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+                            Total Attendance
+                        </span>
+                        <span className="text-lg sm:text-xl font-black text-emerald-400 block mt-0.5">
+                            3,508
+                        </span>
+                        <span className="text-[10px] text-emerald-300/80 block mt-0.5">
+                            83.1% Cleared Attendance Rate
+                        </span>
+                    </div>
+
+                    <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-3">
+                        <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+                            Financial Inflow
+                        </span>
+                        <span className="text-lg sm:text-xl font-black text-emerald-400 block mt-0.5">
+                            ₦5,047,000
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                            Costs: ₦3,448,500 (Surplus: +₦1.60M)
+                        </span>
+                    </div>
+                </div>
+
+                {/* Sub-channel Breakdown Chips */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-300">
+                    <span className="font-bold text-slate-400">Attendance Breakdown:</span>
+                    <span className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
+                        📱 Digital QR Check-ins: <strong className="text-white">2,578</strong>
+                    </span>
+                    <span className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
+                        📋 Concourse Manual Surge: <strong className="text-white">746</strong>
+                    </span>
+                    <span className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
+                        💳 Table D POS Onsite: <strong className="text-white">184</strong>
+                    </span>
+                    <span className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
+                        👥 Secretariat Volunteers: <strong className="text-white">20 (Deactivated)</strong>
+                    </span>
+                </div>
+            </div>
+
             {/* STATS GRID */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 {STATS.map((stat, i) => (
