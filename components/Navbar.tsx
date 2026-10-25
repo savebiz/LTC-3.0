@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { EVENT_DETAILS } from '../constants';
 import { Button } from '@/components/ui/button';
 import { Play, Instagram } from 'lucide-react';
-import { Play, Instagram } from 'lucide-react';
-import { Play, Instagram } from 'lucide-react';
 
 interface NavbarProps { onRegisterClick?: () => void; }
 
