@@ -15,8 +15,11 @@ const Gallery: React.FC = () => {
                         viewport={{ once: true }}
                         transition={{ duration: 0.6 }}
                     >
-                        <h2 className="text-4xl md:text-8xl font-black font-heading tracking-tight mb-2 md:mb-4 text-white">
-                            Conference <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-300">Broadcast & Media</span>
+                        <h2 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-black font-heading tracking-tight mb-2 md:mb-4 text-white leading-tight break-normal whitespace-normal">
+                            Conference <br className="sm:hidden" />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-300">
+                                Broadcast & Media
+                            </span>
                         </h2>
                         <p className="text-base md:text-xl text-gray-400 max-w-md font-light">Relive the atmosphere, praise, and ministrations from Glory Arena.</p>
                         <div className="inline-flex items-center gap-2 mt-4 bg-white/5 border border-white/10 text-zinc-300 px-3.5 py-1.5 rounded-full text-xs font-mono">

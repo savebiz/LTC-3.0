@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Play, Instagram, ArrowUpRight } from 'lucide-react';
@@ -11,6 +11,14 @@ interface HeroProps {
 }
 
 const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
+    const [showConcludedModal, setShowConcludedModal] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowConcludedModal(true);
+        }, 700);
+        return () => clearTimeout(timer);
+    }, []);
     return (
         <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-black pb-12 md:pb-0">
             {/* Video Background */}
@@ -34,7 +42,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
             <Navbar onRegisterClick={onRegisterClick} />
 
             {/* Content */}
-            <div className="relative z-30 text-center space-y-6 md:space-y-8 px-4 mt-4 md:mt-20 max-w-7xl mx-auto w-full">
+            <div className="relative z-30 text-center space-y-6 md:space-y-10 px-4 pt-24 sm:pt-32 md:pt-40 pb-16 md:pb-24 max-w-7xl mx-auto w-full">
                 
 
                 <div className="relative flex items-center justify-center py-6 md:py-10">
@@ -73,7 +81,54 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                     The Incredible Me Evolving
                 </motion.p>
 
-                <CountdownTimer />
+                {/* Pop-Up Modal for Conference Concluded Thank You Notice */}
+                {showConcludedModal && (
+                    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+                        <div className="relative w-full max-w-md bg-gradient-to-b from-zinc-900 via-zinc-950 to-black border border-orange-500/30 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(249,115,22,0.25)] text-center space-y-4">
+                            {/* Close button */}
+                            <button
+                                onClick={() => setShowConcludedModal(false)}
+                                className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+                                aria-label="Close"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-[10px] sm:text-xs font-mono font-bold tracking-wider uppercase">
+                                CONFERENCE CONCLUDED • THANK YOU!
+                            </div>
+
+                            <h3 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight leading-snug">
+                                C3TC '26 Was Historic!
+                            </h3>
+
+                            <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                                Over <strong className="text-white font-bold">5,000 teenagers, coordinators, and teachers</strong> gathered across Continent 3 at Glory Arena, Redemption City. The Incredible You is Evolving.
+                            </p>
+
+                            <div className="pt-2 space-y-2.5">
+                                <a
+                                    href="/#gallery"
+                                    onClick={() => setShowConcludedModal(false)}
+                                    className="block w-full"
+                                >
+                                    <Button className="w-full bg-gradient-to-r from-red-600 via-orange-600 to-amber-500 hover:opacity-90 text-white rounded-2xl font-bold py-5 text-xs sm:text-sm shadow-md gap-2">
+                                        <Play className="w-4 h-4 fill-current" /> Watch Conference Broadcast
+                                    </Button>
+                                </a>
+                                <a
+                                    href="/program"
+                                    onClick={() => setShowConcludedModal(false)}
+                                    className="block w-full"
+                                >
+                                    <Button variant="outline" className="w-full border-white/20 text-zinc-200 hover:text-white hover:bg-white/10 rounded-2xl font-bold py-5 text-xs sm:text-sm">
+                                        Explore Program Souvenir
+                                    </Button>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Official Instagram Reel Callout Badge (No glowing dot) */}
                 <motion.div
