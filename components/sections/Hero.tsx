@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Play, Instagram, ArrowUpRight } from 'lucide-react';
+import { Play, Instagram, ArrowUpRight, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import CountdownTimer from '@/components/CountdownTimer';
 
