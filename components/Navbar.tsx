@@ -141,12 +141,10 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
               <Instagram className="w-4 h-4" />
             </a>
             <a
-              href="https://www.youtube.com/live/ZCQCEWcHXzA"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/#gallery"
             >
               <Button size="sm" className="rounded-full font-bold tracking-wider bg-red-600 hover:bg-red-700 text-white gap-2 shadow-md hover:shadow-red-600/30">
-                <Play className="w-3.5 h-3.5 fill-current" /> WATCH REPLAY
+                <Play className="w-3.5 h-3.5 fill-current" /> WATCH BROADCAST
               </Button>
             </a>
           </div>
@@ -169,9 +167,7 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
               <Instagram className="w-4 h-4" />
             </a>
             <a
-              href="https://www.youtube.com/live/ZCQCEWcHXzA"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/#gallery"
             >
               <Button 
                 size="sm" 

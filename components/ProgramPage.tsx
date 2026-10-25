@@ -360,9 +360,7 @@ export default function ProgramPage() {
                             </button>
 
                             <a
-                                href="https://www.youtube.com/live/ZCQCEWcHXzA"
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                href="/#gallery"
                                 className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition-all active:scale-[0.98] ${
                                     theme === 'dark'
                                         ? 'bg-red-500/15 hover:bg-red-500/25 border-red-500/30 text-red-300'
@@ -370,7 +368,7 @@ export default function ProgramPage() {
                                 }`}
                             >
                                 <Play className="w-4 h-4 text-red-500 fill-current" />
-                                <span>Watch Full Livestream Replay</span>
+                                <span>Watch Conference Broadcast</span>
                             </a>
                         </div>
                     </div>
@@ -467,7 +465,7 @@ export default function ProgramPage() {
                                 OFFICIAL RECORDING
                             </span>
                             <span className={`text-xs ${theme === 'dark' ? 'text-zinc-400' : 'text-slate-500'}`}>
-                                5h 42m Livestream Available
+                                Over 1 hour broadcast available
                             </span>
                         </div>
                         <h3 className={`text-sm sm:text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
@@ -478,13 +476,11 @@ export default function ProgramPage() {
                         </p>
                     </div>
                     <a
-                        href="https://www.youtube.com/live/ZCQCEWcHXzA"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="/#gallery"
                         className="shrink-0"
                     >
                         <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs gap-1.5 w-full sm:w-auto px-5 py-2.5 shadow-md">
-                            <Play className="w-3.5 h-3.5 fill-current" /> Watch Full Replay
+                            <Play className="w-3.5 h-3.5 fill-current" /> Watch Conference Broadcast
                         </Button>
                     </a>
                 </div>

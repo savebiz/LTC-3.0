@@ -54,34 +54,15 @@ const Footer: React.FC<FooterProps> = ({ onRegisterClick, onVolunteerClick }) =>
                     </p>
                 </div>
 
-                <div className="flex flex-wrap justify-center gap-8 md:gap-12 text-sm text-gray-500">
+                <div className="flex flex-wrap justify-center gap-8 md:gap-12 text-sm text-gray-400">
                     {LINKS.map(link => {
-                        const isAction = link.label === "Register" || link.label === "Volunteer";
-                        const handleClick = (e: React.MouseEvent) => {
-                            if (link.label === "Register") {
-                                e.preventDefault();
-                                onRegisterClick();
-                            } else if (link.label === "Volunteer") {
-                                e.preventDefault();
-                                onVolunteerClick();
-                            }
-                        };
-
-                        return isAction ? (
-                            <button
-                                key={link.label}
-                                onClick={handleClick}
-                                className="hover:text-white transition-colors uppercase tracking-[0.2em] text-xs font-medium bg-transparent border-none cursor-pointer"
-                            >
-                                {link.label}
-                            </button>
-                        ) : (
+                        const isExternal = link.url.startsWith('http');
+                        return (
                             <a
                                 key={link.label}
                                 href={link.url}
-                                className="hover:text-white transition-colors uppercase tracking-[0.2em] text-xs font-medium"
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                className="hover:text-orange-400 transition-colors uppercase tracking-[0.2em] text-xs font-medium"
+                                {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                             >
                                 {link.label}
                             </a>

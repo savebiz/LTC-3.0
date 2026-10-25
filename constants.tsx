@@ -29,8 +29,10 @@ export const BANK_DETAILS = {
 };
 
 export const LINKS = [
-  { label: "Register", url: "https://bit.ly/LTC3Register" },
-  { label: "Volunteer", url: "https://bit.ly/LTC3Volunteer" }
+  { label: "Program Souvenir", url: "/program" },
+  { label: "Conference Broadcast", url: "/#gallery" },
+  { label: "Official Reel", url: "https://www.instagram.com/reel/DettbnYti8w/" },
+  { label: "Media Album", url: "https://www.instagram.com/rccg.c3tc/" }
 ];
 
 export const SOCIAL_LINKS = [

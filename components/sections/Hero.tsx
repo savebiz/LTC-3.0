@@ -35,15 +35,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
 
             {/* Content */}
             <div className="relative z-30 text-center space-y-6 md:space-y-8 px-4 mt-4 md:mt-20 max-w-7xl mx-auto w-full">
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                    className="inline-flex items-center space-x-3 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 md:px-5 md:py-2 backdrop-blur-md"
-                >
-                    
-                    <span className="text-gray-300 text-[10px] md:text-sm tracking-[0.2em] font-medium font-mono">ROMANS 12:2</span>
-                </motion.div>
+                
 
                 <div className="relative flex items-center justify-center py-6 md:py-10">
                     <div className="relative inline-block">
@@ -109,16 +101,14 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                     className="pt-4 md:pt-6 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 w-full max-w-sm md:max-w-none mx-auto"
                 >
                     <a
-                        href="https://www.youtube.com/live/ZCQCEWcHXzA"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="/#gallery"
                         className="w-full md:w-auto"
                     >
                         <Button
                             size="lg"
                             className="w-full md:w-auto h-auto bg-gradient-to-r from-red-600 via-orange-600 to-amber-500 text-white hover:from-red-500 hover:to-amber-400 px-8 py-4 md:px-10 md:py-5 text-base md:text-lg rounded-full font-bold tracking-wide transition-all transform hover:scale-105 shadow-[0_0_30px_rgba(239,68,68,0.3)] cursor-pointer flex items-center justify-center gap-2"
                         >
-                            <Play className="w-5 h-5 fill-current" /> WATCH FULL REPLAY
+                            <Play className="w-5 h-5 fill-current" /> WATCH CONFERENCE BROADCAST
                         </Button>
                     </a>
                     <a href="/program" className="w-full md:w-auto">

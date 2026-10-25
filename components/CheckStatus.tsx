@@ -144,16 +144,14 @@ export default function CheckStatus() {
                     </p>
                     <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                         <a
-                            href="https://www.youtube.com/live/ZCQCEWcHXzA"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            href="/#gallery"
                         >
                             <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white rounded-full font-bold text-xs gap-1.5 h-8">
-                                <Play className="w-3 h-3 fill-current" /> Watch Full Replay
+                                <Play className="w-3 h-3 fill-current" /> Watch Conference Broadcast
                             </Button>
                         </a>
                         <a href="/program">
-                            <Button size="sm" variant="outline" className="border-white/20 text-white hover:bg-white/10 rounded-full font-bold text-xs h-8">
+                            <Button size="sm" className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 rounded-full font-bold text-xs h-8 shadow-xs">
                                 Explore Program Souvenir
                             </Button>
                         </a>
