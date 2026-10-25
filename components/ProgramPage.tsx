@@ -138,7 +138,8 @@ export default function ProgramPage() {
     // Determine the active session:
     // If backend stage director set active_session_id, use it.
     // Otherwise, calculate dynamically from current time + delay_minutes.
-    const activeSession = useMemo(() => {
+    const activeSession: ProgramSession | null = null;
+    const _unusedActiveSession = useMemo(() => {
         if (liveState.active_session_id) {
             const found = PROGRAM_SCHEDULE.find(s => s.id === liveState.active_session_id);
             if (found) return found;
@@ -220,7 +221,8 @@ export default function ProgramPage() {
         }
     };
 
-    const isPastSession = (session: ProgramSession) => {
+    const isPastSession = (_session: ProgramSession) => true;
+    const _unusedIsPastSession = (session: ProgramSession) => {
         if (activeSession && activeSession.id === session.id) return false;
         const [eh, em] = session.endTime.split(':').map(Number);
         const endTotal = eh * 60 + em + (liveState.delay_minutes || 0);
@@ -282,17 +284,12 @@ export default function ProgramPage() {
                             </span>
                         )}
 
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                            isOnline 
-                                ? theme === 'dark'
-                                    ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
-                                    : 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                                : theme === 'dark'
-                                    ? 'bg-zinc-800 border-zinc-700 text-zinc-400'
-                                    : 'bg-slate-200 border-slate-300 text-slate-600'
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider border ${
+                            theme === 'dark'
+                                ? 'bg-white/5 border-white/10 text-zinc-300'
+                                : 'bg-slate-100 border-slate-300 text-slate-700'
                         }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'}`} />
-                            {isOnline ? 'Live Sync' : 'Offline'}
+                            OFFICIAL PROGRAM SOUVENIR & EVENT ARCHIVE
                         </span>
                     </div>
                 </div>
@@ -349,7 +346,7 @@ export default function ProgramPage() {
                         </div>
 
                         {/* QUICK ACCESS ACTION BUTTONS */}
-                        <div className="grid grid-cols-2 gap-2.5 pt-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
                             <button
                                 onClick={() => setShowConfessionModal(true)}
                                 className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition-all active:scale-[0.98] ${
@@ -359,20 +356,22 @@ export default function ProgramPage() {
                                 }`}
                             >
                                 <BookOpen className="w-4 h-4 text-orange-500" />
-                                <span>T.I.M.E. Confession</span>
+                                <span>T.I.M.E. Confession (Recite)</span>
                             </button>
 
-                            <button
-                                onClick={() => setShowQaModal(true)}
+                            <a
+                                href="https://www.youtube.com/live/ZCQCEWcHXzA"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition-all active:scale-[0.98] ${
                                     theme === 'dark'
-                                        ? 'bg-blue-500/15 hover:bg-blue-500/25 border-blue-500/30 text-blue-300'
-                                        : 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 shadow-xs'
+                                        ? 'bg-red-500/15 hover:bg-red-500/25 border-red-500/30 text-red-300'
+                                        : 'bg-red-50 hover:bg-red-100 border-red-200 text-red-700 shadow-xs'
                                 }`}
                             >
-                                <MessageSquare className="w-4 h-4 text-blue-500" />
-                                <span>Ask TGS Question</span>
-                            </button>
+                                <Play className="w-4 h-4 text-red-500 fill-current" />
+                                <span>Watch Full Livestream Replay</span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -455,6 +454,40 @@ export default function ProgramPage() {
                         )}
                     </div>
                 )}
+
+                {/* LIVESTREAM REPLAY BANNER */}
+                <div className={`p-4 sm:p-5 rounded-3xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+                    theme === 'dark'
+                        ? 'bg-gradient-to-r from-red-950/40 via-zinc-900 to-zinc-950 border-red-500/30 shadow-xl'
+                        : 'bg-gradient-to-r from-red-50 to-white border-red-200 shadow-sm'
+                }`}>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-red-500 bg-red-500/10 border border-red-500/20 px-2.5 py-0.5 rounded-full">
+                                OFFICIAL RECORDING
+                            </span>
+                            <span className={`text-xs ${theme === 'dark' ? 'text-zinc-400' : 'text-slate-500'}`}>
+                                5h 42m Livestream Available
+                            </span>
+                        </div>
+                        <h3 className={`text-sm sm:text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                            Relive the Impartation, Worship & Praise
+                        </h3>
+                        <p className={`text-xs ${theme === 'dark' ? 'text-zinc-400' : 'text-slate-600'}`}>
+                            Access the complete uninterrupted stage broadcast directly on YouTube.
+                        </p>
+                    </div>
+                    <a
+                        href="https://www.youtube.com/live/ZCQCEWcHXzA"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0"
+                    >
+                        <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs gap-1.5 w-full sm:w-auto px-5 py-2.5 shadow-md">
+                            <Play className="w-3.5 h-3.5 fill-current" /> Watch Full Replay
+                        </Button>
+                    </a>
+                </div>
 
                 {/* VENUE FILTER SEGMENTED BUTTONS */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs font-bold">

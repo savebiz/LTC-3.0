@@ -40,7 +40,7 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
                     transition={{ duration: 0.8, delay: 0.2 }}
                     className="inline-flex items-center space-x-3 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 md:px-5 md:py-2 backdrop-blur-md"
                 >
-                    <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-orange-500 animate-pulse" />
+                    
                     <span className="text-gray-300 text-[10px] md:text-sm tracking-[0.2em] font-medium font-mono">ROMANS 12:2</span>
                 </motion.div>
 
@@ -82,27 +82,51 @@ const Hero: React.FC<HeroProps> = ({ onRegisterClick, onVolunteerClick }) => {
 
                 <CountdownTimer />
 
+                {/* Official Instagram Reel Callout Badge (No glowing dot) */}
+                <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.9 }}
+                    className="flex justify-center pt-2"
+                >
+                    <a
+                        href="https://www.instagram.com/reel/DettbnYti8w/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-pink-500/40 text-zinc-300 hover:text-white transition-all text-xs font-mono group"
+                    >
+                        <Instagram className="w-3.5 h-3.5 text-pink-400" />
+                        <span>Watch Official Event Reel on Instagram</span>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-pink-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </a>
+                </motion.div>
+
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 1 }}
-                    className="pt-8 md:pt-12 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 w-full max-w-sm md:max-w-none mx-auto"
+                    className="pt-4 md:pt-6 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 w-full max-w-sm md:max-w-none mx-auto"
                 >
-                    <a href="/program" className="w-full md:w-auto">
+                    <a
+                        href="https://www.youtube.com/live/ZCQCEWcHXzA"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full md:w-auto"
+                    >
                         <Button
                             size="lg"
-                            className="w-full md:w-auto h-auto bg-gradient-to-r from-orange-500 to-amber-500 text-black hover:from-orange-400 hover:to-amber-400 px-8 py-4 md:px-10 md:py-5 text-base md:text-lg rounded-full font-bold tracking-wide transition-all transform hover:scale-105 shadow-[0_0_30px_rgba(249,115,22,0.3)] cursor-pointer"
+                            className="w-full md:w-auto h-auto bg-gradient-to-r from-red-600 via-orange-600 to-amber-500 text-white hover:from-red-500 hover:to-amber-400 px-8 py-4 md:px-10 md:py-5 text-base md:text-lg rounded-full font-bold tracking-wide transition-all transform hover:scale-105 shadow-[0_0_30px_rgba(239,68,68,0.3)] cursor-pointer flex items-center justify-center gap-2"
                         >
-                            EXPLORE PROGRAM SOUVENIR
+                            <Play className="w-5 h-5 fill-current" /> WATCH FULL REPLAY
                         </Button>
                     </a>
-                    <a href="/check-status" className="w-full md:w-auto">
+                    <a href="/program" className="w-full md:w-auto">
                         <Button
                             variant="outline"
                             size="lg"
                             className="w-full md:w-auto h-auto border-white/20 text-white bg-white/5 hover:bg-white/10 hover:text-white px-8 py-4 md:px-10 md:py-5 text-base md:text-lg rounded-full font-bold tracking-wide backdrop-blur-sm transition-all hover:border-white/50 cursor-pointer"
                         >
-                            CHECK ATTENDANCE STATUS
+                            EXPLORE PROGRAM SOUVENIR
                         </Button>
                     </a>
                 </motion.div>

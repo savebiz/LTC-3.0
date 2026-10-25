@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { EVENT_DETAILS } from '../constants';
 import { Button } from '@/components/ui/button';
+import { Play, Instagram } from 'lucide-react';
+import { Play, Instagram } from 'lucide-react';
+import { Play, Instagram } from 'lucide-react';
 
-interface NavbarProps { onRegisterClick: () => void; }
+interface NavbarProps { onRegisterClick?: () => void; }
 
 const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -112,43 +115,73 @@ const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
           </div>
 
           {/* Desktop Navigation Items */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <a
-              href="/check-status"
-              className={`font-bold tracking-wider text-sm transition-all hover:text-orange-500 hover:scale-105 ${isScrolled ? 'text-zinc-800' : 'text-zinc-200'}`}
+              href="/program"
+              className={`font-bold tracking-wider text-sm transition-all hover:text-orange-500 ${isScrolled ? 'text-zinc-800' : 'text-zinc-200'}`}
             >
-              CHECK STATUS
+              PROGRAM SOUVENIR
             </a>
-            <Button onClick={onRegisterClick} size="lg" className="rounded-full font-bold tracking-wider">REGISTER</Button>
+            <a
+              href="/#gallery"
+              className={`font-bold tracking-wider text-sm transition-all hover:text-orange-500 ${isScrolled ? 'text-zinc-800' : 'text-zinc-200'}`}
+            >
+              HIGHLIGHTS
+            </a>
+            <a
+              href="https://www.instagram.com/reel/DettbnYti8w/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Official Instagram Reel"
+              className={`p-2 rounded-full border transition-all hover:scale-105 ${
+                isScrolled 
+                  ? 'border-zinc-300 text-zinc-700 hover:text-pink-600 hover:border-pink-500' 
+                  : 'border-white/20 text-zinc-300 hover:text-pink-400 hover:border-pink-400'
+              }`}
+              title="Watch Official Event Reel on Instagram"
+            >
+              <Instagram className="w-4 h-4" />
+            </a>
+            <a
+              href="https://www.youtube.com/live/ZCQCEWcHXzA"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button size="sm" className="rounded-full font-bold tracking-wider bg-red-600 hover:bg-red-700 text-white gap-2 shadow-md hover:shadow-red-600/30">
+                <Play className="w-3.5 h-3.5 fill-current" /> WATCH REPLAY
+              </Button>
+            </a>
           </div>
 
-          {/* Mobile Right Side Logo/Buttons */}
-          <div className="flex md:hidden items-center">
-            {isScrolled ? (
-              <div className="flex items-center gap-2">
-                <a
-                  href="/check-status"
-                  className="font-bold tracking-wider text-[11px] text-white hover:text-orange-500 transition-colors py-2 px-1"
-                >
-                  STATUS
-                </a>
-                <Button 
-                  onClick={onRegisterClick} 
-                  size="sm" 
-                  className="rounded-full font-bold tracking-wider text-[10px] px-3 py-0.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-md active:scale-95 transition-all h-6"
-                >
-                  REGISTER
-                </Button>
-              </div>
-            ) : (
-              <a href="#">
-                <img
-                  src="/logos/LTC_Logo_white.png"
-                  alt="C3TC Logo"
-                  className="h-12 w-auto object-contain"
-                />
-              </a>
-            )}
+          {/* Mobile Right Side Actions */}
+          <div className="flex md:hidden items-center gap-2">
+            <a
+              href="/program"
+              className="font-bold tracking-wider text-[11px] text-white hover:text-orange-400 transition-colors py-1 px-1.5"
+            >
+              PROGRAM
+            </a>
+            <a
+              href="https://www.instagram.com/reel/DettbnYti8w/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white hover:text-pink-400 p-1"
+              aria-label="Instagram Reel"
+            >
+              <Instagram className="w-4 h-4" />
+            </a>
+            <a
+              href="https://www.youtube.com/live/ZCQCEWcHXzA"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button 
+                size="sm" 
+                className="rounded-full font-bold tracking-wider text-[10px] px-2.5 py-0.5 bg-red-600 hover:bg-red-700 text-white shadow-md active:scale-95 transition-all h-6 flex items-center gap-1"
+              >
+                <Play className="w-2.5 h-2.5 fill-current" /> REPLAY
+              </Button>
+            </a>
           </div>
         </div>
       </nav>

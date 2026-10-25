@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
-import { Loader2, Search, ArrowLeft } from 'lucide-react';
+import { Loader2, Search, ArrowLeft, Play, ExternalLink } from 'lucide-react';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
 const DPCardGenerator = lazyWithRetry(() => import('./DPCardGenerator'));
@@ -134,13 +134,39 @@ export default function CheckStatus() {
                     </a>
                 </div>
 
+                {/* Post-Conference Notice Banner */}
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center space-y-2">
+                    <p className="text-xs font-mono uppercase tracking-widest text-orange-400 font-bold">
+                        C3TC '26 HAS OFFICIALLY CONCLUDED
+                    </p>
+                    <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+                        Pre-conference admission QR passes are now closed. You can verify your historical registration below or relive the full experience via our official recordings.
+                    </p>
+                    <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                        <a
+                            href="https://www.youtube.com/live/ZCQCEWcHXzA"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white rounded-full font-bold text-xs gap-1.5 h-8">
+                                <Play className="w-3 h-3 fill-current" /> Watch Full Replay
+                            </Button>
+                        </a>
+                        <a href="/program">
+                            <Button size="sm" variant="outline" className="border-white/20 text-white hover:bg-white/10 rounded-full font-bold text-xs h-8">
+                                Explore Program Souvenir
+                            </Button>
+                        </a>
+                    </div>
+                </div>
+
                 {/* Header */}
-                <div className="text-center space-y-3">
+                <div className="text-center space-y-2">
                     <h1 className="text-3xl md:text-4xl font-extrabold font-heading bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent tracking-tight">
-                        Check Your Registration Status
+                        Registration & Attendance Archive
                     </h1>
-                    <p className="text-sm md:text-base text-zinc-400 max-w-lg mx-auto leading-relaxed">
-                        Enter your batch reference code below to check if your payment has been approved.
+                    <p className="text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
+                        Enter your batch reference code below to view your confirmed registration and delegation records.
                     </p>
                 </div>
 
