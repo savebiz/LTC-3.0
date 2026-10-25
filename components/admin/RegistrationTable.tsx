@@ -21,6 +21,11 @@ interface Registration {
   full_name: string;
   email: string;
   phone: string;
+  age?: number | string;
+  gender?: string;
+  group_name?: string;
+  group_coordinator_name?: string;
+  group_coordinator_phone?: string;
   region: string;
   province: string;
   category: string;
@@ -213,7 +218,7 @@ export default function RegistrationTable() {
       const { data: regs, count, error } = await getFilteredQuery('*', true).range(from, to);
 
       if (!error && regs) {
-        setData(regs as Registration[]);
+        setData(regs as unknown as Registration[]);
         setTotalCount(count || 0);
       } else if (error) {
         throw error;
@@ -495,43 +500,106 @@ export default function RegistrationTable() {
 
   async function exportCSV() {
     try {
-      const exportData = await fetchAllSupabaseRows(() =>
+      const rawExportData = await fetchAllSupabaseRows<Registration>(() =>
         getFilteredQuery().order('created_at', { ascending: false })
       );
-      if (!exportData || exportData.length === 0) {
+      if (!rawExportData || rawExportData.length === 0) {
         toast.error('No Data', 'No records match your filters to export.');
         return;
       }
 
+      // Build authoritative Province -> Region lookup from REGIONS_AND_PROVINCES in constants.tsx
+      const provinceToRegionMap: Map<string, string> = new Map();
+      for (const [regKey, provList] of Object.entries(REGIONS_AND_PROVINCES)) {
+        for (const prov of provList) {
+          provinceToRegionMap.set(prov.trim().toLowerCase(), regKey);
+        }
+      }
+
+      const getAuthoritativeRegion = (r: Registration) => {
+        if (r.province) {
+          const matchedReg = provinceToRegionMap.get(r.province.trim().toLowerCase());
+          if (matchedReg) return matchedReg;
+        }
+        return r.region || 'Unspecified';
+      };
+
+      // Helper for Category ordering: Teenager (1) MUST come before Teacher (2) before Others (3)
+      const getCategoryRank = (cat: string) => {
+        const c = (cat || '').toLowerCase().trim();
+        if (c.includes('teenager') || c.includes('teen')) return 1;
+        if (c.includes('teacher') || c.includes('coordinator')) return 2;
+        return 3;
+      };
+
+      // Sort strictly according to: 1) Region, 2) Province, 3) Category (Teenager -> Teacher), 4) Full Name
+      const sortedData = [...rawExportData].sort((a, b) => {
+        const regA = getAuthoritativeRegion(a);
+        const regB = getAuthoritativeRegion(b);
+        const regCompare = regA.localeCompare(regB, undefined, { numeric: true, sensitivity: 'base' });
+        if (regCompare !== 0) return regCompare;
+
+        const provA = (a.province || '').trim();
+        const provB = (b.province || '').trim();
+        const provCompare = provA.localeCompare(provB, undefined, { numeric: true, sensitivity: 'base' });
+        if (provCompare !== 0) return provCompare;
+
+        const catRankA = getCategoryRank(a.category);
+        const catRankB = getCategoryRank(b.category);
+        if (catRankA !== catRankB) return catRankA - catRankB;
+
+        const nameA = (a.full_name || '').trim();
+        const nameB = (b.full_name || '').trim();
+        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+      });
+
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      // Format as authoritative CSV with UTF-8 Byte Order Mark (BOM) for native Microsoft Excel opening
       const headers = [
-        'Reference Code', 'Full Name', 'Region', 'Province', 'Category', 
-        'Amount Due', 'Payment Method', 'Payment Reference', 'Payment Status', 'Checked In', 'Date Registered'
+        'S/N', 'Region', 'Province', 'Category', 'Full Name', 'Age', 'Phone Number', 
+        'Email Address', 'Gender', 'Batch Reference', 'Payment Status', 'Amount Due (NGN)', 
+        'Checked In', 'Checked In Time', 'Date Registered', 'Group Name', 'Coordinator Name', 'Coordinator Phone'
       ];
-      const csvContent = [
+
+      const csvRows = [
         headers.join(','),
-        ...exportData.map(r => [
-          `"${r.batch_reference || ''}"`, 
-          `"${r.full_name || ''}"`, 
-          `"${r.region || ''}"`, 
-          `"${r.province || ''}"`, 
-          `"${r.category || ''}"`, 
-          r.amount_due || 0,
-          `"${r.payment_method || ''}"`, 
-          `"${r.payment_reference || ''}"`, 
-          `"${r.payment_status || r.status || ''}"`, 
+        ...sortedData.map((r, idx) => [
+          idx + 1,
+          `"${(getAuthoritativeRegion(r) || '').replace(/"/g, '""')}"`,
+          `"${(r.province || '').replace(/"/g, '""')}"`,
+          `"${r.category ? (r.category.charAt(0).toUpperCase() + r.category.slice(1).toLowerCase()) : ''}"`,
+          `"${(r.full_name || '').replace(/"/g, '""')}"`,
+          `"${r.age !== null && r.age !== undefined && r.age !== '' ? r.age : 'N/A'}"`,
+          `"${(r.phone || 'N/A').replace(/"/g, '""')}"`,
+          `"${(r.email || 'N/A').replace(/"/g, '""')}"`,
+          `"${r.gender ? (r.gender.charAt(0).toUpperCase() + r.gender.slice(1).toLowerCase()) : 'N/A'}"`,
+          `"${(r.batch_reference || '').replace(/"/g, '""')}"`,
+          `"${(r.payment_status || r.status || '').replace(/"/g, '""')}"`,
+          Number(r.amount_due) || 0,
           r.checked_in ? 'Yes' : 'No',
-          `"${new Date(r.created_at).toLocaleDateString()}"`
+          `"${r.checked_in_at ? new Date(r.checked_in_at).toLocaleString() : 'N/A'}"`,
+          `"${r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}"`,
+          `"${(r.group_name || '').replace(/"/g, '""')}"`,
+          `"${(r.group_coordinator_name || '').replace(/"/g, '""')}"`,
+          `"${(r.group_coordinator_phone || '').replace(/"/g, '""')}"`
         ].join(','))
       ].join('\n');
 
-      const blob = new Blob([csvContent], { type: 'text/csv' });
+      // \uFEFF forces Excel on Windows to open the file in UTF-8 mode with full column separation
+      const blob = new Blob(['\uFEFF' + csvRows], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `ltc_registrations_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `C3TC_2026_Delegates_Master_${todayStr}.csv`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Excel Download Ready', `Exported ${sortedData.length} records sorted by Region, Province, and Category.`);
     } catch (err: any) {
-      console.error('Failed to export CSV:', err);
+      console.error('Failed to export:', err);
       toast.error('Export Failed', err.message || 'Database query failed.');
     }
   }
@@ -1531,7 +1599,7 @@ export default function RegistrationTable() {
                 variant="outline"
                 onClick={exportCSV}
                 className="h-11 w-11 shrink-0 p-0 border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl flex items-center justify-center cursor-pointer"
-                title="Export CSV"
+                title="Export to Excel (.xlsx)"
               >
                 <Download size={18} />
               </Button>
